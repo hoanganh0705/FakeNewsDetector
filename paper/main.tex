@@ -1,0 +1,118 @@
+% Vietnamese Fake News Detection: A Comparative Study of Machine Learning Approaches
+% LaTeX Paper Template
+
+\documentclass[conference]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Vietnamese Fake News Detection: A Comparative Study of Machine Learning Approaches}
+
+\author{
+\IEEEauthorblockN{Author Name}
+\IEEEauthorblockA{\textit{Department/Institution} \\
+City, Country \\
+email@example.com}
+}
+
+\maketitle
+
+\begin{abstract}
+This study presents a comprehensive comparison of machine learning approaches for Vietnamese fake news detection. We evaluate four models representing different paradigms: Logistic Regression and Support Vector Machine (traditional machine learning with TF-IDF features), Bidirectional LSTM (deep learning with word embeddings), and PhoBERT (transformer-based pre-trained language model). Our experiments on a dataset of 5,655 Vietnamese news articles demonstrate that PhoBERT achieves the best performance with 90.58\% accuracy and 0.896 F1-score, significantly outperforming traditional approaches ($p < 0.05$). The results highlight the effectiveness of pre-trained language models for Vietnamese NLP tasks while providing insights into the trade-offs between model complexity and performance.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Fake news detection, Vietnamese NLP, Machine learning, Deep learning, PhoBERT, Text classification
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+The proliferation of fake news on social media platforms has become a significant concern for society, particularly in Vietnamese-speaking communities. Misinformation can influence public opinion, affect democratic processes, and even endanger public health. Automatic fake news detection systems are essential tools for combating this challenge.
+
+While extensive research has been conducted on fake news detection for English text, the Vietnamese language presents unique challenges due to its linguistic characteristics, including the use of diacritics, compound words, and the absence of word boundaries. This study addresses the gap by conducting a systematic comparison of multiple machine learning approaches for Vietnamese fake news detection.
+
+\subsection{Research Objectives}
+\begin{enumerate}
+    \item Compare the effectiveness of traditional machine learning, deep learning, and transformer-based approaches for Vietnamese fake news detection
+    \item Analyze the performance characteristics of each model paradigm
+    \item Provide recommendations for practitioners building Vietnamese fake news detection systems
+\end{enumerate}
+
+\section{Related Work}
+
+\subsection{Fake News Detection}
+Previous research on fake news detection has employed various approaches including linguistic features analysis, network-based methods, and knowledge-based approaches \cite{shu2017fake, zhou2020survey}.
+
+\subsection{Vietnamese NLP}
+Vietnamese natural language processing has seen significant advances with tools like VnCoreNLP \cite{vncorenlp2018} and pre-trained models like PhoBERT \cite{phobert2020}.
+
+\section{Methodology}
+
+\subsection{Dataset}
+We compiled a dataset of Vietnamese news articles labeled as real or fake. After preprocessing and removing duplicates, our final dataset contains:
+
+\input{tables/table1_dataset}
+
+\subsection{Models}
+We evaluate four models representing different paradigms:
+
+\textbf{Logistic Regression:} L2 regularization with $C=10$, LBFGS solver.
+
+\textbf{Support Vector Machine:} RBF kernel with $C=10$, $\gamma=\text{scale}$.
+
+\textbf{BiLSTM:} 2-layer bidirectional LSTM with hidden dimension 128 and dropout 0.3.
+
+\textbf{PhoBERT:} Fine-tuned \texttt{vinai/phobert-base} model with learning rate $2 \times 10^{-5}$.
+
+\section{Results}
+
+\subsection{Overall Performance}
+
+\input{tables/table2_results}
+
+\subsection{Statistical Significance}
+McNemar's test results show that PhoBERT's improvement over other models is statistically significant ($p < 0.05$).
+
+\subsection{Per-Class Performance}
+
+\input{tables/table3_perclass}
+
+\section{Discussion}
+
+\subsection{Key Findings}
+\begin{enumerate}
+    \item \textbf{PhoBERT achieves superior performance:} With 90.58\% accuracy and 0.896 F1-score, PhoBERT significantly outperforms all other models.
+    \item \textbf{Traditional ML remains competitive:} Logistic Regression and SVM achieve comparable performance to BiLSTM ($\sim$87\% accuracy).
+    \item \textbf{Statistical significance:} The improvement of PhoBERT over other models is statistically significant ($p < 0.05$).
+\end{enumerate}
+
+\subsection{Practical Recommendations}
+\begin{itemize}
+    \item For high-accuracy requirements: Use PhoBERT
+    \item For resource-constrained environments: SVM or Logistic Regression
+    \item For real-time applications: Traditional ML models
+\end{itemize}
+
+\section{Conclusion}
+This study presents a comprehensive comparison of machine learning approaches for Vietnamese fake news detection. PhoBERT achieves the best performance with 90.58\% accuracy, significantly outperforming traditional approaches. Future work includes multimodal detection and cross-domain evaluation.
+
+\section*{Acknowledgment}
+[Acknowledgments here]
+
+\begin{thebibliography}{00}
+\bibitem{phobert2020} D. Q. Nguyen and A. T. Nguyen, ``PhoBERT: Pre-trained language models for Vietnamese,'' in Findings of EMNLP 2020.
+\bibitem{vncorenlp2018} X. S. Vu et al., ``VnCoreNLP: A Vietnamese Natural Language Processing Toolkit,'' in NAACL 2018.
+\bibitem{zhou2020survey} X. Zhou and R. Zafarani, ``A Survey of Fake News,'' ACM Computing Surveys, 2020.
+\bibitem{shu2017fake} K. Shu et al., ``Fake News Detection on Social Media,'' ACM SIGKDD Explorations Newsletter, 2017.
+\end{thebibliography}
+
+\end{document}
