@@ -1,0 +1,25 @@
+
+\begin{table}[h]
+\centering
+\caption{Model Hyperparameters}
+\label{tab:hyperparams}
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Hyperparameters} \\
+\midrule
+Logistic Regression & C=10, solver=lbfgs, max\_iter=1000 \\
+\midrule
+SVM & C=10, kernel=rbf, gamma=scale \\
+\midrule
+\multirow{4}{*}{BiLSTM} & Embedding dim=128, Hidden dim=128 \\
+ & Num layers=2, Dropout=0.3 \\
+ & Learning rate=0.001, Batch size=32 \\
+ & Early stopping patience=3 \\
+\midrule
+\multirow{4}{*}{PhoBERT} & Pre-trained: vinai/phobert-base \\
+ & Max length=256, Hidden dim=768 \\
+ & Learning rate=2e-5, Batch size=16 \\
+ & Epochs=5, Warmup steps=100 \\
+\bottomrule
+\end{tabular}
+\end{table}
