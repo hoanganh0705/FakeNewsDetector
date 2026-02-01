@@ -1,0 +1,23 @@
+
+\begin{table}[h]
+\centering
+\caption{Per-Class Performance Metrics}
+\label{tab:perclass}
+\begin{tabular}{llccc}
+\toprule
+\textbf{Model} & \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+\midrule
+\multirow{2}{*}{Logistic Regression} & Real & 0.9049 & 0.8914 & 0.8981 \\
+ & Fake & 0.8204 & 0.8413 & 0.8307 \\
+\midrule
+\multirow{2}{*}{SVM} & Real & 0.8783 & 0.9326 & 0.9046 \\
+ & Fake & 0.8723 & 0.7810 & 0.8241 \\
+\midrule
+\multirow{2}{*}{BiLSTM} & Real & 0.9128 & 0.8820 & 0.8971 \\
+ & Fake & 0.8108 & 0.8571 & 0.8333 \\
+\midrule
+\multirow{2}{*}{PhoBERT} & Real & 0.8955 & 0.9625 & 0.9278 \\
+ & Fake & 0.9273 & 0.8095 & 0.8644 \\
+\bottomrule
+\end{tabular}
+\end{table}
