@@ -5,3 +5,5 @@ matplotlib
 nltk
 torch
 transformers
+sentencepiece
+underthesea
