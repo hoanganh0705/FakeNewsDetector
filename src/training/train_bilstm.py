@@ -25,110 +25,12 @@ sys.path.insert(0, BASE_DIR)
 
 from src.features.embedding_features import TextDataset, collate_fn
 from src.evaluation.metrics import compute_metrics, save_metrics, print_metrics
+from src.models.bilstm_model import BiLSTMClassifier
+from config import cfg
 
 
-class BiLSTMClassifier(nn.Module):
-    """
-    Bidirectional LSTM model for text classification.
-    """
-    
-    def __init__(
-        self,
-        vocab_size: int,
-        embedding_dim: int = 256,
-        hidden_dim: int = 128,
-        num_layers: int = 2,
-        num_classes: int = 2,
-        dropout: float = 0.3,
-        bidirectional: bool = True,
-        padding_idx: int = 0
-    ):
-        """
-        Initialize the BiLSTM model.
-        
-        Args:
-            vocab_size: Size of vocabulary
-            embedding_dim: Dimension of word embeddings
-            hidden_dim: Hidden dimension of LSTM
-            num_layers: Number of LSTM layers
-            num_classes: Number of output classes
-            dropout: Dropout probability
-            bidirectional: Whether to use bidirectional LSTM
-            padding_idx: Index of padding token
-        """
-        super(BiLSTMClassifier, self).__init__()
-        
-        self.embedding = nn.Embedding(
-            vocab_size, 
-            embedding_dim, 
-            padding_idx=padding_idx
-        )
-        
-        self.lstm = nn.LSTM(
-            input_size=embedding_dim,
-            hidden_size=hidden_dim,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout if num_layers > 1 else 0,
-            bidirectional=bidirectional
-        )
-        
-        lstm_output_dim = hidden_dim * 2 if bidirectional else hidden_dim
-        
-        self.attention = nn.Sequential(
-            nn.Linear(lstm_output_dim, hidden_dim),
-            nn.Tanh(),
-            nn.Linear(hidden_dim, 1)
-        )
-        
-        self.classifier = nn.Sequential(
-            nn.Dropout(dropout),
-            nn.Linear(lstm_output_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, num_classes)
-        )
-        
-        self.hidden_dim = hidden_dim
-        self.num_layers = num_layers
-        self.bidirectional = bidirectional
-    
-    def forward(self, x: torch.Tensor, attention_mask: torch.Tensor = None) -> torch.Tensor:
-        """
-        Forward pass.
-        
-        Args:
-            x: Input tensor of shape (batch_size, seq_len)
-            attention_mask: Mask tensor of shape (batch_size, seq_len)
-            
-        Returns:
-            Output logits of shape (batch_size, num_classes)
-        """
-        # Embedding
-        embedded = self.embedding(x)  # (batch, seq_len, embed_dim)
-        
-        # LSTM
-        lstm_out, _ = self.lstm(embedded)  # (batch, seq_len, hidden*2)
-        
-        # Attention
-        attention_weights = self.attention(lstm_out)  # (batch, seq_len, 1)
-        
-        # Apply mask if provided
-        if attention_mask is not None:
-            attention_weights = attention_weights.masked_fill(
-                attention_mask.unsqueeze(-1) == 0, 
-                float('-inf')
-            )
-        
-        attention_weights = torch.softmax(attention_weights, dim=1)
-        
-        # Weighted sum
-        context = torch.sum(attention_weights * lstm_out, dim=1)  # (batch, hidden*2)
-        
-        # Classification
-        output = self.classifier(context)  # (batch, num_classes)
-        
-        return output
+# BiLSTMClassifier is defined in src/models/bilstm_model.py
+# and imported above — keeping training logic and architecture separate.
 
 
 class BiLSTMTrainer:
@@ -296,7 +198,7 @@ class BiLSTMTrainer:
             if val_f1 > best_val_f1:
                 best_val_f1 = val_f1
                 self.best_val_f1 = val_f1
-                self.best_model_state = self.model.state_dict().copy()
+                self.best_model_state = {k: v.cpu().clone() for k, v in self.model.state_dict().items()}
                 patience_counter = 0
                 print(f"   ✅ New best model! F1: {val_f1:.4f}")
             else:
@@ -437,15 +339,15 @@ def main():
     print(f"  Test samples: {len(test_sequences)}")
     
     # Create data loaders
-    batch_size = 32
-    
+    batch_size = cfg.BILSTM.batch_size
+
     train_dataset = TextDataset(train_sequences, y_train)
-    val_dataset = TextDataset(val_sequences, y_val)
-    test_dataset = TextDataset(test_sequences, y_test)
-    
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+    val_dataset   = TextDataset(val_sequences,   y_val)
+    test_dataset  = TextDataset(test_sequences,  y_test)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,  collate_fn=collate_fn)
+    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
     
     # Compute class weights
     from sklearn.utils.class_weight import compute_class_weight
@@ -455,20 +357,20 @@ def main():
     # Initialize trainer
     trainer = BiLSTMTrainer(
         vocab_size=vocab_size,
-        embedding_dim=256,
-        hidden_dim=128,
-        num_layers=2,
-        dropout=0.3,
-        learning_rate=1e-3
+        embedding_dim=cfg.BILSTM.embedding_dim,
+        hidden_dim=cfg.BILSTM.hidden_dim,
+        num_layers=cfg.BILSTM.num_layers,
+        dropout=cfg.BILSTM.dropout,
+        learning_rate=cfg.BILSTM.learning_rate
     )
-    
+
     # Train
     print("\n" + "-"*60)
     trainer.train(
         train_loader,
         val_loader,
-        epochs=20,
-        patience=5,
+        epochs=cfg.BILSTM.epochs,
+        patience=cfg.BILSTM.patience,
         class_weights=class_weights
     )
     

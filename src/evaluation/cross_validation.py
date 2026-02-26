@@ -28,6 +28,8 @@ from sklearn.metrics import (
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, BASE_DIR)
 
+from config import cfg
+
 
 def get_scorers() -> Dict:
     """Define scoring metrics for cross-validation."""
@@ -154,7 +156,7 @@ def main():
     # 1. Logistic Regression
     lr_model = LogisticRegression(
         C=10, max_iter=1000, solver='lbfgs',
-        class_weight='balanced', random_state=42, n_jobs=-1
+        class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
     )
     results['Logistic Regression'] = run_cross_validation(
         lr_model, X_cv, y_cv, 'Logistic Regression',
@@ -164,7 +166,7 @@ def main():
     # 2. SVM
     svm_model = SVC(
         C=10, kernel='rbf', gamma='scale',
-        class_weight='balanced', random_state=42, probability=True
+        class_weight='balanced', random_state=cfg.RANDOM_STATE, probability=True
     )
     results['SVM'] = run_cross_validation(
         svm_model, X_cv, y_cv, 'SVM',

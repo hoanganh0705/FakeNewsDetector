@@ -38,7 +38,11 @@ from src.features.phobert_features import PhoBertDataset
 
 
 # Set style for plots
-plt.style.use('seaborn-v0_8-whitegrid')
+# Support both matplotlib ≥ 3.6 (seaborn-v0_8-*) and older versions
+try:
+    plt.style.use('seaborn-v0_8-whitegrid')
+except OSError:
+    plt.style.use('seaborn-whitegrid')
 sns.set_palette("husl")
 
 
