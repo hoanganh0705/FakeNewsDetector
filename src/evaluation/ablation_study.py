@@ -26,6 +26,8 @@ from sklearn.metrics import accuracy_score, f1_score
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, BASE_DIR)
 
+from config import cfg
+
 
 def load_text_data() -> Tuple[pd.Series, pd.Series, np.ndarray, np.ndarray]:
     """Load train and test text data."""
@@ -70,7 +72,7 @@ def ablation_tfidf_vocab_size(X_train_text, X_test_text, y_train, y_test) -> Lis
         
         model = LogisticRegression(
             C=10, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=42, n_jobs=-1
+            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
         )
         model.fit(X_train, y_train)
         
@@ -125,7 +127,7 @@ def ablation_ngram_range(X_train_text, X_test_text, y_train, y_test) -> List[Dic
         
         model = LogisticRegression(
             C=10, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=42, n_jobs=-1
+            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
         )
         model.fit(X_train, y_train)
         
@@ -189,7 +191,7 @@ def ablation_word_segmentation(y_train, y_test) -> List[Dict]:
         
         model = LogisticRegression(
             C=10, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=42, n_jobs=-1
+            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
         )
         model.fit(X_train, y_train)
         
@@ -230,7 +232,7 @@ def ablation_lr_regularization(X_train_text, X_test_text, y_train, y_test) -> Li
     for C in c_values:
         model = LogisticRegression(
             C=C, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=42, n_jobs=-1
+            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
         )
         model.fit(X_train, y_train)
         
@@ -272,7 +274,7 @@ def ablation_sublinear_tf(X_train_text, X_test_text, y_train, y_test) -> List[Di
         
         model = LogisticRegression(
             C=10, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=42, n_jobs=-1
+            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
         )
         model.fit(X_train, y_train)
         

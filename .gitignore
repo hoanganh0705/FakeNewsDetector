@@ -1,8 +1,47 @@
+# Python
 __pycache__/
+*.py[cod]
+*.egg-info/
 .env
+
+# Virtual environment
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model checkpoints & serialised objects
 *.pt
 *.ckpt
+*.pkl
+
+# Logs
 *.log
+
+# VnCoreNLP model jar (140 MB, downloaded at setup)
+.vncorenlp/
+
+# Generated data artefacts (reproducible from raw data)
 data/processed/
+data/splits/
+data/features/
+
+# Experiment outputs (reproducible from training)
 models/
-results/    
+experiments/
+
+# Results & figures (reproducible from evaluation scripts)
+results/
+
+# Generated PDFs (reproducible from scripts, PNGs are tracked instead)
+paper/figures/*.pdf

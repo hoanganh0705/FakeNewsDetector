@@ -26,79 +26,12 @@ sys.path.insert(0, BASE_DIR)
 
 from src.features.phobert_features import PhoBertDataset
 from src.evaluation.metrics import compute_metrics, save_metrics, print_metrics
+from src.models.phobert_model import PhoBertClassifier
+from config import cfg
 
 
-class PhoBertClassifier(nn.Module):
-    """
-    PhoBERT-based classifier for Vietnamese fake news detection.
-    """
-    
-    MODEL_NAME = "vinai/phobert-base"
-    
-    def __init__(
-        self,
-        num_classes: int = 2,
-        dropout: float = 0.1,
-        freeze_bert: bool = False
-    ):
-        """
-        Initialize the PhoBERT classifier.
-        
-        Args:
-            num_classes: Number of output classes
-            dropout: Dropout probability
-            freeze_bert: Whether to freeze BERT parameters
-        """
-        super(PhoBertClassifier, self).__init__()
-        
-        print(f"Loading PhoBERT model ({self.MODEL_NAME})...")
-        self.bert = AutoModel.from_pretrained(self.MODEL_NAME)
-        
-        if freeze_bert:
-            for param in self.bert.parameters():
-                param.requires_grad = False
-            print("   BERT parameters frozen")
-        
-        hidden_size = self.bert.config.hidden_size  # 768 for phobert-base
-        
-        self.classifier = nn.Sequential(
-            nn.Dropout(dropout),
-            nn.Linear(hidden_size, hidden_size // 2),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_size // 2, num_classes)
-        )
-        
-        print(f"✅ Model initialized. Hidden size: {hidden_size}")
-    
-    def forward(
-        self, 
-        input_ids: torch.Tensor, 
-        attention_mask: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        Forward pass.
-        
-        Args:
-            input_ids: Input token IDs (batch_size, seq_len)
-            attention_mask: Attention mask (batch_size, seq_len)
-            
-        Returns:
-            Logits (batch_size, num_classes)
-        """
-        # Get BERT outputs
-        outputs = self.bert(
-            input_ids=input_ids,
-            attention_mask=attention_mask
-        )
-        
-        # Use [CLS] token representation (first token)
-        cls_output = outputs.last_hidden_state[:, 0, :]  # (batch, hidden)
-        
-        # Classification
-        logits = self.classifier(cls_output)  # (batch, num_classes)
-        
-        return logits
+# PhoBertClassifier is defined in src/models/phobert_model.py
+# and imported above — keeping training logic and architecture separate.
 
 
 class PhoBertTrainer:
@@ -360,25 +293,44 @@ class PhoBertTrainer:
         return compute_metrics(y_true, y_pred, y_prob)
     
     def save(self, path: str) -> None:
-        """Save the model."""
+        """Save the model, optimizer, and scheduler state for full resumption."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'training_history': self.training_history,
-            'best_val_f1': self.best_val_f1
-        }, path)
+        checkpoint = {
+            'model_state_dict':     self.model.state_dict(),
+            'training_history':     self.training_history,
+            'best_val_f1':          self.best_val_f1,
+        }
+        # Persist optimizer & scheduler so training can resume without LR jump
+        if self.optimizer is not None:
+            checkpoint['optimizer_state_dict'] = self.optimizer.state_dict()
+        if self.scheduler is not None:
+            checkpoint['scheduler_state_dict'] = self.scheduler.state_dict()
+        torch.save(checkpoint, path)
         print(f"✅ Model saved to {path}")
     
     @classmethod
     def load(cls, path: str, device: str = None) -> 'PhoBertTrainer':
-        """Load a saved model."""
+        """
+        Load a saved model.
+
+        Restores model weights, optimizer state (if present), and scheduler
+        state (if present) so training can resume exactly where it stopped.
+        """
         checkpoint = torch.load(path, map_location='cpu')
-        
+
         trainer = cls(device=device)
         trainer.model.load_state_dict(checkpoint['model_state_dict'])
         trainer.training_history = checkpoint['training_history']
-        trainer.best_val_f1 = checkpoint['best_val_f1']
-        
+        trainer.best_val_f1      = checkpoint['best_val_f1']
+
+        # Restore optimizer state if available (prevents LR jump on resume)
+        if 'optimizer_state_dict' in checkpoint and trainer.optimizer is not None:
+            trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        # Restore scheduler state if available
+        if 'scheduler_state_dict' in checkpoint and trainer.scheduler is not None:
+            trainer.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+
         return trainer
 
 
@@ -425,11 +377,11 @@ def main():
     )
     
     # Create data loaders
-    batch_size = 16  # Smaller batch for BERT due to memory
-    
+    batch_size = cfg.PHOBERT.batch_size  # Smaller batch for BERT due to memory
+
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False)
+    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False)
     
     # Compute class weights
     from sklearn.utils.class_weight import compute_class_weight
@@ -438,21 +390,21 @@ def main():
     
     # Initialize trainer
     trainer = PhoBertTrainer(
-        num_classes=2,
-        dropout=0.1,
-        learning_rate=2e-5,
-        warmup_ratio=0.1
+        num_classes=cfg.PHOBERT.num_classes,
+        dropout=cfg.PHOBERT.dropout,
+        learning_rate=cfg.PHOBERT.learning_rate,
+        warmup_ratio=cfg.PHOBERT.warmup_ratio
     )
-    
+
     # Train
     print("\n" + "-"*60)
     trainer.train(
         train_loader,
         val_loader,
-        epochs=5,
-        patience=3,
+        epochs=cfg.PHOBERT.epochs,
+        patience=cfg.PHOBERT.patience,
         class_weights=class_weights,
-        gradient_accumulation_steps=2
+        gradient_accumulation_steps=cfg.PHOBERT.gradient_accumulation_steps
     )
     
     # Evaluate on validation set
