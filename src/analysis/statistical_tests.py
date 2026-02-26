@@ -20,6 +20,8 @@ from typing import Dict, Tuple, List
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, BASE_DIR)
 
+from config import cfg
+
 
 def mcnemar_test(y_true: np.ndarray, y_pred1: np.ndarray, y_pred2: np.ndarray) -> Tuple[float, float]:
     """
@@ -120,7 +122,7 @@ def bootstrap_confidence_interval(y_true: np.ndarray, y_pred: np.ndarray,
     n_samples = len(y_true)
     bootstrap_scores = []
     
-    np.random.seed(42)
+    np.random.seed(cfg.RANDOM_STATE)
     for _ in range(n_bootstrap):
         indices = np.random.choice(n_samples, n_samples, replace=True)
         score = metric_func(y_true[indices], y_pred[indices])
