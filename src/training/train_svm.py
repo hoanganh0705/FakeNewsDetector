@@ -21,6 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, BASE_DIR)
 
 from src.evaluation.metrics import compute_metrics, save_metrics, print_metrics
+from config import cfg
 
 
 class SVMTrainer:
@@ -247,19 +248,15 @@ def main():
     # Initialize trainer
     trainer = SVMTrainer(
         class_weight='balanced',
-        random_state=42
+        random_state=cfg.RANDOM_STATE
     )
-    
+
     # Train with GridSearchCV
     print("\n" + "-"*60)
     trainer.train_with_grid_search(
         X_train, y_train,
-        param_grid={
-            'C': [0.1, 1, 10],
-            'kernel': ['linear', 'rbf'],
-            'gamma': ['scale']
-        },
-        cv=5
+        param_grid=cfg.SVM.param_grid,
+        cv=cfg.SVM.cv_folds
     )
     
     # Evaluate on validation set

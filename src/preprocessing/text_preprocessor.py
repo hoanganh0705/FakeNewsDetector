@@ -11,6 +11,12 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import pickle
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from src.utils.logger import get_logger
+
+_log = get_logger(__name__)
 
 
 class TextPreprocessor:
@@ -168,7 +174,7 @@ class TextPreprocessor:
                 'max_df': self.max_df,
                 'is_fitted': self.is_fitted
             }, f)
-        print(f"Preprocessor saved to {path}")
+        _log.info("Preprocessor saved to %s", path)
     
     @classmethod
     def load(cls, path: str) -> 'TextPreprocessor':
