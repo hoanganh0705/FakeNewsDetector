@@ -1,32 +1,30 @@
 """
 BiLSTM Training Script for Vietnamese Fake News Detection
 
+
 This script trains a Bidirectional LSTM model using word embeddings.
 Includes early stopping and learning rate scheduling.
 """
 
 import os
-import sys
-import pickle
-import json
+import joblib
 import time
 import numpy as np
-from datetime import datetime
-from typing import Tuple, List
+from typing import Tuple
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-# Add project root to path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, BASE_DIR)
-
 from src.features.embedding_features import TextDataset, collate_fn
-from src.evaluation.metrics import compute_metrics, save_metrics, print_metrics
+from src.evaluation.metrics import compute_metrics, print_metrics
 from src.models.bilstm_model import BiLSTMClassifier
+from src.training.runner import save_training_results
 from config import cfg
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 # BiLSTMClassifier is defined in src/models/bilstm_model.py
@@ -39,12 +37,12 @@ class BiLSTMTrainer:
     def __init__(
         self,
         vocab_size: int,
-        embedding_dim: int = 256,
-        hidden_dim: int = 128,
-        num_layers: int = 2,
-        dropout: float = 0.3,
-        learning_rate: float = 1e-3,
-        weight_decay: float = 1e-5,
+        embedding_dim: int = None,
+        hidden_dim: int = None,
+        num_layers: int = None,
+        dropout: float = None,
+        learning_rate: float = None,
+        weight_decay: float = None,
         device: str = None
     ):
         """
@@ -52,21 +50,21 @@ class BiLSTMTrainer:
         
         Args:
             vocab_size: Size of vocabulary
-            embedding_dim: Embedding dimension
-            hidden_dim: LSTM hidden dimension
-            num_layers: Number of LSTM layers
-            dropout: Dropout rate
-            learning_rate: Learning rate
-            weight_decay: L2 regularization
+            embedding_dim: Embedding dimension (defaults to cfg.BILSTM.embedding_dim)
+            hidden_dim: LSTM hidden dimension (defaults to cfg.BILSTM.hidden_dim)
+            num_layers: Number of LSTM layers (defaults to cfg.BILSTM.num_layers)
+            dropout: Dropout rate (defaults to cfg.BILSTM.dropout)
+            learning_rate: Learning rate (defaults to cfg.BILSTM.learning_rate)
+            weight_decay: L2 regularization (defaults to cfg.BILSTM.weight_decay)
             device: Device to use ('cuda' or 'cpu')
         """
         self.vocab_size = vocab_size
-        self.embedding_dim = embedding_dim
-        self.hidden_dim = hidden_dim
-        self.num_layers = num_layers
-        self.dropout = dropout
-        self.learning_rate = learning_rate
-        self.weight_decay = weight_decay
+        self.embedding_dim = embedding_dim if embedding_dim is not None else cfg.BILSTM.embedding_dim
+        self.hidden_dim = hidden_dim if hidden_dim is not None else cfg.BILSTM.hidden_dim
+        self.num_layers = num_layers if num_layers is not None else cfg.BILSTM.num_layers
+        self.dropout = dropout if dropout is not None else cfg.BILSTM.dropout
+        self.learning_rate = learning_rate if learning_rate is not None else cfg.BILSTM.learning_rate
+        self.weight_decay = weight_decay if weight_decay is not None else cfg.BILSTM.weight_decay
         
         # Set device
         if device is None:
@@ -74,15 +72,15 @@ class BiLSTMTrainer:
         else:
             self.device = torch.device(device)
         
-        print(f"Using device: {self.device}")
+        log.info(f"Using device: {self.device}")
         
         # Initialize model
         self.model = BiLSTMClassifier(
             vocab_size=vocab_size,
-            embedding_dim=embedding_dim,
-            hidden_dim=hidden_dim,
-            num_layers=num_layers,
-            dropout=dropout
+            embedding_dim=self.embedding_dim,
+            hidden_dim=self.hidden_dim,
+            num_layers=self.num_layers,
+            dropout=self.dropout
         ).to(self.device)
         
         self.optimizer = None
@@ -102,8 +100,8 @@ class BiLSTMTrainer:
         self,
         train_loader: DataLoader,
         val_loader: DataLoader,
-        epochs: int = 20,
-        patience: int = 5,
+        epochs: int = None,
+        patience: int = None,
         class_weights: np.ndarray = None
     ) -> 'BiLSTMTrainer':
         """
@@ -119,12 +117,15 @@ class BiLSTMTrainer:
         Returns:
             self
         """
-        # Setup loss function with class weights
+        epochs = epochs if epochs is not None else cfg.BILSTM.epochs
+        patience = patience if patience is not None else cfg.BILSTM.patience
+
+        # Setup loss function with class weights and label smoothing
         if class_weights is not None:
             weights = torch.tensor(class_weights, dtype=torch.float32).to(self.device)
-            self.criterion = nn.CrossEntropyLoss(weight=weights)
+            self.criterion = nn.CrossEntropyLoss(weight=weights, label_smoothing=cfg.BILSTM.label_smoothing)
         else:
-            self.criterion = nn.CrossEntropyLoss()
+            self.criterion = nn.CrossEntropyLoss(label_smoothing=cfg.BILSTM.label_smoothing)
         
         # Setup optimizer and scheduler
         self.optimizer = optim.AdamW(
@@ -133,12 +134,13 @@ class BiLSTMTrainer:
             weight_decay=self.weight_decay
         )
         
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer, mode='max', factor=0.5, patience=2
+        # Use Cosine Annealing schedule instead of ReduceLROnPlateau
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(
+            self.optimizer, T_max=epochs, eta_min=1e-6
         )
         
-        print(f"\nTraining BiLSTM for {epochs} epochs...")
-        print(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
+        log.info(f"\nTraining BiLSTM for {epochs} epochs...")
+        log.info(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
         
         best_val_f1 = 0
         patience_counter = 0
@@ -160,10 +162,21 @@ class BiLSTMTrainer:
                 
                 self.optimizer.zero_grad()
                 
-                outputs = self.model(sequences, attention_mask)
-                loss = self.criterion(outputs, labels)
-                
-                loss.backward()
+                try:
+                    outputs = self.model(sequences, attention_mask)
+                    loss = self.criterion(outputs, labels)
+                    
+                    loss.backward()
+                except torch.cuda.OutOfMemoryError:
+                    torch.cuda.empty_cache()
+                    log.error(
+                        "CUDA out of memory during forward/backward pass! "
+                        "Try reducing batch_size (current: %d) or "
+                        "max_seq_length in config.py.",
+                        train_loader.batch_size,
+                    )
+                    raise
+
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 self.optimizer.step()
                 
@@ -179,7 +192,7 @@ class BiLSTMTrainer:
             val_loss, val_acc, val_f1 = self._evaluate(val_loader)
             
             # Update scheduler
-            self.scheduler.step(val_f1)
+            self.scheduler.step()
             
             # Save history
             self.training_history['train_loss'].append(train_loss)
@@ -190,7 +203,7 @@ class BiLSTMTrainer:
             
             epoch_time = time.time() - epoch_start
             
-            print(f"Epoch {epoch+1}/{epochs} ({epoch_time:.1f}s) | "
+            log.info(f"Epoch {epoch+1}/{epochs} ({epoch_time:.1f}s) | "
                   f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f} | "
                   f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}")
             
@@ -200,16 +213,16 @@ class BiLSTMTrainer:
                 self.best_val_f1 = val_f1
                 self.best_model_state = {k: v.cpu().clone() for k, v in self.model.state_dict().items()}
                 patience_counter = 0
-                print(f"   ✅ New best model! F1: {val_f1:.4f}")
+                log.info(f"    New best model! F1: {val_f1:.4f}")
             else:
                 patience_counter += 1
                 if patience_counter >= patience:
-                    print(f"\n⚠️ Early stopping at epoch {epoch+1}")
+                    log.warning(f"\n Early stopping at epoch {epoch+1}")
                     break
         
         total_time = time.time() - start_time
-        print(f"\n✅ Training complete in {total_time:.2f}s")
-        print(f"   Best Val F1: {self.best_val_f1:.4f}")
+        log.info(f"\n Training complete in {total_time:.2f}s")
+        log.info(f"Best Val F1: {self.best_val_f1:.4f}")
         
         # Restore best model
         if self.best_model_state is not None:
@@ -284,12 +297,12 @@ class BiLSTMTrainer:
             'training_history': self.training_history,
             'best_val_f1': self.best_val_f1
         }, path)
-        print(f"✅ Model saved to {path}")
+        log.info(f"Model saved to {path}")
     
     @classmethod
     def load(cls, path: str, device: str = None) -> 'BiLSTMTrainer':
         """Load a saved model."""
-        checkpoint = torch.load(path, map_location='cpu')
+        checkpoint = torch.load(path, map_location='cpu', weights_only=True)
         
         trainer = cls(
             vocab_size=checkpoint['vocab_size'],
@@ -309,22 +322,24 @@ class BiLSTMTrainer:
 
 def main():
     """Main training function."""
-    
-    print("="*60)
-    print("🔬 BiLSTM TRAINING")
-    print("="*60)
-    
+    from src.utils.common import set_reproducibility_seeds
+
+    set_reproducibility_seeds()
+
+    log.info("=" * 60)
+    log.info("BiLSTM TRAINING")
+    log.info("=" * 60)
+
     # Paths
-    features_path = os.path.join(BASE_DIR, 'data', 'features', 'embedding', 'embedding_features.pkl')
-    extractor_path = os.path.join(BASE_DIR, 'data', 'features', 'embedding', 'embedding_extractor.pkl')
-    model_dir = os.path.join(BASE_DIR, 'experiments', 'bilstm')
+    features_path = os.path.join(cfg.PATHS.embedding_dir, 'embedding_features.pkl')
+    extractor_path = os.path.join(cfg.PATHS.embedding_dir, 'embedding_extractor.pkl')  # also used in FastText block
+    model_dir = cfg.PATHS.bilstm_dir
     os.makedirs(model_dir, exist_ok=True)
-    
+
     # Load features
-    print("\nLoading embedding features...")
-    with open(features_path, 'rb') as f:
-        features = pickle.load(f)
-    
+    log.info("Loading embedding features...")
+    features = joblib.load(features_path)
+
     train_sequences = features['train_sequences']
     val_sequences = features['val_sequences']
     test_sequences = features['test_sequences']
@@ -332,12 +347,12 @@ def main():
     y_val = features['y_val']
     y_test = features['y_test']
     vocab_size = features['vocab_size']
-    
-    print(f"  Vocabulary size: {vocab_size}")
-    print(f"  Train samples: {len(train_sequences)}")
-    print(f"  Val samples: {len(val_sequences)}")
-    print(f"  Test samples: {len(test_sequences)}")
-    
+
+    log.info("Vocabulary size: %d", vocab_size)
+    log.info("Train samples: %d", len(train_sequences))
+    log.info("Val samples: %d", len(val_sequences))
+    log.info("Test samples: %d", len(test_sequences))
+
     # Create data loaders
     batch_size = cfg.BILSTM.batch_size
 
@@ -345,77 +360,105 @@ def main():
     val_dataset   = TextDataset(val_sequences,   y_val)
     test_dataset  = TextDataset(test_sequences,  y_test)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,  collate_fn=collate_fn)
-    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    
-    # Compute class weights
-    from sklearn.utils.class_weight import compute_class_weight
-    class_weights = compute_class_weight('balanced', classes=np.unique(y_train), y=y_train)
-    print(f"  Class weights: {class_weights}")
-    
-    # Initialize trainer
-    trainer = BiLSTMTrainer(
-        vocab_size=vocab_size,
-        embedding_dim=cfg.BILSTM.embedding_dim,
-        hidden_dim=cfg.BILSTM.hidden_dim,
-        num_layers=cfg.BILSTM.num_layers,
-        dropout=cfg.BILSTM.dropout,
-        learning_rate=cfg.BILSTM.learning_rate
-    )
+    _num_workers = min(4, os.cpu_count() or 1)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,  collate_fn=collate_fn, num_workers=_num_workers, pin_memory=True)
+    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=_num_workers, pin_memory=True)
+    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=_num_workers, pin_memory=True)
+
+    # Compute class weights based on config
+    class_weights = None
+    if cfg.BILSTM.class_weight == 'balanced':
+        from src.utils.common import compute_balanced_class_weights
+        class_weights = compute_balanced_class_weights(y_train)
+    log.info("Class weights: %s", class_weights)
+
+    # Initialize trainer (defaults pulled from cfg.BILSTM)
+    trainer = BiLSTMTrainer(vocab_size=vocab_size)
+
+    # If FastText path is provided, load matrix and set embeddings (requires extractor)
+    if cfg.BILSTM.fasttext_path:
+        try:
+            if os.path.exists(extractor_path):
+                from src.features.embedding_features import EmbeddingFeatureExtractor, load_fasttext_matrix
+                log.info("Loading FastText embeddings from %s ...", cfg.BILSTM.fasttext_path)
+                ext = EmbeddingFeatureExtractor.load(extractor_path)
+                matrix = load_fasttext_matrix(ext.vocab, cfg.BILSTM.fasttext_path, cfg.BILSTM.embedding_dim)
+                trainer.model.load_pretrained_embeddings(matrix)
+                log.info("FastText embeddings loaded into model")
+                # Optionally freeze embeddings to prevent overfitting
+                if getattr(cfg.BILSTM, 'freeze_embeddings', False):
+                    trainer.model.embedding.weight.requires_grad = False
+                    log.info("Embedding layer frozen (freeze_embeddings=True)")
+            else:
+                log.info("FastText path set but embedding extractor not found at %s; skipping pretrained init", extractor_path)
+        except (ImportError, FileNotFoundError, RuntimeError, OSError) as e:
+            log.warning("Could not load FastText embeddings: %s", e)
 
     # Train
-    print("\n" + "-"*60)
+    log.info("-" * 60)
     trainer.train(
         train_loader,
         val_loader,
-        epochs=cfg.BILSTM.epochs,
-        patience=cfg.BILSTM.patience,
         class_weights=class_weights
     )
-    
+
     # Evaluate on validation set
-    print("\n" + "-"*60)
-    print("📊 Validation Results:")
+    log.info("-" * 60)
+    log.info("Validation Results:")
     val_metrics = trainer.evaluate(val_loader, y_val)
     print_metrics(val_metrics)
-    
-    # Evaluate on test set
-    print("\n" + "-"*60)
-    print("📊 Test Results:")
-    test_metrics = trainer.evaluate(test_loader, y_test)
+
+    # Evaluate on test set — compute predictions once, reuse for metrics and saving
+    log.info("-" * 60)
+    log.info("Test Results:")
+    y_pred, y_prob = trainer.predict(test_loader)
+    test_metrics = compute_metrics(y_test, y_pred, y_prob)
     print_metrics(test_metrics)
-    
+
     # Save model
     model_path = os.path.join(model_dir, 'bilstm_model.pt')
     trainer.save(model_path)
-    
-    # Save metrics
-    metrics_path = os.path.join(model_dir, 'metrics.json')
-    save_metrics({
-        'model': 'BiLSTM',
-        'config': {
-            'vocab_size': vocab_size,
-            'embedding_dim': 256,
-            'hidden_dim': 128,
-            'num_layers': 2,
-            'dropout': 0.3
+
+    # Save results (metrics, predictions, experiment log)
+    save_training_results(
+        model_name='BiLSTM',
+        model_dir=model_dir,
+        model_path=model_path,
+        metrics_dict={
+            'model': 'BiLSTM',
+            'config': {
+                'vocab_size':     vocab_size,
+                'embedding_dim':  trainer.embedding_dim,
+                'hidden_dim':     trainer.hidden_dim,
+                'num_layers':     trainer.num_layers,
+                'dropout':        trainer.dropout,
+                'batch_size':     cfg.BILSTM.batch_size,
+                'learning_rate':  trainer.learning_rate,
+                'epochs':         cfg.BILSTM.epochs,
+                'patience':       cfg.BILSTM.patience,
+            },
+            'validation': val_metrics,
+            'test': test_metrics,
+            'training_history': {
+                'best_val_f1':    trainer.best_val_f1,
+                'epochs_trained': len(trainer.training_history['train_loss']),
+            },
         },
-        'validation': val_metrics,
-        'test': test_metrics,
-        'training_history': {
-            'best_val_f1': trainer.best_val_f1,
-            'epochs_trained': len(trainer.training_history['train_loss'])
+        test_metrics=test_metrics,
+        y_true=y_test,
+        y_pred=y_pred,
+        y_prob=y_prob,
+        experiment_config={
+            'embedding_dim': trainer.embedding_dim,
+            'hidden_dim':    trainer.hidden_dim,
+            'num_layers':    trainer.num_layers,
+            'dropout':       trainer.dropout,
+            'learning_rate': trainer.learning_rate,
+            'batch_size':    cfg.BILSTM.batch_size,
+            'epochs':        cfg.BILSTM.epochs,
         },
-        'timestamp': datetime.now().isoformat()
-    }, metrics_path)
-    
-    print("\n" + "="*60)
-    print("✅ TRAINING COMPLETE!")
-    print("="*60)
-    print(f"Model saved to: {model_path}")
-    print(f"Metrics saved to: {metrics_path}")
-    
+    )
+
     return trainer, test_metrics
 
 

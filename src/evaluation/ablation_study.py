@@ -1,6 +1,7 @@
 """
 Ablation Study for Vietnamese Fake News Detection
 
+
 Evaluates the impact of different components on model performance:
 1. TF-IDF vocabulary size impact (LR)
 2. N-gram range impact (LR)
@@ -10,9 +11,7 @@ Evaluates the impact of different components on model performance:
 """
 
 import os
-import sys
 import json
-import pickle
 import time
 import numpy as np
 import pandas as pd
@@ -23,19 +22,20 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, f1_score
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, BASE_DIR)
-
 from config import cfg
+from src.utils.common import load_csv
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 def load_text_data() -> Tuple[pd.Series, pd.Series, np.ndarray, np.ndarray]:
     """Load train and test text data."""
-    train_path = os.path.join(BASE_DIR, 'data', 'splits', 'train.csv')
-    test_path = os.path.join(BASE_DIR, 'data', 'splits', 'test.csv')
+    train_path = os.path.join(cfg.PATHS.splits_dir, 'train.csv')
+    test_path = os.path.join(cfg.PATHS.splits_dir, 'test.csv')
     
-    train_df = pd.read_csv(train_path)
-    test_df = pd.read_csv(test_path)
+    train_df = load_csv(train_path, required_columns=['text', 'label'])
+    test_df = load_csv(test_path, required_columns=['text', 'label'])
     
     X_train_text = train_df['text'].fillna('')
     X_test_text = test_df['text'].fillna('')
@@ -45,15 +45,27 @@ def load_text_data() -> Tuple[pd.Series, pd.Series, np.ndarray, np.ndarray]:
     return X_train_text, X_test_text, y_train, y_test
 
 
+def _build_lr_model(C: float = None) -> LogisticRegression:
+    """Build a config-aligned LR model for ablation runs."""
+    return LogisticRegression(
+        C=C if C is not None else cfg.LR.C,
+        max_iter=cfg.LR.max_iter,
+        solver='liblinear',
+        class_weight=cfg.LR.class_weight,
+        random_state=cfg.RANDOM_STATE,
+        n_jobs=cfg.LR.n_jobs,
+    )
+
+
 def ablation_tfidf_vocab_size(X_train_text, X_test_text, y_train, y_test) -> List[Dict]:
     """
     Ablation: Impact of TF-IDF vocabulary size on LR performance.
     
     Tests vocabulary sizes: 1000, 5000, 10000, 20000, 50000
     """
-    print("\n" + "="*60)
-    print("ABLATION 1: TF-IDF Vocabulary Size")
-    print("="*60)
+    log.info("\n" + "="*60)
+    log.info("ABLATION 1: TF-IDF Vocabulary Size")
+    log.info("="*60)
     
     vocab_sizes = [1000, 5000, 10000, 20000, 50000]
     results = []
@@ -63,17 +75,14 @@ def ablation_tfidf_vocab_size(X_train_text, X_test_text, y_train, y_test) -> Lis
         
         vectorizer = TfidfVectorizer(
             max_features=vocab_size,
-            ngram_range=(1, 2),
-            sublinear_tf=True
+            ngram_range=cfg.TFIDF.ngram_range,
+            sublinear_tf=cfg.TFIDF.sublinear_tf
         )
-        
+    
         X_train = vectorizer.fit_transform(X_train_text)
         X_test = vectorizer.transform(X_test_text)
         
-        model = LogisticRegression(
-            C=10, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
-        )
+        model = _build_lr_model()
         model.fit(X_train, y_train)
         
         y_pred = model.predict(X_test)
@@ -88,7 +97,7 @@ def ablation_tfidf_vocab_size(X_train_text, X_test_text, y_train, y_test) -> Lis
             'time_s': round(elapsed, 2)
         })
         
-        print(f"  Vocab={vocab_size:>6}: Acc={acc:.4f}, F1={f1:.4f} ({elapsed:.1f}s)")
+        log.info(f"Vocab={vocab_size:>6}: Acc={acc:.4f}, F1={f1:.4f} ({elapsed:.1f}s)")
     
     return results
 
@@ -99,9 +108,9 @@ def ablation_ngram_range(X_train_text, X_test_text, y_train, y_test) -> List[Dic
     
     Tests: unigrams only, bigrams, trigrams, (1,3)
     """
-    print("\n" + "="*60)
-    print("ABLATION 2: N-gram Range")
-    print("="*60)
+    log.info("\n" + "="*60)
+    log.info("ABLATION 2: N-gram Range")
+    log.info("="*60)
     
     ngram_configs = [
         ((1, 1), "Unigrams"),
@@ -117,18 +126,15 @@ def ablation_ngram_range(X_train_text, X_test_text, y_train, y_test) -> List[Dic
         start = time.time()
         
         vectorizer = TfidfVectorizer(
-            max_features=10000,
+            max_features=cfg.TFIDF.max_features,
             ngram_range=ngram_range,
-            sublinear_tf=True
+            sublinear_tf=cfg.TFIDF.sublinear_tf
         )
         
         X_train = vectorizer.fit_transform(X_train_text)
         X_test = vectorizer.transform(X_test_text)
         
-        model = LogisticRegression(
-            C=10, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
-        )
+        model = _build_lr_model()
         model.fit(X_train, y_train)
         
         y_pred = model.predict(X_test)
@@ -144,55 +150,45 @@ def ablation_ngram_range(X_train_text, X_test_text, y_train, y_test) -> List[Dic
             'time_s': round(elapsed, 2)
         })
         
-        print(f"  {label:>18} {str(ngram_range)}: Acc={acc:.4f}, F1={f1:.4f}")
+        log.info(f"  {label:>18} {str(ngram_range)}: Acc={acc:.4f}, F1={f1:.4f}")
     
     return results
 
 
-def ablation_word_segmentation(y_train, y_test) -> List[Dict]:
+def ablation_word_segmentation(X_train_text, X_test_text, y_train, y_test) -> List[Dict]:
     """
     Ablation: Impact of Vietnamese word segmentation.
     
     Compares: with segmentation (processed text) vs without (raw text).
     """
-    print("\n" + "="*60)
-    print("ABLATION 3: Word Segmentation Impact")
-    print("="*60)
+    log.info("\n" + "="*60)
+    log.info("ABLATION 3: Word Segmentation Impact")
+    log.info("="*60)
     
     results = []
     
-    # With segmentation (from splits - already segmented)
-    train_path = os.path.join(BASE_DIR, 'data', 'splits', 'train.csv')
-    test_path = os.path.join(BASE_DIR, 'data', 'splits', 'test.csv')
-    
-    train_df = pd.read_csv(train_path)
-    test_df = pd.read_csv(test_path)
-    
-    for use_seg, label in [(True, "With Segmentation"), (False, "Without Segmentation")]:
+    for use_seg, label in [(True, "Có tách từ"), (False, "Không tách từ")]:
         if use_seg:
-            X_train_text = train_df['text'].fillna('')
+            X_train_text_seg = X_train_text
         else:
             # Remove underscore connections (undo word segmentation)
-            X_train_text = train_df['text'].fillna('').str.replace('_', ' ', regex=False)
+            X_train_text_seg = X_train_text.str.replace('_', ' ', regex=False)
         
         if use_seg:
-            X_test_text = test_df['text'].fillna('')
+            X_test_text_seg = X_test_text
         else:
-            X_test_text = test_df['text'].fillna('').str.replace('_', ' ', regex=False)
+            X_test_text_seg = X_test_text.str.replace('_', ' ', regex=False)
         
         vectorizer = TfidfVectorizer(
-            max_features=10000,
-            ngram_range=(1, 2),
-            sublinear_tf=True
+            max_features=cfg.TFIDF.max_features,
+            ngram_range=cfg.TFIDF.ngram_range,
+            sublinear_tf=cfg.TFIDF.sublinear_tf
         )
         
-        X_train = vectorizer.fit_transform(X_train_text)
-        X_test = vectorizer.transform(X_test_text)
+        X_train = vectorizer.fit_transform(X_train_text_seg)
+        X_test = vectorizer.transform(X_test_text_seg)
         
-        model = LogisticRegression(
-            C=10, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
-        )
+        model = _build_lr_model()
         model.fit(X_train, y_train)
         
         y_pred = model.predict(X_test)
@@ -205,7 +201,7 @@ def ablation_word_segmentation(y_train, y_test) -> List[Dict]:
             'f1_macro': round(f1, 4),
         })
         
-        print(f"  {label}: Acc={acc:.4f}, F1={f1:.4f}")
+        log.info(f"  {label}: Acc={acc:.4f}, F1={f1:.4f}")
     
     return results
 
@@ -214,26 +210,23 @@ def ablation_lr_regularization(X_train_text, X_test_text, y_train, y_test) -> Li
     """
     Ablation: Impact of regularization strength on LR.
     """
-    print("\n" + "="*60)
-    print("ABLATION 4: Regularization Strength (LR)")
-    print("="*60)
+    log.info("\n" + "="*60)
+    log.info("ABLATION 4: Regularization Strength (LR)")
+    log.info("="*60)
     
     c_values = [0.01, 0.1, 1, 10, 100]
     results = []
     
     vectorizer = TfidfVectorizer(
-        max_features=10000,
-        ngram_range=(1, 2),
-        sublinear_tf=True
+        max_features=cfg.TFIDF.max_features,
+        ngram_range=cfg.TFIDF.ngram_range,
+        sublinear_tf=cfg.TFIDF.sublinear_tf
     )
     X_train = vectorizer.fit_transform(X_train_text)
     X_test = vectorizer.transform(X_test_text)
     
     for C in c_values:
-        model = LogisticRegression(
-            C=C, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
-        )
+        model = _build_lr_model(C=C)
         model.fit(X_train, y_train)
         
         y_pred = model.predict(X_test)
@@ -246,7 +239,7 @@ def ablation_lr_regularization(X_train_text, X_test_text, y_train, y_test) -> Li
             'f1_macro': round(f1, 4),
         })
         
-        print(f"  C={C:>6}: Acc={acc:.4f}, F1={f1:.4f}")
+        log.info(f"C={C:>6}: Acc={acc:.4f}, F1={f1:.4f}")
     
     return results
 
@@ -255,27 +248,24 @@ def ablation_sublinear_tf(X_train_text, X_test_text, y_train, y_test) -> List[Di
     """
     Ablation: Impact of sublinear TF scaling.
     """
-    print("\n" + "="*60)
-    print("ABLATION 5: Sublinear TF Scaling")
-    print("="*60)
+    log.info("\n" + "="*60)
+    log.info("ABLATION 5: Sublinear TF Scaling")
+    log.info("="*60)
     
     results = []
     
     for sublinear in [False, True]:
-        label = "Sublinear TF" if sublinear else "Standard TF"
+        label = "TF dưới tuyến tính" if sublinear else "TF chuẩn"
         
         vectorizer = TfidfVectorizer(
-            max_features=10000,
-            ngram_range=(1, 2),
+            max_features=cfg.TFIDF.max_features,
+            ngram_range=cfg.TFIDF.ngram_range,
             sublinear_tf=sublinear
         )
         X_train = vectorizer.fit_transform(X_train_text)
         X_test = vectorizer.transform(X_test_text)
         
-        model = LogisticRegression(
-            C=10, max_iter=1000, solver='lbfgs',
-            class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
-        )
+        model = _build_lr_model()
         model.fit(X_train, y_train)
         
         y_pred = model.predict(X_test)
@@ -289,14 +279,15 @@ def ablation_sublinear_tf(X_train_text, X_test_text, y_train, y_test) -> List[Di
             'f1_macro': round(f1, 4),
         })
         
-        print(f"  {label}: Acc={acc:.4f}, F1={f1:.4f}")
+        log.info(f"  {label}: Acc={acc:.4f}, F1={f1:.4f}")
     
     return results
 
 
 def main():
     """Run all ablation studies."""
-    
+
+
     print("="*60)
     print("ABLATION STUDY")
     print("="*60)
@@ -317,7 +308,9 @@ def main():
         X_train_text, X_test_text, y_train, y_test
     )
     
-    all_results['word_segmentation'] = ablation_word_segmentation(y_train, y_test)
+    all_results['word_segmentation'] = ablation_word_segmentation(
+        X_train_text, X_test_text, y_train, y_test
+    )
     
     all_results['regularization'] = ablation_lr_regularization(
         X_train_text, X_test_text, y_train, y_test
@@ -328,7 +321,7 @@ def main():
     )
     
     # Save results
-    results_dir = os.path.join(BASE_DIR, 'results', 'tables')
+    results_dir = cfg.PATHS.tables_dir
     os.makedirs(results_dir, exist_ok=True)
     
     output = {
@@ -346,7 +339,7 @@ def main():
     # Best vocab size
     best_vocab = max(all_results['vocab_size'], key=lambda x: x['f1_macro'])
     summary_rows.append({
-        'Component': 'Vocabulary Size',
+        'Component': 'Kích thước từ vựng',
         'Best Config': f"{best_vocab['vocab_size']}",
         'F1-Score': best_vocab['f1_macro']
     })
@@ -354,7 +347,7 @@ def main():
     # Best ngram
     best_ngram = max(all_results['ngram_range'], key=lambda x: x['f1_macro'])
     summary_rows.append({
-        'Component': 'N-gram Range',
+        'Component': 'Phạm vi N-gram',
         'Best Config': best_ngram['label'],
         'F1-Score': best_ngram['f1_macro']
     })
@@ -363,7 +356,7 @@ def main():
     seg_results = all_results['word_segmentation']
     for r in seg_results:
         summary_rows.append({
-            'Component': 'Word Segmentation',
+            'Component': 'Tách từ',
             'Best Config': r['config'],
             'F1-Score': r['f1_macro']
         })
@@ -371,7 +364,7 @@ def main():
     # Sublinear TF
     for r in all_results['sublinear_tf']:
         summary_rows.append({
-            'Component': 'TF Scaling',
+            'Component': 'Co giãn TF',
             'Best Config': r['config'],
             'F1-Score': r['f1_macro']
         })
@@ -381,18 +374,18 @@ def main():
     
     # Save LaTeX table
     with open(os.path.join(results_dir, 'ablation_study.tex'), 'w') as f:
-        f.write("% Ablation Study Results\n")
+        f.write("% Kết quả nghiên cứu khả trừ\n")
         f.write("\\begin{table}[h]\n")
         f.write("\\centering\n")
-        f.write("\\caption{Ablation Study: Impact of Key Components}\n")
+        f.write("\\caption{Nghiên cứu khả trừ: Tác động của các thành phần chính}\n")
         f.write("\\label{tab:ablation}\n")
         f.write("\\begin{tabular}{llcc}\n")
         f.write("\\toprule\n")
-        f.write("\\textbf{Component} & \\textbf{Configuration} & \\textbf{Accuracy} & \\textbf{F1-Score} \\\\\n")
+        f.write("\\textbf{Thành phần} & \\textbf{Cấu hình} & \\textbf{Độ chính xác} & \\textbf{F1-Score} \\\\\n")
         f.write("\\midrule\n")
         
         # Vocab size
-        f.write("\\multirow{5}{*}{Vocabulary Size}")
+        f.write("\\multirow{5}{*}{Kích thước từ vựng}")
         for r in all_results['vocab_size']:
             best = " $\\star$" if r == best_vocab else ""
             f.write(f" & {r['vocab_size']:,} & {r['accuracy']:.4f} & {r['f1_macro']:.4f}{best} \\\\\n")
@@ -400,7 +393,7 @@ def main():
         f.write("\\midrule\n")
         
         # N-gram
-        f.write("\\multirow{5}{*}{N-gram Range}")
+        f.write("\\multirow{5}{*}{Phạm vi N-gram}")
         for r in all_results['ngram_range']:
             best = " $\\star$" if r == best_ngram else ""
             f.write(f" & {r['label']} & {r['accuracy']:.4f} & {r['f1_macro']:.4f}{best} \\\\\n")
@@ -408,14 +401,14 @@ def main():
         f.write("\\midrule\n")
         
         # Segmentation
-        f.write("\\multirow{2}{*}{Word Segmentation}")
+        f.write("\\multirow{2}{*}{Tách từ}")
         for r in all_results['word_segmentation']:
             f.write(f" & {r['config']} & {r['accuracy']:.4f} & {r['f1_macro']:.4f} \\\\\n")
         
         f.write("\\midrule\n")
         
         # Sublinear TF
-        f.write("\\multirow{2}{*}{TF Scaling}")
+        f.write("\\multirow{2}{*}{Co giãn TF}")
         for r in all_results['sublinear_tf']:
             f.write(f" & {r['config']} & {r['accuracy']:.4f} & {r['f1_macro']:.4f} \\\\\n")
         

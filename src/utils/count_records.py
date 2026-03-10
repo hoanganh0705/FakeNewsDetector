@@ -1,6 +1,9 @@
 import os
 import pandas as pd
 
+from src.utils.logger import get_logger
+log = get_logger(__name__)
+
 
 def count_records(path: str, label_col: str = "label", text_col: str = "text"):
     """
@@ -15,35 +18,35 @@ def count_records(path: str, label_col: str = "label", text_col: str = "text"):
     df = pd.read_csv(path)
     df.columns = [c.strip().lower() for c in df.columns]
 
-    print("\n==============================")
-    print(f"📄 FILE: {path}")
-    print("==============================")
+    log.info("\n==============================")
+    log.info(f"FILE: {path}")
+    log.info("==============================")
 
-    print(f"✅ Total rows: {len(df)}")
-    print(f"✅ Total columns: {len(df.columns)}")
-    print("🧾 Columns:", list(df.columns))
+    log.info(f"Total rows: {len(df)}")
+    log.info(f"Total columns: {len(df.columns)}")
+    log.info("Columns: %s", list(df.columns))
 
     # Missing values report
-    print("\n==== MISSING VALUES ====")
+    log.info("\n==== MISSING VALUES ====")
     for col in df.columns:
         missing = df[col].isna().sum()
         if missing > 0:
-            print(f"⚠️ {col}: {missing}")
+            log.warning(f"{col}: {missing} missing")
 
     if df.isna().sum().sum() == 0:
-        print("✅ No missing values")
+        log.info("No missing values")
 
     # Text stats (if exists)
     if text_col in df.columns:
         empty_text = df[text_col].astype(str).str.strip().eq("").sum()
-        print("\n==== TEXT INFO ====")
-        print(f"Empty '{text_col}' rows: {empty_text}")
+        log.info("\n==== TEXT INFO ====")
+        log.info(f"Empty '{text_col}' rows: {empty_text}")
 
     # Label stats (if exists)
     if label_col in df.columns:
-        print("\n==== LABEL COUNTS ====")
+        log.info("\n==== LABEL COUNTS ====")
         counts = df[label_col].value_counts(dropna=False)
-        print(counts)
+        log.info("\n%s", counts)
 
         # ratio calc (only if binary)
         unique_labels = counts.index.tolist()
@@ -51,11 +54,11 @@ def count_records(path: str, label_col: str = "label", text_col: str = "text"):
             a, b = unique_labels[0], unique_labels[1]
             ca, cb = counts[a], counts[b]
             if cb != 0:
-                print(f"\n📊 Ratio {a}:{b} = 1 : {cb/ca:.2f}")
+                log.info(f"Ratio {a}:{b} = 1 : {cb/ca:.2f}")
         else:
-            print("\nℹ️ Label column exists but not binary (not 2 classes).")
+            log.info("Label column exists but not binary (not 2 classes).")
 
-    print("==============================\n")
+    log.info("==============================\n")
 
 
 if __name__ == "__main__":

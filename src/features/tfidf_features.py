@@ -1,6 +1,7 @@
 """
 TF-IDF Feature Extraction for Traditional ML Models (Logistic Regression, SVM)
 
+
 TF-IDF (Term Frequency-Inverse Document Frequency) converts text into numerical
 vectors based on word importance across the corpus.
 """
@@ -8,9 +9,14 @@ vectors based on word importance across the corpus.
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
-import pickle
+import joblib
 import os
 from typing import Tuple, Optional
+from config import cfg
+from src.utils.common import load_csv
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 class TfidfFeatureExtractor:
@@ -26,10 +32,10 @@ class TfidfFeatureExtractor:
     
     def __init__(
         self,
-        max_features: int = 10000,
-        ngram_range: Tuple[int, int] = (1, 2),
-        min_df: int = 2,
-        max_df: float = 0.95
+        max_features: Optional[int] = None,
+        ngram_range: Optional[Tuple[int, int]] = None,
+        min_df: Optional[int] = None,
+        max_df: Optional[float] = None
     ):
         """
         Initialize the TF-IDF feature extractor.
@@ -40,17 +46,18 @@ class TfidfFeatureExtractor:
             min_df: Ignore terms with document frequency below this threshold
             max_df: Ignore terms with document frequency above this threshold
         """
-        self.max_features = max_features
-        self.ngram_range = ngram_range
-        self.min_df = min_df
-        self.max_df = max_df
+        # Use central config defaults when not provided
+        self.max_features = max_features if max_features is not None else cfg.TFIDF.max_features
+        self.ngram_range = ngram_range if ngram_range is not None else cfg.TFIDF.ngram_range
+        self.min_df = min_df if min_df is not None else cfg.TFIDF.min_df
+        self.max_df = max_df if max_df is not None else cfg.TFIDF.max_df
         
         self.vectorizer = TfidfVectorizer(
-            max_features=max_features,
-            ngram_range=ngram_range,
-            min_df=min_df,
-            max_df=max_df,
-            sublinear_tf=True,  # Apply sublinear tf scaling (1 + log(tf))
+            max_features=self.max_features,
+            ngram_range=self.ngram_range,
+            min_df=self.min_df,
+            max_df=self.max_df,
+            sublinear_tf=cfg.TFIDF.sublinear_tf,
             strip_accents=None,  # Keep Vietnamese accents
             lowercase=True
         )
@@ -67,12 +74,12 @@ class TfidfFeatureExtractor:
         Returns:
             self
         """
-        print(f"Fitting TF-IDF vectorizer on {len(texts)} documents...")
+        log.info(f"Fitting TF-IDF vectorizer on {len(texts)} documents...")
         self.vectorizer.fit(texts.astype(str))
         self.is_fitted = True
         
         vocab_size = len(self.vectorizer.vocabulary_)
-        print(f"✅ Vocabulary size: {vocab_size}")
+        log.info(f"Vocabulary size: {vocab_size}")
         
         return self
     
@@ -90,7 +97,7 @@ class TfidfFeatureExtractor:
             raise ValueError("Vectorizer not fitted. Call fit() first.")
         
         features = self.vectorizer.transform(texts.astype(str))
-        print(f"✅ Transformed {len(texts)} documents to shape {features.shape}")
+        log.info(f"Transformed {len(texts)} documents to shape {features.shape}")
         
         return features
     
@@ -121,16 +128,15 @@ class TfidfFeatureExtractor:
             path: Path to save the vectorizer
         """
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'wb') as f:
-            pickle.dump({
-                'vectorizer': self.vectorizer,
-                'max_features': self.max_features,
-                'ngram_range': self.ngram_range,
-                'min_df': self.min_df,
-                'max_df': self.max_df,
-                'is_fitted': self.is_fitted
-            }, f)
-        print(f"✅ Saved TF-IDF vectorizer to {path}")
+        joblib.dump({
+            'vectorizer': self.vectorizer,
+            'max_features': self.max_features,
+            'ngram_range': self.ngram_range,
+            'min_df': self.min_df,
+            'max_df': self.max_df,
+            'is_fitted': self.is_fitted
+        }, path)
+        log.info(f"Saved TF-IDF vectorizer to {path}")
     
     @classmethod
     def load(cls, path: str) -> 'TfidfFeatureExtractor':
@@ -143,8 +149,7 @@ class TfidfFeatureExtractor:
         Returns:
             Loaded TfidfFeatureExtractor instance
         """
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
+        data = joblib.load(path)
         
         extractor = cls(
             max_features=data['max_features'],
@@ -155,7 +160,7 @@ class TfidfFeatureExtractor:
         extractor.vectorizer = data['vectorizer']
         extractor.is_fitted = data['is_fitted']
         
-        print(f"✅ Loaded TF-IDF vectorizer from {path}")
+        log.info(f"Loaded TF-IDF vectorizer from {path}")
         return extractor
 
 
@@ -164,8 +169,8 @@ def extract_tfidf_features(
     val_path: str,
     test_path: str,
     output_dir: str,
-    max_features: int = 10000,
-    ngram_range: Tuple[int, int] = (1, 2)
+    max_features: Optional[int] = None,
+    ngram_range: Optional[Tuple[int, int]] = None
 ) -> dict:
     """
     Extract TF-IDF features from train/val/test datasets.
@@ -181,18 +186,20 @@ def extract_tfidf_features(
     Returns:
         Dictionary with feature matrices and labels
     """
+
+
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
     
     # Load datasets
-    print("Loading datasets...")
-    train_df = pd.read_csv(train_path)
-    val_df = pd.read_csv(val_path)
-    test_df = pd.read_csv(test_path)
+    log.info("Loading datasets...")
+    train_df = load_csv(train_path, required_columns=['text', 'label'])
+    val_df = load_csv(val_path, required_columns=['text', 'label'])
+    test_df = load_csv(test_path, required_columns=['text', 'label'])
     
-    print(f"  Train: {len(train_df)} samples")
-    print(f"  Val: {len(val_df)} samples")
-    print(f"  Test: {len(test_df)} samples")
+    log.info(f"Train: {len(train_df)} samples")
+    log.info(f"Val: {len(val_df)} samples")
+    log.info(f"Test: {len(test_df)} samples")
     
     # Initialize and fit TF-IDF extractor on training data
     extractor = TfidfFeatureExtractor(
@@ -201,7 +208,7 @@ def extract_tfidf_features(
     )
     
     # Extract features
-    print("\nExtracting TF-IDF features...")
+    log.info("\nExtracting TF-IDF features...")
     X_train = extractor.fit_transform(train_df['text'])
     X_val = extractor.transform(val_df['text'])
     X_test = extractor.transform(test_df['text'])
@@ -217,16 +224,15 @@ def extract_tfidf_features(
     
     # Save features
     features_path = os.path.join(output_dir, 'tfidf_features.pkl')
-    with open(features_path, 'wb') as f:
-        pickle.dump({
-            'X_train': X_train,
-            'X_val': X_val,
-            'X_test': X_test,
-            'y_train': y_train,
-            'y_val': y_val,
-            'y_test': y_test
-        }, f)
-    print(f"✅ Saved features to {features_path}")
+    joblib.dump({
+        'X_train': X_train,
+        'X_val': X_val,
+        'X_test': X_test,
+        'y_train': y_train,
+        'y_val': y_val,
+        'y_test': y_test
+    }, features_path)
+    log.info(f"Saved features to {features_path}")
     
     return {
         'X_train': X_train,
@@ -241,17 +247,13 @@ def extract_tfidf_features(
 
 if __name__ == "__main__":
     # Example usage
-    import os
-    
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    
     features = extract_tfidf_features(
-        train_path=os.path.join(BASE_DIR, 'data', 'splits', 'train.csv'),
-        val_path=os.path.join(BASE_DIR, 'data', 'splits', 'val.csv'),
-        test_path=os.path.join(BASE_DIR, 'data', 'splits', 'test.csv'),
-        output_dir=os.path.join(BASE_DIR, 'data', 'features', 'tfidf'),
-        max_features=10000,
-        ngram_range=(1, 2)
+        train_path=os.path.join(cfg.PATHS.splits_dir, 'train.csv'),
+        val_path=os.path.join(cfg.PATHS.splits_dir, 'val.csv'),
+        test_path=os.path.join(cfg.PATHS.splits_dir, 'test.csv'),
+        output_dir=cfg.PATHS.tfidf_dir,
+        max_features=cfg.TFIDF.max_features,
+        ngram_range=cfg.TFIDF.ngram_range
     )
     
     print("\n" + "="*50)

@@ -1,26 +1,27 @@
 """
 Statistical Significance Testing for Model Comparison
 
+
 Performs:
 1. McNemar's test for comparing classifier predictions
 2. Holm-Bonferroni correction for multiple comparisons
-3. Bootstrap confidence intervals (10,000 iterations)
+3. Bootstrap confidence intervals (configurable via cfg.ANALYSIS.bootstrap_iterations)
 4. Effect size calculations (Cohen's d)
 """
 
 import os
-import sys
 import json
-import pickle
+import joblib
 import numpy as np
 import pandas as pd
 from scipy import stats
 from typing import Dict, Tuple, List
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, BASE_DIR)
-
 from config import cfg
+from src.utils.common import MODEL_DIR_MAP
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 def mcnemar_test(y_true: np.ndarray, y_pred1: np.ndarray, y_pred2: np.ndarray) -> Tuple[float, float]:
@@ -41,8 +42,8 @@ def mcnemar_test(y_true: np.ndarray, y_pred1: np.ndarray, y_pred2: np.ndarray) -
     correct1 = (y_pred1 == y_true)
     correct2 = (y_pred2 == y_true)
     
-    b = np.sum(correct1 & ~correct2)  # Model 1 correct, Model 2 wrong
-    c = np.sum(~correct1 & correct2)  # Model 1 wrong, Model 2 correct
+    b = np.sum(correct1 & np.logical_not(correct2))  # Model 1 correct, Model 2 wrong
+    c = np.sum(np.logical_not(correct1) & correct2)  # Model 1 wrong, Model 2 correct
     
     # McNemar's test with continuity correction
     if b + c == 0:
@@ -54,7 +55,7 @@ def mcnemar_test(y_true: np.ndarray, y_pred1: np.ndarray, y_pred2: np.ndarray) -
     return chi2_stat, p_value
 
 
-def holm_bonferroni_correction(p_values: List[float], alpha: float = 0.05) -> List[dict]:
+def holm_bonferroni_correction(p_values: List[float], alpha: float = None) -> List[dict]:
     """
     Apply Holm-Bonferroni correction for multiple comparisons.
     
@@ -68,6 +69,9 @@ def holm_bonferroni_correction(p_values: List[float], alpha: float = 0.05) -> Li
     Returns:
         List of dicts with original and adjusted p-values and significance
     """
+    if alpha is None:
+        alpha = cfg.ANALYSIS.significance_level
+
     n = len(p_values)
     indexed_pvalues = sorted(enumerate(p_values), key=lambda x: x[1])
     
@@ -99,26 +103,31 @@ def holm_bonferroni_correction(p_values: List[float], alpha: float = 0.05) -> Li
     return results
 
 
-def bootstrap_confidence_interval(y_true: np.ndarray, y_pred: np.ndarray, 
-                                   metric_func, n_bootstrap: int = 10000, 
+def bootstrap_confidence_interval(y_true: np.ndarray, y_pred: np.ndarray,
+                                   metric_func, n_bootstrap: int = None,
                                    confidence: float = 0.95) -> Tuple[float, float, float]:
     """
     Calculate bootstrap confidence interval for a metric.
-    
-    Uses 10,000 bootstrap iterations (modern standard for reporting).
-    
+
+    Number of bootstrap iterations defaults to `cfg.ANALYSIS.bootstrap_iterations`.
+
     Args:
         y_true: Ground truth labels
         y_pred: Predicted labels
         metric_func: Metric function(y_true, y_pred) -> float
-        n_bootstrap: Number of bootstrap iterations (default: 10000)
+        n_bootstrap: Number of bootstrap iterations (if None, uses cfg)
         confidence: Confidence level (default: 0.95)
-    
+
     Returns:
         mean: Mean of bootstrap samples
         lower: Lower bound of CI
         upper: Upper bound of CI
     """
+    if n_bootstrap is None:
+        n_bootstrap = cfg.ANALYSIS.bootstrap_iterations
+
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
     n_samples = len(y_true)
     bootstrap_scores = []
     
@@ -162,48 +171,41 @@ def cohens_d(group1: np.ndarray, group2: np.ndarray) -> float:
 def load_predictions() -> Dict[str, dict]:
     """Load predictions from all models."""
     predictions = {}
-    
-    models = {
-        'Logistic Regression': 'lr',
-        'SVM': 'svm', 
-        'BiLSTM': 'bilstm',
-        'PhoBERT': 'bert'
-    }
-    
-    for name, dir_name in models.items():
-        pred_path = os.path.join(BASE_DIR, 'experiments', dir_name, 'predictions.pkl')
+
+    for name, dir_name in MODEL_DIR_MAP.items():
+        pred_path = os.path.join(cfg.PATHS.experiments_dir, dir_name, 'predictions.pkl')
         if os.path.exists(pred_path):
-            with open(pred_path, 'rb') as f:
-                predictions[name] = pickle.load(f)
-    
+            predictions[name] = joblib.load(pred_path)
+
     return predictions
 
 
 def run_statistical_analysis():
     """Run comprehensive statistical analysis with multiple comparison correction."""
-    
-    print("="*70)
-    print("STATISTICAL SIGNIFICANCE ANALYSIS")
-    print("="*70)
+
+
+    log.info("="*70)
+    log.info("STATISTICAL SIGNIFICANCE ANALYSIS")
+    log.info("="*70)
     
     predictions = load_predictions()
     
     if len(predictions) < 2:
-        print("Need at least 2 models for comparison")
+        log.info("Need at least 2 models for comparison")
         return
     
-    y_true = list(predictions.values())[0]['y_true']
+    y_true = np.asarray(list(predictions.values())[0]['y_true'])
     
     # ================================================================
     # 1. McNemar's Test with Holm-Bonferroni Correction
     # ================================================================
-    print("\n" + "="*70)
-    print("1. McNEMAR'S TEST (Pairwise Classifier Comparison)")
-    print("="*70)
-    print("H0: The two classifiers have equal error rates")
-    print("Significance level: alpha = 0.05")
-    print("Correction: Holm-Bonferroni for multiple comparisons")
-    print("-"*70)
+    log.info("\n" + "="*70)
+    log.info("1. McNEMAR'S TEST (Pairwise Classifier Comparison)")
+    log.info("="*70)
+    log.info("H0: The two classifiers have equal error rates")
+    log.info("Significance level: alpha = %.2f", cfg.ANALYSIS.significance_level)
+    log.info("Correction: Holm-Bonferroni for multiple comparisons")
+    log.info("-"*70)
     
     model_names = list(predictions.keys())
     mcnemar_results = []
@@ -225,33 +227,33 @@ def run_statistical_analysis():
             })
     
     # Apply Holm-Bonferroni correction
-    corrections = holm_bonferroni_correction(raw_p_values)
+    corrections = holm_bonferroni_correction(raw_p_values, alpha=cfg.ANALYSIS.significance_level)
     
     for i, result in enumerate(mcnemar_results):
         result['p-value (adjusted)'] = corrections[i]['adjusted_p']
-        result['Significant (raw)'] = "Yes" if result['p-value (raw)'] < 0.05 else "No"
+        result['Significant (raw)'] = "Yes" if result['p-value (raw)'] < cfg.ANALYSIS.significance_level else "No"
         result['Significant (corrected)'] = "Yes" if corrections[i]['significant'] else "No"
         
-        sig_raw = "*" if result['p-value (raw)'] < 0.05 else "ns"
+        sig_raw = "*" if result['p-value (raw)'] < cfg.ANALYSIS.significance_level else "ns"
         sig_adj = "*" if corrections[i]['significant'] else "ns"
         
-        print(f"\n{result['Model 1']} vs {result['Model 2']}:")
-        print(f"   chi2 = {result['Chi-squared']:.4f}")
-        print(f"   p (raw)      = {result['p-value (raw)']:.4f} [{sig_raw}]")
-        print(f"   p (adjusted) = {result['p-value (adjusted)']:.4f} [{sig_adj}]")
+        log.info(f"\n{result['Model 1']} vs {result['Model 2']}:")
+        log.info(f"   chi2 = {result['Chi-squared']:.4f}")
+        log.info(f"   p (raw)      = {result['p-value (raw)']:.4f} [{sig_raw}]")
+        log.info(f"   p (adjusted) = {result['p-value (adjusted)']:.4f} [{sig_adj}]")
     
     mcnemar_df = pd.DataFrame(mcnemar_results)
     
-    print("\n" + "-"*70)
-    print(f"NOTE: Holm-Bonferroni correction applied across {len(raw_p_values)} comparisons")
-    print(f"to control family-wise error rate (FWER).")
+    log.info("\n" + "-"*70)
+    log.info(f"NOTE: Holm-Bonferroni correction applied across {len(raw_p_values)} comparisons")
+    log.info(f"to control family-wise error rate (FWER).")
     
     # ================================================================
     # 2. Bootstrap Confidence Intervals (10,000 iterations)
     # ================================================================
-    print("\n" + "="*70)
-    print("2. BOOTSTRAP CONFIDENCE INTERVALS (95%, n=10,000)")
-    print("="*70)
+    log.info("\n" + "="*70)
+    log.info(f"2. BOOTSTRAP CONFIDENCE INTERVALS (95%, n={cfg.ANALYSIS.bootstrap_iterations})")
+    log.info("="*70)
     
     from sklearn.metrics import accuracy_score, f1_score
     
@@ -261,12 +263,11 @@ def run_statistical_analysis():
         y_pred = preds['y_pred']
         
         acc_mean, acc_lower, acc_upper = bootstrap_confidence_interval(
-            y_true, y_pred, accuracy_score, n_bootstrap=10000
+            y_true, y_pred, accuracy_score
         )
-        
+
         f1_mean, f1_lower, f1_upper = bootstrap_confidence_interval(
-            y_true, y_pred, lambda yt, yp: f1_score(yt, yp, average='macro'),
-            n_bootstrap=10000
+            y_true, y_pred, lambda yt, yp: f1_score(yt, yp, average='macro')
         )
         
         ci_results.append({
@@ -277,33 +278,33 @@ def run_statistical_analysis():
             'F1 95% CI': f"[{f1_lower:.4f}, {f1_upper:.4f}]"
         })
         
-        print(f"\n{model_name}:")
-        print(f"   Accuracy: {acc_mean:.4f} (95% CI: [{acc_lower:.4f}, {acc_upper:.4f}])")
-        print(f"   F1-Score: {f1_mean:.4f} (95% CI: [{f1_lower:.4f}, {f1_upper:.4f}])")
+        log.info(f"\n{model_name}:")
+        log.info(f"Accuracy: {acc_mean:.4f} (95% CI: [{acc_lower:.4f}, {acc_upper:.4f}])")
+        log.info(f"F1-Score: {f1_mean:.4f} (95% CI: [{f1_lower:.4f}, {f1_upper:.4f}])")
     
     ci_df = pd.DataFrame(ci_results)
     
     # ================================================================
     # 3. Effect Size (Cohen's d)
     # ================================================================
-    print("\n" + "="*70)
-    print("3. EFFECT SIZE ANALYSIS (Cohen's d)")
-    print("="*70)
-    print("Interpretation: |d| < 0.2 = negligible, 0.2-0.5 = small,")
-    print("                0.5-0.8 = medium, > 0.8 = large")
-    print("-"*70)
+    log.info("\n" + "="*70)
+    log.info("3. EFFECT SIZE ANALYSIS (Cohen's d)")
+    log.info("="*70)
+    log.info("Interpretation: |d| < 0.2 = negligible, 0.2-0.5 = small,")
+    log.info("                0.5-0.8 = medium, > 0.8 = large")
+    log.info("-"*70)
     
     effect_sizes = []
     
     if 'PhoBERT' in predictions:
-        phobert_correct = (predictions['PhoBERT']['y_pred'] == y_true).astype(float)
+        phobert_correct = (np.asarray(predictions['PhoBERT']['y_pred']) == y_true).astype(float)
         
         for model_name, preds in predictions.items():
             if model_name != 'PhoBERT':
-                other_correct = (preds['y_pred'] == y_true).astype(float)
+                other_correct = (np.asarray(preds['y_pred']) == y_true).astype(float)
                 d = cohens_d(phobert_correct, other_correct)
                 
-                effect = "negligible" if abs(d) < 0.2 else "small" if abs(d) < 0.5 else "medium" if abs(d) < 0.8 else "large"
+                effect = "không đáng kể" if abs(d) < 0.2 else "nhỏ" if abs(d) < 0.5 else "trung bình" if abs(d) < 0.8 else "lớn"
                 
                 effect_sizes.append({
                     'Comparison': f'PhoBERT vs {model_name}',
@@ -311,15 +312,15 @@ def run_statistical_analysis():
                     'Effect': effect
                 })
                 
-                print(f"\nPhoBERT vs {model_name}:")
-                print(f"   Cohen's d = {d:.4f} ({effect} effect)")
+                log.info(f"\nPhoBERT vs {model_name}:")
+                log.info(f"Cohen's d = {d:.4f} ({effect} effect)")
     
     effect_df = pd.DataFrame(effect_sizes) if effect_sizes else pd.DataFrame()
     
     # ================================================================
     # Save results
     # ================================================================
-    results_dir = os.path.join(BASE_DIR, 'results', 'tables')
+    results_dir = cfg.PATHS.tables_dir
     os.makedirs(results_dir, exist_ok=True)
     
     mcnemar_df.to_csv(os.path.join(results_dir, 'mcnemar_test.csv'), index=False)
@@ -329,12 +330,12 @@ def run_statistical_analysis():
     
     # Save LaTeX
     with open(os.path.join(results_dir, 'statistical_tests.tex'), 'w') as f:
-        f.write("% McNemar's Test Results (with Holm-Bonferroni Correction)\n")
+        f.write("% Kết quả kiểm định McNemar (với hiệu chỉnh Holm-Bonferroni)\n")
         f.write(mcnemar_df.to_latex(index=False, escape=False))
-        f.write("\n\n% Bootstrap Confidence Intervals (n=10,000)\n")
+        f.write(f"\n\n% Khoảng tin cậy Bootstrap (n={cfg.ANALYSIS.bootstrap_iterations})\n")
         f.write(ci_df.to_latex(index=False, escape=False))
         if len(effect_sizes) > 0:
-            f.write("\n\n% Effect Sizes (Cohen's d)\n")
+            f.write("\n\n% Độ lớn hiệu ứng (Cohen's d)\n")
             f.write(effect_df.to_latex(index=False, escape=False))
     
     # Save summary JSON
@@ -343,18 +344,18 @@ def run_statistical_analysis():
         'bootstrap_ci': ci_results,
         'effect_sizes': effect_sizes,
         'correction_method': 'Holm-Bonferroni',
-        'bootstrap_iterations': 10000,
-        'significance_level': 0.05,
+        'bootstrap_iterations': cfg.ANALYSIS.bootstrap_iterations,
+        'significance_level': cfg.ANALYSIS.significance_level,
         'num_comparisons': len(raw_p_values)
     }
     
     with open(os.path.join(results_dir, 'statistical_analysis_summary.json'), 'w') as f:
         json.dump(summary, f, indent=2, default=str)
     
-    print("\n" + "="*70)
-    print("STATISTICAL ANALYSIS COMPLETE!")
-    print("="*70)
-    print(f"\nResults saved to: {results_dir}")
+    log.info("\n" + "="*70)
+    log.info("STATISTICAL ANALYSIS COMPLETE!")
+    log.info("="*70)
+    log.info(f"\nResults saved to: {results_dir}")
     
     return mcnemar_df, ci_df, effect_df
 

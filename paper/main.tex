@@ -1,575 +1,1995 @@
-% Vietnamese Fake News Detection: A Comparative Study of Machine Learning Approaches
-% Complete Research Paper
+% ============================================================
+%  BÁO CÁO NGHIÊN CỨU KHOA HỌC
+%  Phát hiện tin giả tiếng Việt bằng học máy và học sâu
+% ============================================================
+\documentclass[12pt, a4paper]{report}
 
-\documentclass[conference]{IEEEtran}
+% ── Encoding & language ──────────────────────────────────────
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
 
-\usepackage{cite}
-\usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
-\usepackage{graphicx}
-\usepackage{textcomp}
-\usepackage{xcolor}
+
+% ── Layout ───────────────────────────────────────────────────
+\usepackage[top=3cm, bottom=3cm, left=3.5cm, right=2cm]{geometry}
+\usepackage{setspace}
+\usepackage{longtable}
+\onehalfspacing
+
+% ── Typography ───────────────────────────────────────────────
+\usepackage[protrusion=alltext-nott]{microtype}
+\usepackage{indentfirst}
+\setlength{\parindent}{1.5em}
+
+% ── Math ─────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb, amsfonts}
+
+% ── Tables ───────────────────────────────────────────────────
 \usepackage{booktabs}
 \usepackage{multirow}
-\usepackage{hyperref}
+\usepackage{array}
 \usepackage{tabularx}
-\usepackage{enumitem}
-\usepackage{url}
-
-\begin{document}
-
-\title{Vietnamese Fake News Detection: A Comparative Study of Machine Learning Approaches}
-
-\author{
-\IEEEauthorblockN{Nguyen Hoang Anh}
-\IEEEauthorblockA{\textit{Faculty of Information Technology} \\
-\textit{University Name} \\
-City, Vietnam \\
-email@university.edu.vn}
+\usepackage{makecell}
+\usepackage{siunitx}
+\sisetup{
+  output-decimal-marker={.},
+  group-separator={,},
+  group-minimum-digits=4
 }
 
-\maketitle
+% ── Figures ──────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[section]{placeins}
+\usepackage{caption}
+\usepackage{subcaption}
+\graphicspath{{./figures/}}
 
-\begin{abstract}
-The proliferation of fake news in Vietnamese-language media presents significant challenges to public trust and social stability. This study presents a comprehensive comparison of machine learning approaches for Vietnamese fake news detection, evaluating four models representing distinct paradigms: Logistic Regression and Support Vector Machine (traditional machine learning with TF-IDF features), Bidirectional LSTM with attention mechanism (deep learning with word embeddings), and PhoBERT (transformer-based pre-trained language model). Our experiments on a curated dataset of 5,655 Vietnamese news articles demonstrate that PhoBERT achieves the best performance with 90.58\% accuracy and 0.896 F1-score. Statistical significance testing using McNemar's test with Holm-Bonferroni correction for multiple comparisons shows that PhoBERT's raw p-values are significant ($p \approx 0.011$), but after correction for 6 pairwise comparisons the adjusted p-values are marginally non-significant ($p_{\text{adj}} = 0.064$), highlighting the importance of proper multiple comparison correction. We further provide ablation studies examining the impact of feature engineering choices, cross-validation results for robust estimation, and an interpretability analysis identifying the most predictive linguistic features. The results highlight the effectiveness of pre-trained language models for Vietnamese NLP tasks while revealing that traditional ML models remain viable alternatives in resource-constrained scenarios.
-\end{abstract}
+% ── Colors ───────────────────────────────────────────────────
+\usepackage[dvipsnames]{xcolor}
 
-\begin{IEEEkeywords}
-Fake news detection, Vietnamese NLP, machine learning, deep learning, PhoBERT, text classification, natural language processing
-\end{IEEEkeywords}
+\definecolor{primaryblue}{RGB}{0, 70, 127}
+\definecolor{primarypurple}{RGB}{128, 0, 128}
+
+% ── Code listings ────────────────────────────────────────────
+\usepackage{listings}
+\lstset{
+  basicstyle=\small\ttfamily,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!8},
+}
+
+% ── TOC formatting ───────────────────────────────────────────
+\usepackage{tocloft}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsubsecleader}{\cftdotfill{\cftdotsep}}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% ── Section titles ───────────────────────────────────────────
+\usepackage{titlesec}
+\renewcommand{\chaptername}{Chương}
+\titleformat{\chapter}[block]
+  {\normalfont\huge\bfseries}
+  {\chaptername\ \thechapter}{0.8em}{}
+\titlespacing{\chapter}{0pt}{*2}{*1.5}
+
+% ── Hyperlinks ───────────────────────────────────────────────
+\usepackage[unicode]{hyperref}
+\usepackage{bookmark}
+\usepackage[capitalise,nameinlink,noabbrev]{cleveref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=primaryblue,
+  urlcolor=primarypurple,
+  pdfhighlight=/N,
+  pdftitle={Phát hiện tin giả tiếng Việt sử dụng học máy và học sâu},
+  pdfauthor={Nguyễn Hoàng Anh},
+  pdfsubject={Báo cáo nghiên cứu khoa học},
+  pdfkeywords={fake news detection, Vietnamese NLP, PhoBERT, BiLSTM, TF-IDF, SVM, Logistic Regression},
+  pdflang={vi-VN},
+  hyperfootnotes=false,
+  pdfborder={0 0 0},
+}
+\crefname{figure}{hình}{hình}
+\Crefname{figure}{Hình}{Hình}
+\crefname{table}{bảng}{bảng}
+\Crefname{table}{Bảng}{Bảng}
+\crefname{section}{mục}{mục}
+\Crefname{section}{Mục}{Mục}
+
+% ── Bibliography ─────────────────────────────────────────────
+\usepackage{cite}
+
+% ── Fix Vietnamese diacritics in PDF bookmarks ──────────────
+\pdfstringdefDisableCommands{%
+  \let\h\relax
+}
+
+% ── Header/footer ────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ── Utilities ────────────────────────────────────────────────
+\usepackage{enumitem}
+\usepackage{xspace}
+\newcommand{\phobert}{PhoBERT\xspace}
+\newcommand{\bilstm}{BiLSTM\xspace}
+\newcommand{\imagesource}[1]{%
+  \footnotetext{\footnotesize\textit{Nguồn ảnh:} \url{#1}}
+}
+
+% ── Centralized data definitions ─────────────────────────────
+% Update these once; every occurrence in the paper updates automatically.
+%
+% --- Dataset sizes ---
+\newcommand{\nRaw}{15,789}              % raw samples before cleaning
+\newcommand{\nRemoved}{1,831}            % samples removed during cleaning
+\newcommand{\nClean}{13,958}             % samples after cleaning
+\newcommand{\nTrain}{9,770}              % training set
+\newcommand{\nVal}{2,094}                % validation set
+\newcommand{\nTest}{2,094}               % test set
+\newcommand{\nReal}{7,764}               % total Real samples
+\newcommand{\nFake}{6,194}               % total Fake samples
+\newcommand{\pctReal}{55.6}              % % Real
+\newcommand{\pctFake}{44.4}              % % Fake
+\newcommand{\nValReal}{1,165}            % Real in val/test
+\newcommand{\nValFake}{929}              % Fake in val/test
+%
+% --- PhoBERT metrics (test set) ---
+\newcommand{\phobertAcc}{90.07}
+\newcommand{\phobertFone}{89.88}
+\newcommand{\phobertAUC}{0.9495}
+%
+% --- LR metrics (test set) ---
+\newcommand{\lrFone}{83.29}
+\newcommand{\lrAUC}{0.9188}
+%
+% --- SVM metrics (test set) ---
+\newcommand{\svmFone}{84.10}
+\newcommand{\svmAUC}{0.9190}
+%
+% --- BiLSTM metrics (test set) ---
+\newcommand{\bilstmFone}{82.32}
+\newcommand{\bilstmAUC}{0.9048}
+%
+% --- Improvement deltas ---
+\newcommand{\deltaLR}{6.59}
+\newcommand{\deltaSVM}{5.78}
+\newcommand{\deltaBiLSTM}{7.56}
+%
+% --- Config / hyperparameters ---
+\newcommand{\minWordCount}{10}
+\newcommand{\splitRatio}{70/15/15}
+\newcommand{\randomState}{42}
+\newcommand{\tfidfMaxFeatures}{40,000}
+\newcommand{\bilstmVocab}{23,166}
+\newcommand{\bilstmEmbDim}{300}
+\newcommand{\bilstmHiddenDim}{128}
+\newcommand{\bilstmLayers}{1}
+\newcommand{\bilstmMaxSeq}{128}
+\newcommand{\phobertMaxSeq}{256}        % PhoBERT max sequence length
+\newcommand{\lrBestC}{10}               % LR best C from GridSearch
+\newcommand{\svmBestC}{0.5}             % SVM best C from GridSearch
+%
+% --- Per-class recall, Giả (test set) ---
+\newcommand{\phobertRecallFake}{86.22}
+\newcommand{\svmRecallFake}{81.38}
+\newcommand{\lrRecallFake}{82.02}
+\newcommand{\bilstmRecallFake}{80.84}
+%
+% --- Confusion matrix (PhoBERT test set) ---
+\newcommand{\phobertTN}{1,085}
+\newcommand{\phobertTP}{801}
+\newcommand{\phobertFP}{80}
+\newcommand{\phobertFN}{128}
+%
+% --- Error analysis counts (test set) ---
+\newcommand{\lrErrors}{346}
+\newcommand{\lrErrorRate}{16.52}
+\newcommand{\lrFPcount}{179}
+\newcommand{\lrFNcount}{167}
+\newcommand{\svmErrors}{328}
+\newcommand{\svmErrorRate}{15.66}
+\newcommand{\svmFPcount}{155}
+\newcommand{\svmFNcount}{173}
+\newcommand{\bilstmErrors}{366}
+\newcommand{\bilstmErrorRate}{17.48}
+\newcommand{\bilstmFPcount}{188}
+\newcommand{\bilstmFNcount}{178}
+\newcommand{\phobertErrors}{208}
+\newcommand{\phobertErrorRate}{9.93}
+%
+% --- Bootstrap 95\% CI (F1-Score) ---
+\newcommand{\lrFoneCI}{[0.8165;\ 0.8487]}
+\newcommand{\svmFoneCI}{[0.8253;\ 0.8564]}
+\newcommand{\bilstmFoneCI}{[0.8063;\ 0.8391]}
+\newcommand{\phobertFoneCI}{[0.8853;\ 0.9114]}
+%
+% --- Hard examples (all 4 models wrong) ---
+\newcommand{\nHardExamples}{73}
+%
+%% ── Overall model metrics — fraction format (for tables) ────
+% LR
+\newcommand{\lrAccTab}{0.8348}
+\newcommand{\lrPrecTab}{0.8325}
+\newcommand{\lrRecTab}{0.8333}
+\newcommand{\lrFoneTab}{0.8329}
+\newcommand{\lrAucTab}{0.9188}
+% SVM
+\newcommand{\svmAccTab}{0.8434}
+\newcommand{\svmPrecTab}{0.8418}
+\newcommand{\svmRecTab}{0.8404}
+\newcommand{\svmFoneTab}{0.8410}
+\newcommand{\svmAucTab}{0.9190}
+% BiLSTM
+\newcommand{\bilstmAccTab}{0.8252}
+\newcommand{\bilstmPrecTab}{0.8228}
+\newcommand{\bilstmRecTab}{0.8235}
+\newcommand{\bilstmFoneTab}{0.8232}
+\newcommand{\bilstmAucTab}{0.9048}
+% PhoBERT
+\newcommand{\phobertAccTab}{0.9007}
+\newcommand{\phobertPrecTab}{0.9018}
+\newcommand{\phobertRecTab}{0.8968}
+\newcommand{\phobertFoneTab}{0.8988}
+\newcommand{\phobertAucTab}{0.9495}
+%
+%% ── Per-class metrics — fraction format (for table 3) ───────
+% LR
+\newcommand{\lrRealPrec}{0.8552}
+\newcommand{\lrRealRec}{0.8464}
+\newcommand{\lrRealFone}{0.8507}
+\newcommand{\lrFakePrec}{0.8098}
+\newcommand{\lrFakeRec}{0.8202}
+\newcommand{\lrFakeFone}{0.8150}
+% SVM
+\newcommand{\svmRealPrec}{0.8538}
+\newcommand{\svmRealRec}{0.8670}
+\newcommand{\svmRealFone}{0.8603}
+\newcommand{\svmFakePrec}{0.8299}
+\newcommand{\svmFakeRec}{0.8138}
+\newcommand{\svmFakeFone}{0.8217}
+% BiLSTM
+\newcommand{\bilstmRealPrec}{0.8459}
+\newcommand{\bilstmRealRec}{0.8386}
+\newcommand{\bilstmRealFone}{0.8422}
+\newcommand{\bilstmFakePrec}{0.7998}
+\newcommand{\bilstmFakeRec}{0.8084}
+\newcommand{\bilstmFakeFone}{0.8041}
+% PhoBERT
+\newcommand{\phobertRealPrec}{0.8945}
+\newcommand{\phobertRealRec}{0.9313}
+\newcommand{\phobertRealFone}{0.9125}
+\newcommand{\phobertFakePrec}{0.9092}
+\newcommand{\phobertFakeRec}{0.8622}
+\newcommand{\phobertFakeFone}{0.8851}
+%
+%% ── Dataset stats (for table 1) ─────────────────────────────
+\newcommand{\nTrainReal}{5,434}
+\newcommand{\nTrainFake}{4,336}
+\newcommand{\avgLenTrain}{90.1}
+\newcommand{\avgLenVal}{91.7}
+\newcommand{\avgLenTest}{96.5}
+%
+%% ── McNemar test results ────────────────────────────────────
+\newcommand{\mcnLrSvmChi}{4.52}
+\newcommand{\mcnLrSvmP}{0.0945}
+\newcommand{\mcnLrBilstmChi}{1.24}
+\newcommand{\mcnLrBilstmP}{0.2645}
+\newcommand{\mcnLrPhobertChi}{57.22}
+\newcommand{\mcnSvmBilstmChi}{4.63}
+\newcommand{\mcnSvmBilstmP}{0.0945}
+\newcommand{\mcnSvmPhobertChi}{45.68}
+\newcommand{\mcnBilstmPhobertChi}{66.62}
+%
+%% ── Cross-validation results ────────────────────────────────
+\newcommand{\cvLrAcc}{0.8301}
+\newcommand{\cvLrAccStd}{0.0087}
+\newcommand{\cvLrFone}{0.8282}
+\newcommand{\cvLrFoneStd}{0.0087}
+\newcommand{\cvSvmAcc}{0.8490}
+\newcommand{\cvSvmAccStd}{0.0087}
+\newcommand{\cvSvmFone}{0.8469}
+\newcommand{\cvSvmFoneStd}{0.0087}
+%
+%% ── Ablation study: Vocabulary size ─────────────────────────
+\newcommand{\ablVocOneKAcc}{0.7841}
+\newcommand{\ablVocOneKF}{0.7819}
+\newcommand{\ablVocFiveKAcc}{0.8233}
+\newcommand{\ablVocFiveKF}{0.8214}
+\newcommand{\ablVocTenKAcc}{0.8324}
+\newcommand{\ablVocTenKF}{0.8303}
+\newcommand{\ablVocTwentyKAcc}{0.8386}
+\newcommand{\ablVocTwentyKF}{0.8368}
+\newcommand{\ablVocFiftyKAcc}{0.8395}
+\newcommand{\ablVocFiftyKF}{0.8378}
+%% ── Ablation study: N-gram ──────────────────────────────────
+\newcommand{\ablNgUniAcc}{0.8276}
+\newcommand{\ablNgUniF}{0.8256}
+\newcommand{\ablNgUniBiAcc}{0.8429}
+\newcommand{\ablNgUniBiF}{0.8410}
+\newcommand{\ablNgUniTriAcc}{0.8415}
+\newcommand{\ablNgUniTriF}{0.8397}
+\newcommand{\ablNgBiAcc}{0.8152}
+\newcommand{\ablNgBiF}{0.8120}
+%% ── Ablation study: Word segmentation ───────────────────────
+\newcommand{\ablWsOnAcc}{0.8429}
+\newcommand{\ablWsOnF}{0.8410}
+\newcommand{\ablWsOffAcc}{0.8319}
+\newcommand{\ablWsOffF}{0.8300}
+%% ── Ablation study: Regularization C ────────────────────────
+\newcommand{\ablCaAcc}{0.7713}        % C = 0.01
+\newcommand{\ablCaF}{0.7679}
+\newcommand{\ablCbAcc}{0.7942}        % C = 0.1
+\newcommand{\ablCbF}{0.7914}
+\newcommand{\ablCcAcc}{0.8429}        % C = 1
+\newcommand{\ablCcF}{0.8410}
+\newcommand{\ablCdAcc}{0.8367}        % C = 10
+\newcommand{\ablCdF}{0.8348}
+\newcommand{\ablCeAcc}{0.8357}        % C = 100
+\newcommand{\ablCeF}{0.8336}
+%% ── Ablation study: TF Scaling ──────────────────────────────
+\newcommand{\ablTfStdAcc}{0.8386}
+\newcommand{\ablTfStdF}{0.8367}
+\newcommand{\ablTfSubAcc}{0.8429}
+\newcommand{\ablTfSubF}{0.8410}
+%% ── Ablation delta values (body text) ───────────────────────
+\newcommand{\ablVocDelta}{4.84}       % F1 improvement 1K → 10K
+\newcommand{\ablWsDelta}{1.10}        % word segmentation delta F1
+\newcommand{\ablTfDelta}{0.43}        % TF scaling delta F1
+%
+%% ── Model complexity (approximate parameter counts) ─────────
+\newcommand{\lrParams}{$\sim$10K}
+\newcommand{\svmParams}{$\sim$10K}
+\newcommand{\bilstmParamCount}{$\sim$500K}
+\newcommand{\phobertParamCount}{$\sim$135M}
+%
+%% ── Calibration metrics (test set) ──────────────────────────
+\newcommand{\lrECE}{0.0242}
+\newcommand{\lrMCE}{0.1329}
+\newcommand{\lrBrier}{0.1136}
+\newcommand{\svmECE}{0.0229}
+\newcommand{\svmMCE}{0.0740}
+\newcommand{\svmBrier}{0.1134}
+\newcommand{\bilstmECE}{0.0884}
+\newcommand{\bilstmMCE}{0.2135}
+\newcommand{\bilstmBrier}{0.1348}
+\newcommand{\phobertECE}{0.0911}
+\newcommand{\phobertMCE}{0.6622}
+\newcommand{\phobertBrier}{0.0925}
 
 % ============================================================
-\section{Introduction}
+\begin{document}
+\pagenumbering{gobble}
+\hypersetup{pageanchor=false}
+
 % ============================================================
+%  TRANG BÌA
+% ============================================================
+\begin{titlepage}
+\centering
+{\large TRƯỜNG ĐẠI HỌC MỞ THÀNH PHỐ HỒ CHÍ MINH }\\[2cm]
 
-The rapid expansion of social media and online news platforms has created an environment where misinformation can spread faster than ever before. Fake news---fabricated information that mimics legitimate news in form but not in content---has become a pressing global concern, influencing public opinion, undermining trust in institutions, and even threatening democratic processes~\cite{lazer2018science, vosoughi2018spread}.
+{\LARGE\bfseries PHÁT HIỆN TIN GIẢ DỰA TRÊN CÁC KỸ THUẬT TRÍ TUỆ NHÂN TẠO}\\[1.5cm]
 
-While extensive research has been conducted on fake news detection for English text~\cite{zhou2020survey, shu2017fake, ruchansky2017csi}, the Vietnamese language has received comparatively limited attention despite Vietnam having over 70 million internet users and one of the highest social media penetration rates in Southeast Asia~\cite{datareportal2024}. Vietnamese presents unique challenges for natural language processing (NLP), including: (1) a tonal language system with diacritical marks that carry semantic meaning, (2) the absence of explicit word boundaries requiring specialized segmentation tools, and (3) compound words formed by combining syllables with underscores~\cite{vncorenlp2018}.
+{\large\textit{Báo cáo Nghiên cứu Khoa học Sinh viên}}\\[3cm]
 
-This study addresses the gap in Vietnamese fake news detection research by conducting a systematic comparison of four machine learning approaches representing three distinct paradigms:
+\begin{tabular}{r l}
+  \textbf{Sinh viên thực hiện:} & Nguyễn Hoàng Anh \\[0.3em]
+  \textbf{Giảng viên hướng dẫn:} & Dương Hữu Thành \\[0.3em]
+  \textbf{Năm học:} & 2025--2026 \\
+\end{tabular}
 
-\begin{itemize}[leftmargin=*]
-    \item \textbf{Traditional Machine Learning}: Logistic Regression (LR) and Support Vector Machine (SVM) with TF-IDF features
-    \item \textbf{Deep Learning}: Bidirectional Long Short-Term Memory (BiLSTM) with attention mechanism and word embeddings
-    \item \textbf{Transformer-based}: PhoBERT~\cite{phobert2020}, a pre-trained language model specifically designed for Vietnamese
+\vfill
+{\large Thành phố Hồ Chí Minh, tháng 02 năm 2026}
+\end{titlepage}
+
+% ============================================================
+%  MỤC LỤC
+% ============================================================
+\tableofcontents
+\cleardoublepage
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% ============================================================
+%  DANH SÁCH BẢNG
+% ============================================================
+\listoftables
+\addcontentsline{toc}{chapter}{\listtablename}
+\label{listoftables}
+\newpage
+
+% ============================================================
+%  DANH SÁCH HÌNH VẼ
+% ============================================================
+\listoffigures
+\addcontentsline{toc}{chapter}{\listfigurename}
+\label{listoffigures}
+\newpage
+
+% ============================================================
+%  DANH SÁCH TỪ VIẾT TẮT
+% ============================================================
+\chapter*{Danh sách từ viết tắt}
+\label{abbrev}
+\addcontentsline{toc}{chapter}{Danh sách từ viết tắt}
+
+\vspace{0.5em}
+\noindent\begin{longtable}{p{3.2cm} p{10.8cm}}
+\toprule
+\textbf{Từ viết tắt} & \textbf{Giải nghĩa} \\
+\midrule
+AI      & Artificial Intelligence -- Trí tuệ nhân tạo \\[0.3em]
+AUC     & Area Under the Curve -- Diện tích dưới đường cong ROC \\[0.3em]
+BERT    & Bidirectional Encoder Representations from Transformers \\[0.3em]
+BiLSTM  & Bidirectional Long Short-Term Memory -- Mạng LSTM hai chiều \\[0.3em]
+BPE     & Byte Pair Encoding -- Mã hoá cặp byte \\[0.3em]
+CI      & Confidence Interval -- Khoảng tin cậy \\[0.3em]
+CUDA    & Compute Unified Device Architecture \\[0.3em]
+CV      & Cross-Validation -- Kiểm tra chéo \\[0.3em]
+F1      & F1-Score -- Trung bình điều hoà Precision và Recall \\[0.3em]
+FFN     & Feed-Forward Network -- Mạng truyền thẳng \\[0.3em]
+FN      & False Negative -- Âm tính giả \\[0.3em]
+FP      & False Positive -- Dương tính giả \\[0.3em]
+GPU     & Graphics Processing Unit -- Bộ xử lý đồ hoạ \\[0.3em]
+IDF     & Inverse Document Frequency -- Tần số nghịch đảo tài liệu \\[0.3em]
+LR      & Logistic Regression -- Hồi quy Logistic \\[0.3em]
+LSTM    & Long Short-Term Memory \\[0.3em]
+ML      & Machine Learning -- Học máy \\[0.3em]
+NLP     & Natural Language Processing -- Xử lý ngôn ngữ tự nhiên \\[0.3em]
+PhoBERT & Pretrained Language Model for Vietnamese (VinAI Research) \\[0.3em]
+ReLU    & Rectified Linear Unit -- Hàm kích hoạt tuyến tính chỉnh lưu \\[0.3em]
+RNN     & Recurrent Neural Network -- Mạng nơ-ron hồi tiếp \\[0.3em]
+ROC     & Receiver Operating Characteristic \\[0.3em]
+SVM     & Support Vector Machine -- Máy vectơ hỗ trợ \\[0.3em]
+TF      & Term Frequency -- Tần số xuất hiện của từ \\[0.3em]
+TF-IDF  & Term Frequency -- Inverse Document Frequency \\[0.3em]
+TN      & True Negative -- Âm tính thật \\[0.3em]
+TP      & True Positive -- Dương tính thật \\[0.3em]
+ECE     & Expected Calibration Error -- Sai số hiệu chuẩn kỳ vọng \\[0.3em]
+MCE     & Maximum Calibration Error -- Sai số hiệu chuẩn cực đại \\
+\bottomrule
+\end{longtable}
+\newpage
+
+% ============================================================
+%  DANH SÁCH THUẬT NGỮ TIẾNG ANH
+% ============================================================
+\chapter*{Danh sách thuật ngữ tiếng Anh}
+\label{glossary}
+\addcontentsline{toc}{chapter}{Danh sách thuật ngữ tiếng Anh}
+
+\vspace{0.5em}
+\noindent\begin{longtable}{p{5cm} p{9cm}}
+\toprule
+\textbf{Thuật ngữ tiếng Anh} & \textbf{Giải thích} \\
+\midrule
+Ablation Study      & Nghiên cứu triệt bỏ từng thành phần để đo đóng góp \\[0.3em]
+Attention Mechanism & Cơ chế chú ý cho phép mô hình tập trung vào phần quan trọng \\[0.3em]
+Backpropagation     & Lan truyền ngược -- thuật toán cập nhật trọng số dựa trên gradient \\[0.3em]
+Batch Size          & Số mẫu xử lý đồng thời trong mỗi bước huấn luyện \\[0.3em]
+Bootstrap           & Phương pháp lấy mẫu lại có hoàn lại để ước lượng phân phối thống kê \\[0.3em]
+Class Weighting     & Trọng số lớp -- tăng phạt cho lớp thiểu số trong hàm mất mát \\[0.3em]
+Cross-Entropy       & Hàm mất mát đo sự khác biệt giữa phân phối dự đoán và thực tế \\[0.3em]
+Cross-Validation    & Kiểm tra chéo -- đánh giá mô hình trên nhiều lần chia dữ liệu \\[0.3em]
+Data Leakage        & Rò rỉ dữ liệu -- thông tin test set lọt vào quá trình huấn luyện \\[0.3em]
+Dropout             & Kỹ thuật tắt ngẫu nhiên neuron trong huấn luyện để giảm quá khớp \\[0.3em]
+Early Stopping      & Dừng sớm -- dừng huấn luyện khi hiệu năng val không cải thiện \\[0.3em]
+Embedding           & Biểu diễn từ bằng vectơ số thực nhiều chiều \\[0.3em]
+Fine-tuning         & Tinh chỉnh -- cập nhật nhẹ nhàng mô hình đã được tiền huấn luyện \\[0.3em]
+Gradient Clipping   & Cắt gradient -- giới hạn biên độ gradient để ổn định huấn luyện \\[0.3em]
+Grid Search         & Tìm kiếm lưới -- duyệt tổ hợp siêu tham số để chọn cấu hình tốt nhất \\[0.3em]
+Hyperparameter      & Siêu tham số -- tham số đặt trước khi huấn luyện \\[0.3em]
+Learning Rate       & Tốc độ học -- hệ số điều chỉnh bước cập nhật trọng số \\[0.3em]
+McNemar's Test      & Kiểm định thống kê so sánh hai bộ phân loại theo từng mẫu \\[0.3em]
+Overfitting         & Quá khớp -- mô hình học thuộc dữ liệu train, kém tổng quát \\[0.3em]
+Precision           & Độ chính xác dương -- tỷ lệ dự đoán dương đúng trên tổng dự đoán dương \\[0.3em]
+Recall              & Độ thu hồi -- tỷ lệ mẫu dương được phát hiện đúng \\[0.3em]
+Stratified Split    & Chia phân tầng -- giữ nguyên tỉ lệ nhãn trong mỗi tập \\[0.3em]
+Subword             & Đơn vị con của từ -- thành phần nhỏ hơn từ dùng trong BPE \\[0.3em]
+Tokenization        & Tách chuỗi ký tự thành các đơn vị (token) \\[0.3em]
+Transformer         & Kiến trúc mạng nơ-ron dùng cơ chế tự chú ý (self-attention) \\[0.3em]
+Warmup Schedule     & Lịch khởi động -- tăng dần tốc độ học ở đầu quá trình huấn luyện \\[0.3em]
+Word Segmentation   & Phân đoạn từ -- tách văn bản tiếng Việt thành các từ \\[0.3em]
+Calibration         & Hiệu chuẩn xác suất -- đánh giá tương quan giữa xác suất dự đoán và kết quả thực tế \\[0.3em]
+Brier Score         & Trung bình bình phương sai số giữa xác suất dự đoán và nhãn thực \\[0.3em]
+Reliability Diagram & Biểu đồ hiệu chuẩn -- trực quan hóa chất lượng xác suất dự đoán \\[0.3em]
+Bag-of-Words        & Biểu diễn văn bản theo tần suất xuất hiện từ, bỏ qua thứ tự \\[0.3em]
+Baseline            & Mô hình cơ sở dùng làm điểm so sánh cho các phương pháp khác \\[0.3em]
+Domain Shift        & Dịch chuyển miền -- sự khác biệt phân phối giữa dữ liệu huấn luyện và triển khai \\[0.3em]
+Fact-checking       & Kiểm chứng thực tế -- xác minh tính chính xác của thông tin \\[0.3em]
+Knowledge Distillation & Chưng cất tri thức -- chuyển giao kiến thức từ mô hình lớn sang mô hình nhỏ \\[0.3em]
+Pipeline            & Quy trình xử lý dữ liệu gồm nhiều bước nối tiếp nhau \\[0.3em]
+Temperature Scaling & Kỹ thuật hiệu chuẩn hậu xử lý điều chỉnh độ tin cậy xác suất dự đoán \\
+\bottomrule
+\end{longtable}
+\newpage
+
+% ============================================================
+%  DANH SÁCH KÝ HIỆU
+% ============================================================
+\chapter*{Danh sách ký hiệu}
+\label{symbols}
+\addcontentsline{toc}{chapter}{Danh sách ký hiệu}
+
+\vspace{0.5em}
+\noindent\begin{longtable}{p{2.5cm} p{11.5cm}}
+\toprule
+\textbf{Ký hiệu} & \textbf{Ý nghĩa} \\
+\midrule
+$x_i$           & Văn bản đầu vào thứ $i$ \\[0.3em]
+$y_i$           & Nhãn thực thứ $i$ (0 = Thật, 1 = Giả) \\[0.3em]
+$\hat{y}_i$     & Nhãn dự đoán thứ $i$ \\[0.3em]
+$N$             & Tổng số văn bản trong tập dữ liệu \\[0.3em]
+$V$             & Kích thước từ điển (vocabulary size) \\[0.3em]
+$d$             & Số chiều của vectơ biểu diễn \\[0.3em]
+$h_t$           & Trạng thái ẩn tại bước thời gian $t$ \\[0.3em]
+$\mathbf{W}$    & Ma trận trọng số \\[0.3em]
+$\mathbf{b}$    & Vectơ độ lệch (bias) \\[0.3em]
+$\sigma$        & Hàm kích hoạt sigmoid \\[0.3em]
+$\alpha_t$      & Trọng số chú ý tại bước thời gian $t$ \\[0.3em]
+$C$             & Tham số điều chuẩn (regularization) của SVM và LR \\[0.3em]
+$\eta$          & Tốc độ học (learning rate) \\[0.3em]
+$\lambda$       & Hệ số phân rã trọng số (weight decay) \\
+\bottomrule
+\end{longtable}
+\newpage
+
+% ============================================================
+%  TÓM TẮT ĐỀ TÀI
+% ============================================================
+\chapter*{Tóm tắt đề tài}
+\label{abstract}
+\addcontentsline{toc}{chapter}{Tóm tắt đề tài}
+
+Tin giả trên các nền tảng số tiếng Việt đang đặt ra thách thức cấp bách cho các nhà nghiên cứu NLP, do đặc điểm hình thái học của tiếng Việt -- ngôn ngữ đơn lập, không biến hình -- vốn đòi hỏi những kỹ thuật tiền xử lý và biểu diễn đặc trưng riêng biệt. Trong khi nhiều nghiên cứu quốc tế đã đạt kết quả đáng chú ý trên dữ liệu tiếng Anh, hiệu quả của các phương pháp tương tự trên tiếng Việt chưa được khảo sát đầy đủ.
+
+Nghiên cứu này đề xuất và so sánh bốn phương pháp phân loại tin tức Việt Nam: Hồi quy Logistic (LR) và Máy vectơ hỗ trợ (SVM) sử dụng đặc trưng tần suất từ -- tần suất tài liệu nghịch đảo (Term Frequency -- Inverse Document Frequency, TF-IDF), Mạng LSTM hai chiều (BiLSTM) với cơ chế chú ý, và mô hình ngôn ngữ PhoBERT tinh chỉnh theo tác vụ. Thực nghiệm được thực hiện trên bộ dữ liệu gồm \nClean{} mẫu sau khi làm sạch, được chia theo tỉ lệ \splitRatio{} (huấn luyện/kiểm định/kiểm tra).
+
+Kết quả cho thấy PhoBERT đạt hiệu năng tốt nhất (F1 = \phobertFone\%, ROC-AUC = \phobertAUC), vượt trội rõ rệt so với LR (\lrFone\%), SVM (\svmFone\%) và BiLSTM (\bilstmFone\%). Đáng chú ý, SVM lại vượt BiLSTM bất chấp kiến trúc đơn giản hơn nhiều, cho thấy chất lượng biểu diễn đặc trưng có thể bù đắp cho độ phức tạp của mô hình khi dữ liệu có giới hạn. Kiểm định McNemar với hiệu chỉnh Holm-Bonferroni xác nhận sự vượt trội của PhoBERT có ý nghĩa thống kê ($p < 0.001$). Nghiên cứu ablation cho thấy tiền huấn luyện trên ngữ liệu tiếng Việt quy mô lớn là nhân tố quyết định; phân đoạn từ và kích thước từ điển chỉ đóng vai trò thứ yếu đối với các mô hình học máy truyền thống.
+
+\bigskip
+\noindent\textbf{Từ khoá:} phát hiện tin giả, tiếng Việt, PhoBERT, BiLSTM, TF-IDF, xử lý ngôn ngữ tự nhiên.
+\newpage
+
+
+% ============================================================
+%  TỔNG QUAN VỀ ĐỀ TÀI
+% ============================================================
+\chapter*{Tổng quan về đề tài}
+\label{introduction}
+\addcontentsline{toc}{chapter}{Tổng quan về đề tài}
+
+\section*{1. Đặt vấn đề}
+
+Mạng xã hội và các nền tảng tin tức trực tuyến tại Việt Nam đã rút ngắn tối thiểu khoảng cách giữa sự kiện và công chúng, nhưng cũng đồng thời tạo ra môi trường thuận lợi cho tin sai lệch phát tán rộng rãi trước khi được kiểm chứng. Theo thống kê, Việt Nam nằm trong nhóm các quốc gia có tỉ lệ tiếp xúc với tin giả cao nhất tại Đông Nam Á. Việc kiểm chứng thủ công không thể theo kịp quy mô sản xuất và lưu truyền nội dung hiện nay; đó là lý do các hệ thống phát hiện tin giả tự động bằng học máy và học sâu trở nên cấp thiết.
+
+\section*{2. Mục tiêu nghiên cứu}
+
+\begin{itemize}[leftmargin=2em]
+  \item Xây dựng và so sánh bốn mô hình phân loại tin tức tiếng Việt: LR, SVM, BiLSTM và PhoBERT.
+  \item Đánh giá ảnh hưởng của phân đoạn từ tiếng Việt đối với hiệu năng mô hình.
+  \item Thực hiện đánh giá toàn diện bao gồm kiểm định thống kê, kiểm tra chéo, và phân tích giải thích.
+  \item Xác định phương pháp tốt nhất cho bài toán phát hiện tin giả tiếng Việt.
 \end{itemize}
 
-\subsection{Research Objectives}
+\section*{3. Phạm vi nghiên cứu}
 
-\begin{enumerate}
-    \item Compare the effectiveness of traditional ML, deep learning, and transformer-based approaches for Vietnamese fake news detection
-    \item Conduct rigorous statistical analysis with appropriate corrections for multiple comparisons
-    \item Investigate the contribution of key components through ablation studies
-    \item Provide interpretability insights through feature importance analysis
-    \item Offer practical recommendations for deploying fake news detection systems in Vietnamese-language contexts
-\end{enumerate}
+Nghiên cứu tập trung vào phân loại nhị phân văn bản tiếng Việt (Thật/Giả) dựa trên tiêu đề và nội dung bài viết. Dữ liệu được thu thập từ các bài đăng công khai trên mạng xã hội (Facebook) và bào điện tử trong giai đoạn COVID-19, bao gồm ngôn ngữ tự nhiên, không được kiểm soát
 
-\subsection{Contributions}
+\section*{4. Bố cục báo cáo}
 
-Our main contributions are:
-\begin{enumerate}
-    \item A comprehensive benchmark comparing four models across three ML paradigms on Vietnamese fake news data with proper statistical validation
-    \item Ablation studies quantifying the impact of word segmentation, vocabulary size, n-gram range, and TF-IDF scaling
-    \item Cross-validation results providing robust performance estimates beyond single-split evaluation
-    \item Interpretability analysis identifying the most discriminative linguistic features for Vietnamese fake vs.\ real news
-\end{enumerate}
-
-% ============================================================
-\section{Related Work}
-% ============================================================
-
-\subsection{Fake News Detection}
-
-Fake news detection has been studied extensively in the NLP community. Early approaches relied on handcrafted linguistic features such as writing style, sentiment, and lexical complexity~\cite{perez2018automatic, rashkin2017truth}. Shu et al.~\cite{shu2017fake} provided a comprehensive data mining perspective on fake news detection, categorizing approaches into content-based, social context-based, and knowledge-based methods.
-
-Content-based methods have evolved from simple bag-of-words and TF-IDF representations to more sophisticated neural architectures. Ruchansky et al.~\cite{ruchansky2017csi} proposed CSI, a model that integrates article content, user response, and source information. Wang~\cite{wang2017liar} introduced the LIAR dataset and showed that CNN and LSTM models outperform traditional classifiers for fine-grained fake news classification.
-
-The advent of pre-trained language models has significantly advanced the field. Kaliyar et al.~\cite{kaliyar2021fakebert} proposed FakeBERT, achieving over 98\% accuracy on English fake news detection. Devlin et al.~\cite{devlin2019bert} demonstrated the effectiveness of BERT for various downstream NLP tasks through fine-tuning, which has been widely adopted for misinformation detection~\cite{vijjali2020two}.
-
-Network-based approaches analyze the propagation patterns of news on social media. Vosoughi et al.~\cite{vosoughi2018spread} found that false news spreads significantly farther, faster, and more broadly than true news on Twitter. Ma et al.~\cite{ma2016detecting} used recurrent neural networks to model the temporal patterns of rumor propagation.
-
-\subsection{Vietnamese Natural Language Processing}
-
-Vietnamese NLP has seen significant advances in recent years. VnCoreNLP~\cite{vncorenlp2018} provides a comprehensive toolkit for word segmentation, POS tagging, named entity recognition, and dependency parsing, addressing the challenge of identifying word boundaries in Vietnamese text.
-
-PhoBERT~\cite{phobert2020} represents a major milestone as the first large-scale monolingual language model for Vietnamese, pre-trained on 20GB of Vietnamese text using the RoBERTa architecture. It has achieved state-of-the-art results on multiple Vietnamese NLP benchmarks including POS tagging, named entity recognition, dependency parsing, and natural language inference.
-
-Other notable Vietnamese NLP resources include ViT5~\cite{phan2022vit5} for sequence-to-sequence tasks, UndertheSea~\cite{underthesea2018} as an accessible NLP toolkit, and BARTpho~\cite{tran2022bartpho} for generative tasks.
-
-\subsection{Fake News Detection for Vietnamese}
-
-Research specifically targeting Vietnamese fake news detection remains limited compared to English. Nguyen et al.~\cite{nguyen2021vietnamese} explored traditional ML approaches with TF-IDF features, finding that SVM and Logistic Regression achieved reasonable performance. Vo et al.~\cite{vo2020fakenews} investigated the use of social context features in combination with text features for Vietnamese fake news on social media.
-
-Le et al.~\cite{le2021vietnamese} proposed using PhoBERT for Vietnamese text classification tasks and showed improvements over traditional methods. However, no comprehensive study has systematically compared approaches across all three paradigms (traditional ML, deep learning, and transformers) with proper statistical validation for Vietnamese fake news detection.
-
-Our work fills this gap by providing a rigorous benchmark with statistical significance testing, ablation studies, cross-validation, and interpretability analysis.
-
-% ============================================================
-\section{Methodology}
-% ============================================================
-
-\subsection{Dataset}
-
-We compiled a dataset of Vietnamese news articles labeled as real or fake from various Vietnamese online news sources. The raw dataset underwent careful preprocessing to ensure quality:
-
-\begin{itemize}[leftmargin=*]
-    \item \textbf{Duplicate removal}: 433 duplicate texts were identified and removed
-    \item \textbf{Data leakage prevention}: 392 overlapping texts between splits were eliminated
-    \item \textbf{Quality filtering}: Empty and very short texts ($<$ 5 words) were excluded
+Báo cáo gồm bốn chương chính:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Chương 1} trình bày cơ sở lý thuyết về xử lý ngôn ngữ tự nhiên tiếng Việt, các phương pháp học máy và kiến trúc mô hình học sâu được sử dụng.
+  \item \textbf{Chương 2} mô tả bộ dữ liệu, quy trình tiền xử lý và chia tập.
+  \item \textbf{Chương 3} trình bày chi tiết các phương pháp đề xuất, kiến trúc mô hình và quy trình huấn luyện.
+  \item \textbf{Chương 4} trình bày kết quả thực nghiệm, phân tích lỗi, kiểm định thống kê và nghiên cứu ablation.
 \end{itemize}
 
-The cleaned dataset was split using stratified sampling to maintain class distribution:
 
+% ============================================================
+%  CHƯƠNG 1 -- CƠ SỞ LÝ THUYẾT
+% ============================================================
+
+\chapter{Cơ sở lý thuyết}
+
+Chương này thiết lập nền tảng lý thuyết cho bốn mô hình được khảo sát trong nghiên cứu. Phần đầu làm rõ các khái niệm biểu diễn văn bản và đặc thù ngôn ngữ tiếng Việt; phần tiếp theo phân tích nguyên lý hoạt động của hai thuật toán học máy truyền thống -- LR và SVM. Phần cuối đi sâu vào các kiến trúc học sâu: từ LSTM tuần tự, BiLSTM hai chiều, đến Transformer song song, qua đó lý giải vì sao PhoBERT -- nhờ cơ chế self-attention nắm bắt ngữ cảnh toàn cục -- đạt hiệu năng vượt trội trong bài toán phát hiện tin giả tiếng Việt.
+
+\section{Một số khái niệm cơ bản}
+
+\subsection{Văn bản và biểu diễn văn bản}
+Mô hình học máy không xử lý trực tiếp chuỗi ký tự mà yêu cầu văn bản phải được chuyển sang dạng số trong một không gian đặc trưng xác định. Hai trường phái biểu diễn chính đối lập nhau về bản chất: Bag-of-Words và TF-IDF ánh xạ mỗi tài liệu thành một vectơ thưa (\textit{sparse vector}) trong không gian từ vựng, hoàn toàn bỏ qua thứ tự từ; ngược lại, các phương pháp embedding chiếu từng từ vào một không gian dày (\textit{dense}) có số chiều thấp, nơi quan hệ ngữ nghĩa được mã hóa ngầm qua cấu trúc hình học của các vectơ. Sự lựa chọn giữa hai trường phái này gắn chặt với kiến trúc mô hình: LR và SVM vận hành hiệu quả trên vectơ TF-IDF thưa nhờ khả năng tối ưu trong không gian chiều cao, còn BiLSTM và PhoBERT đòi hỏi biểu diễn embedding liên tục để khai thác ngữ cảnh tuần tự hoặc toàn cục.
+
+\subsection{Đặc trưng văn bản và tiền xử lý}
+Tiền xử lý biến đổi văn bản thô thành đầu vào đồng nhất cho mô hình thông qua chuẩn hóa chữ viết, loại bỏ ký tự nhiễu, tách từ và lọc từ dừng. Đối với tiếng Việt, \textit{phân đoạn từ} (\textit{word segmentation}) đóng vai trò then chốt hơn hẳn so với các ngôn ngữ biến hình: khoảng trắng trong tiếng Việt phân tách âm tiết chứ không phân tách từ, nên nhiều đơn vị từ vựng bao gồm hai hoặc nhiều âm tiết liền kề (``kiến\_trúc'', ``tiền\_huấn\_luyện''). Bỏ qua bước này khiến từ vựng phân mảnh nghiêm trọng, đồng thời làm giảm chất lượng vectơ TF-IDF và gây bất tương thích giữa dữ liệu đầu vào với từ điển tiền huấn luyện của PhoBERT.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{textpreprocessing.jpg}
+  \caption{Các bước tiền xử lý văn bản trước khi đưa vào mô hình học máy.}
+  \label{fig:preprocessing}
+\end{figure}
+
+\subsection{Bài toán phân loại văn bản}
+Phát hiện tin giả về bản chất là bài toán phân loại nhị phân: mỗi văn bản được gán nhãn “thật” hoặc “giả”. Mô hình cần học một hàm ánh xạ từ không gian đặc trưng của văn bản sang tập nhãn, sao cho ranh giới quyết định phân tách tốt nhất hai lớp trên dữ liệu chưa quan sát.
+
+
+\section{Xử lý ngôn ngữ tự nhiên tiếng Việt}
+
+\subsection{Đặc điểm ngôn ngữ tiếng Việt}
+
+Tiếng Việt là ngôn ngữ đơn lập, không biến hình, với các đặc điểm khác biệt so với tiếng Anh và nhiều ngôn ngữ châu Âu:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Không có khoảng cách giữa các âm tiết:} Ranh giới từ và âm tiết trong tiếng Việt không trùng nhau. Ví dụ, ``thành phố'' là một từ nhưng được viết thành hai âm tiết riêng biệt.
+  \item \textbf{Từ ghép và từ láy:} Nhiều khái niệm được biểu đạt bằng tổ hợp nhiều âm tiết, ví dụ từ ghép ``học\_sinh'', ``kinh\_tế'', hay từ láy ``lung\_linh''.
+  \item \textbf{Thanh điệu:} Tiếng Việt có 6 thanh điệu, ảnh hưởng quan trọng đến ngữ nghĩa nhưng không ảnh hưởng đến cấu trúc hình thái học.
+  \item \textbf{Ngôn ngữ cô lập:} Quan hệ ngữ pháp được biểu đạt qua trật tự từ và các hư từ, không qua biến đổi hình thái.
+\end{itemize}
+
+Những đặc điểm này đòi hỏi bước tiền xử lý đặc thù -- đặc biệt là \textit{phân đoạn từ} -- trước khi áp dụng các mô hình học máy.
+
+\subsection{Phân đoạn từ (Word Segmentation)}
+
+Phân đoạn từ là bước xác định ranh giới các từ trong câu tiếng Việt. Hầu hết các mô hình xử lý ngôn ngữ tự nhiên (Natural Language Processing -- NLP), đặc biệt là PhoBERT, được huấn luyện trên dữ liệu đã được phân đoạn.
+
+\textbf{Ví dụ:}
+\begin{quote}
+\textit{Trước:} ``Thành phố Hồ Chí Minh là trung tâm kinh tế lớn nhất Việt Nam.''\\
+\textit{Sau:} ``Thành\_phố Hồ\_Chí\_Minh là trung\_tâm kinh\_tế lớn nhất Việt\_Nam .''
+\end{quote}
+
+Trong nghiên cứu này, nhóm sử dụng \textbf{VnCoreNLP RDRSegmenter}~\cite{nguyen2018vncorenlp} thông qua thư viện \texttt{py\_vncorenlp}. Đây là bộ phân đoạn cùng với bộ tokenizer mà \phobert được tiền huấn luyện, đảm bảo sự nhất quán về từ vựng.
+
+\subsection{Biểu diễn văn bản số}
+
+Các mô hình học máy cần chuyển đổi văn bản thô sang dạng số. Nghiên cứu này sử dụng ba phương pháp:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textbf{TF-IDF:} Vectơ đặc trưng dựa trên tần suất từ, phù hợp cho LR và SVM.
+  \item \textbf{Nhúng từ (Word Embedding):} Vectơ dày đặc học được~\cite{mikolov2013word2vec}, khởi tạo từ FastText tiếng Việt~\cite{bojanowski2017fasttext}, phù hợp cho BiLSTM.
+  \item \textbf{Mã hóa cặp byte (Byte-Pair Encoding -- BPE):} Tách từ thành các đơn vị con, dùng cho PhoBERT.
+\end{enumerate}
+
+\section{Học máy}
+
+\subsection{Định nghĩa}
+
+Với sự phát triển của khoa học công nghệ, các ứng dụng tự động ngày càng trở
+nên phổ biến hơn trong đời sống chúng ta, một phần là nhờ vào các thuật toán học
+máy. Học máy (Machine Learning -- ML) là một nhánh của lĩnh vực trí tuệ nhân tạo
+(Artificial Intelligence -- AI), chuyên nghiên cứu và phát minh các thuật toán cho phép
+máy tính có khả năng tự vận hành một công việc nhất định bằng các bộ dữ liệu đã
+có mà không cần can thiệp nhiều từ lập trình viên. Các thuật toán máy học thường
+được chia thành 2 loại chính, đó là:
+
+Học có giám sát (Supervised Learning) gồm các thuật toán giúp máy tính xây
+dựng một hàm dựa trên dữ liệu có sẵn và đã được gán nhãn để có thể xác định nhãn
+của một dữ liệu mới.
+
+Học không giám sát (Unsupervised Learning) gồm các thuật toán cho phép máy
+tính học từ các dữ liệu có sẵn nhưng chưa được gán nhãn. Từ đó, phân các dữ liệu
+này thành các cụm theo yêu cầu.
+
+\subsection{Một số thuật toán học máy tiêu biểu}
+\subsubsection{Hồi quy Logistic (Logistic Regression -- LR)}
+Hồi quy Logistic (Logistic Regression)~\cite{cox1958regression} là một thuật toán học máy có giám sát được sử dụng phổ biến trong các bài toán phân lớp nhị phân. Thuật toán này mô hình hóa mối quan hệ giữa các đặc trưng đầu vào và xác suất thuộc về một lớp thông qua một hàm logistic (sigmoid). Cụ thể, dữ liệu huấn luyện được biểu diễn dưới dạng các vector đặc trưng trong không gian nhiều chiều. Thuật toán sẽ học các tham số của mô hình sao cho xác suất dự đoán phù hợp nhất với nhãn thực tế của dữ liệu huấn luyện.
+
+Khi có một điểm dữ liệu mới (chưa có nhãn), mô hình sẽ tính toán giá trị tuyến tính của điểm đó dựa trên các trọng số đã học, sau đó đưa kết quả qua hàm sigmoid để thu được một giá trị xác suất trong khoảng từ 0 đến 1. Dựa trên một ngưỡng phân loại xác định trước (thường là 0.5), điểm dữ liệu mới sẽ được gán vào một trong hai lớp tương ứng. Nếu xác suất dự đoán lớn hơn hoặc bằng ngưỡng, điểm dữ liệu sẽ được gán vào lớp thứ nhất; ngược lại, nó sẽ được gán vào lớp còn lại. Nhờ cơ chế này, Logistic Regression cho phép thực hiện phân lớp một cách hiệu quả và dễ diễn giải trong nhiều bài toán thực tế.
+
+\subsubsection{Máy vectơ hỗ trợ (Support Vector Machine -- SVM)}
+
+Máy vectơ hỗ trợ (Support Vector Machine -- SVM)~\cite{cortes1995svm} là một thuật toán học máy có giám sát được sử dụng phổ biến trong các bài toán phân lớp nhị phân. Đối với bài toán phát hiện tin giả, SVM được sử dụng để phân loại văn bản thành hai lớp là “thật” và “giả”. Thuật toán hoạt động dựa trên việc tìm một siêu phẳng (hyperplane) trong không gian đặc trưng sao cho có thể phân tách hai lớp dữ liệu một cách tối ưu.
+
+Cụ thể, các dữ liệu huấn luyện sau khi được biểu diễn dưới dạng vector đặc trưng (ví dụ như TF-IDF) sẽ được ánh xạ vào không gian nhiều chiều. Trong không gian này, SVM tìm một siêu phẳng sao cho khoảng cách từ siêu phẳng đến các điểm gần nhất của mỗi lớp là lớn nhất. Khoảng cách này được gọi là biên (margin). Những điểm dữ liệu nằm gần siêu phẳng nhất và quyết định vị trí của nó được gọi là các vector hỗ trợ (support vectors).
+
+Khi đã xác định được siêu phẳng tối ưu, với một điểm dữ liệu mới, mô hình sẽ xác định vị trí của điểm đó so với siêu phẳng để gán nhãn tương ứng. Nếu điểm dữ liệu nằm về một phía của siêu phẳng, nó sẽ được gán vào lớp thứ nhất; nếu nằm về phía còn lại, nó sẽ được gán vào lớp thứ hai. Nhờ cơ chế tối đa hóa biên phân tách, SVM thường đạt hiệu quả cao trong các bài toán phân loại văn bản nhị phân như phát hiện tin giả.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{svm.jpg}
+  \caption{Minh họa thuật toán nhị phân SVM (phỏng theo \cite{cortes1995svm})}
+  \label{fig:svm}
+\end{figure}
+
+\subsection{Biểu diễn đặc trưng cơ bản}
+\subsubsection{Tần suất từ -- Tần suất tài liệu nghịch đảo (TF-IDF)}
+TF-IDF (Term Frequency -- Inverse Document Frequency)~\cite{sparkjones1972idf} là một phương pháp biểu diễn văn bản được sử dụng phổ biến trong các bài toán xử lý ngôn ngữ tự nhiên và phân loại văn bản. Phương pháp này nhằm đánh giá mức độ quan trọng của một từ trong một tài liệu dựa trên tần suất xuất hiện của từ đó trong tài liệu và mức độ phổ biến của nó trong toàn bộ tập dữ liệu.
+
+Term Frequency (TF) biểu diễn số lần một từ $t$ xuất hiện trong tài liệu $d$. Để tránh thiên lệch do độ dài tài liệu, TF thường được chuẩn hóa theo tổng số từ trong tài liệu:
+
+\[
+TF(t, d) = \frac{f_{t,d}}{\sum_{t' \in d} f_{t',d}}
+\]
+
+trong đó $f_{t,d}$ là số lần xuất hiện của từ $t$ trong tài liệu $d$.
+
+Inverse Document Frequency (IDF) được sử dụng nhằm giảm trọng số của các từ xuất hiện phổ biến trong nhiều tài liệu và tăng trọng số cho các từ mang tính phân biệt cao. IDF được tính như sau:
+
+\[
+IDF(t) = \log \left( \frac{N}{df_t} \right)
+\]
+
+trong đó $N$ là tổng số tài liệu trong tập dữ liệu và $df_t$ là số tài liệu chứa từ $t$.
+
+Giá trị TF-IDF của một từ $t$ trong tài liệu $d$ được xác định bằng tích của hai thành phần trên:
+
+\[
+TF\text{-}IDF(t, d) = TF(t, d) \times IDF(t)
+\]
+
+Kết quả thu được là một trọng số thực phản ánh mức độ quan trọng tương đối của từ trong tài liệu. Sau khi tính toán cho toàn bộ từ vựng, mỗi tài liệu được biểu diễn dưới dạng một vector đặc trưng có kích thước bằng số lượng từ trong từ điển. Các vector này thường có tính thưa (sparse) và được sử dụng làm đầu vào cho các mô hình học máy truyền thống như Hồi quy Logistic (Logistic Regression) và Máy vectơ hỗ trợ (Support Vector Machine) trong các bài toán phân loại văn bản, bao gồm phát hiện tin giả.
+
+\section{Học sâu}
+
+\subsection{Định nghĩa}
+Học sâu (Deep Learning) là một nhánh của học máy dựa trên các mô hình mạng nơ-ron nhân tạo có nhiều lớp ẩn, cho phép hệ thống học được các đặc trưng phức tạp từ dữ liệu đầu vào. Khác với các phương pháp học máy truyền thống, trong đó đặc trưng thường được thiết kế thủ công, học sâu có khả năng tự động trích xuất và biểu diễn đặc trưng thông qua quá trình huấn luyện trên tập dữ liệu lớn.
+
+Mỗi mô hình học sâu được cấu thành từ nhiều lớp nơ-ron liên kết với nhau theo từng tầng. Dữ liệu đầu vào sẽ được truyền qua các lớp này theo cơ chế lan truyền tiến (feedforward), tại đó mỗi lớp sẽ thực hiện các phép biến đổi tuyến tính kết hợp với hàm kích hoạt phi tuyến nhằm tạo ra biểu diễn ở mức trừu tượng cao hơn. Trong quá trình huấn luyện, các tham số của mô hình được điều chỉnh thông qua thuật toán lan truyền ngược (backpropagation) nhằm tối thiểu hóa hàm mất mát.
+
+Nhờ cấu trúc nhiều tầng và khả năng học biểu diễn tự động, học sâu đã đạt được hiệu quả cao trong nhiều lĩnh vực như thị giác máy tính, xử lý ngôn ngữ tự nhiên và nhận dạng tiếng nói. Trong bài toán phát hiện tin giả, các mô hình học sâu như BiLSTM và PhoBERT cho phép khai thác thông tin ngữ cảnh và quan hệ giữa các từ trong văn bản một cách hiệu quả hơn so với các phương pháp truyền thống.
+
+\subsection{Mạng nơ-ron nhân tạo (Artificial Neural Network)}
+Dựa trên cơ chế hoạt động của các neuron trong hệ thần kinh sinh học, các nhà nghiên cứu đã xây dựng mô hình mạng nơ-ron nhân tạo nhằm mô phỏng quá trình xử lý thông tin của não người. Trong cơ thể, neuron được xem là đơn vị cấu trúc cơ bản của hệ thần kinh. Mỗi neuron bao gồm thân tế bào chứa nhân, các sợi nhánh (dendrite) có chức năng tiếp nhận tín hiệu từ các neuron khác và sợi trục (axon) dùng để truyền tín hiệu đi.
+
+Khi một neuron nhận được các tín hiệu đầu vào thông qua các sợi nhánh, nó sẽ tiến hành xử lý và tổng hợp các tín hiệu này. Nếu mức tín hiệu sau khi xử lý vượt qua một giá trị ngưỡng nhất định, neuron sẽ phát sinh tín hiệu đầu ra và truyền qua sợi trục đến các neuron kế tiếp. Cơ chế này được trừu tượng hóa trong mạng nơ-ron nhân tạo dưới dạng một hàm toán học, trong đó nhiều giá trị đầu vào được kết hợp để tạo ra một đầu ra duy nhất. Vai trò của ngưỡng kích hoạt được mô phỏng thông qua hàm kích hoạt (Activation Function), quyết định xem neuron có phát tín hiệu hay không.
+
+
+
+
+Mạng neuron nhân tạo là một tập hợp gồm các neuron nhân tạo được sắp xếp
+theo từng lớp ẩn. Mỗi lớp ẩn (hidden layer) bao gồm một hoặc nhiều
+neuron nhân tạo. Các neuron này liên kết từng đôi một với các neuron ở lớp kế tiếp
+và sẽ không có sự liên kết giữa các neuron trong cùng một lớp. Số lớp của một mạng
+neuron nhân tạo được tính bằng tổng số lớp ẩn và lớp đầu vào, lớp đầu ra không
+được tính.
+Trong quá trình huấn luyện, mạng nơ-ron nhân tạo thực hiện cơ chế lan truyền tiến (feedforward), trong đó dữ liệu đầu vào được truyền qua từng lớp và được biến đổi thông qua các trọng số tương ứng để tạo ra kết quả dự đoán ở đầu ra. Để đánh giá mức độ chính xác của dự đoán này, một hàm mất mát (Loss Function) được sử dụng nhằm đo lường sai số giữa giá trị dự đoán và nhãn thực tế. Dựa trên giá trị sai số đó, các tham số của mô hình sẽ được điều chỉnh thông qua thuật toán lan truyền ngược nhằm giảm thiểu sai số. Quá trình này được lặp lại nhiều lần cho đến khi mô hình đạt được mức sai số nhỏ nhất có thể.
+
+Trong các kiến trúc mạng nơ-ron hiện đại, nhiều mô hình đã được phát triển nhằm xử lý các loại dữ liệu khác nhau. Đối với bài toán xử lý văn bản, các kiến trúc mạng nơ-ron hồi quy (Recurrent Neural Network -- RNN) và các mô hình dựa trên Transformer được sử dụng phổ biến.
+
+\subsubsection{Một số thành phần cần chú ý}
+
+Hàm kích hoạt (Activation Function) là thành phần quan trọng trong mạng nơ-ron nhân tạo, giữ vai trò quyết định xem tín hiệu sau khi được tổng hợp tại một neuron có được truyền tiếp đến lớp kế tiếp hay không. Sau khi các giá trị đầu vào được nhân với trọng số và cộng lại, kết quả thu được sẽ được đưa qua một hàm kích hoạt nhằm tạo ra tính phi tuyến cho mô hình. Nhờ tính phi tuyến này, mạng nơ-ron có khả năng học được các mối quan hệ phức tạp trong dữ liệu. Một số hàm kích hoạt thường được sử dụng gồm Sigmoid, Tanh và ReLU. Đối với các bài toán phân loại, đặc biệt là phân loại nhị phân, hàm Sigmoid thường được dùng ở lớp đầu ra để đưa kết quả dự đoán về dạng xác suất trong khoảng từ 0 đến 1, trong khi hàm Softmax được sử dụng khi cần phân phối xác suất trên nhiều lớp.
+
+Để đánh giá mức độ chính xác của mô hình trong quá trình huấn luyện, người ta sử dụng hàm mất mát (Loss Function) nhằm đo lường sai số giữa giá trị dự đoán và nhãn thực tế. Trong các bài toán phân loại văn bản, hàm mất mát phổ biến là Cross-Entropy, do khả năng phản ánh tốt sự khác biệt giữa phân phối xác suất dự đoán và phân phối thực tế. Giá trị của hàm mất mát càng nhỏ thì mô hình càng đưa ra dự đoán gần với nhãn đúng.
+
+Quá trình huấn luyện mạng nơ-ron nhân tạo diễn ra thông qua hai bước chính là lan truyền tiến (feedforward) và lan truyền ngược (backpropagation). Ở bước lan truyền tiến, dữ liệu đầu vào được truyền qua từng lớp của mạng, tại đó các phép biến đổi tuyến tính và phi tuyến được thực hiện để tạo ra kết quả dự đoán ở đầu ra. Sau khi tính được giá trị của hàm mất mát, thuật toán lan truyền ngược sẽ được áp dụng để tính toán đạo hàm của sai số theo từng tham số trong mạng. Các tham số này sau đó được cập nhật bằng thuật toán tối ưu hóa, phổ biến nhất là Gradient Descent, nhằm giảm dần giá trị sai số qua từng vòng lặp huấn luyện.
+
+Trong quá trình huấn luyện các mạng nhiều tầng, có thể xuất hiện các hiện tượng như mất mát hoặc bùng nổ gradient khi giá trị đạo hàm trở nên quá nhỏ hoặc quá lớn. Những vấn đề này ảnh hưởng đến tốc độ và độ ổn định của quá trình học. Các kiến trúc hiện đại như LSTM và Transformer được thiết kế nhằm hạn chế những hạn chế này, giúp mô hình học được các quan hệ dài hạn trong dữ liệu chuỗi, đặc biệt hiệu quả trong các bài toán xử lý ngôn ngữ tự nhiên như phát hiện tin giả.
+
+\subsection{Mạng nơ-ron hồi quy (Recurrent Neural Network -- RNN)}
+
+RNN là một mô hình học sâu được thiết kế để xử lý dữ liệu tuần tự bằng cách duy trì thông tin từ các trạng thái trước đó. Điều này giúp RNN có khả năng ghi nhớ và sử dụng các mối liên hệ giữa các phần tử trong chuỗi dữ liệu, tạo ra đầu ra có ngữ cảnh và ý nghĩa hơn. 
+
+Dữ liệu tuần tự có thể bao gồm văn bản, chuỗi thời gian, hoặc tín hiệu âm thanh, trong đó các thành phần có sự liên kết với nhau dựa trên ngữ nghĩa hoặc quy luật cụ thể. Khác với các mạng nơ-ron truyền thống xử lý dữ liệu đầu vào độc lập, RNN có một vòng lặp bên trong, cho phép lưu trữ trạng thái và truyền tải thông tin qua từng bước thời gian.
+
+Tuy nhiên, mặc dù có khả năng ghi nhớ thông tin qua các bước thời gian, RNN truyền thống vẫn tồn tại một số hạn chế. Khi chuỗi dữ liệu có độ dài lớn, quá trình lan truyền ngược sai số qua nhiều bước thời gian có thể làm cho gradient trở nên rất nhỏ hoặc rất lớn. Hiện tượng này được gọi là mất mát gradient (vanishing gradient) hoặc bùng nổ gradient (exploding gradient). Khi gradient bị suy giảm quá mức, mô hình sẽ gặp khó khăn trong việc học và ghi nhớ các phụ thuộc dài hạn giữa các phần tử trong chuỗi. Điều này ảnh hưởng trực tiếp đến hiệu quả của RNN trong các bài toán xử lý văn bản, nơi mà ngữ nghĩa của một từ có thể phụ thuộc vào các từ xuất hiện ở vị trí xa trong câu hoặc đoạn văn. Để khắc phục những hạn chế này, các kiến trúc cải tiến như Bộ nhớ dài-ngắn hạn (Long Short-Term Memory -- LSTM) đã được đề xuất nhằm tăng cường khả năng ghi nhớ thông tin dài hạn và cải thiện hiệu suất của mô hình trên dữ liệu tuần tự.
+
+\subsection{Bộ nhớ dài-ngắn hạn (Long Short-Term Memory -- LSTM)}
+Bộ nhớ dài-ngắn hạn (Long Short-Term Memory -- LSTM)~\cite{hochreiter1997lstm} là một kiến trúc RNN được thiết kế nhằm khắc phục hạn chế trong việc ghi nhớ thông tin dài hạn. Trong khi RNN chỉ sử dụng một trạng thái ẩn đơn giản để truyền thông tin qua các bước thời gian, thì LSTM bổ sung một bộ nhớ tế bào (memory cell) cùng với ba cơ chế cổng kiểm soát: cổng quên, cổng đầu vào và cổng đầu ra. Các cổng này cho phép mô hình lựa chọn thông tin cần ghi nhớ hoặc loại bỏ, nhờ đó duy trì được ngữ cảnh trong các chuỗi dữ liệu dài.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{LSTM.jpeg}
+  \caption{Minh họa cấu trúc mạng LSTM~\cite{jm3}.}
+  \label{fig:LSTM}
+\end{figure}
+
+Điểm nổi bật của LSTM chính là khả năng học và lưu giữ các phụ thuộc dài hạn (long-term dependencies) trong dữ liệu tuần tự. Điều này đặc biệt hữu ích trong các ứng dụng yêu cầu hiểu ngữ cảnh kéo dài như xử lý ngôn ngữ tự nhiên (NLP), dịch máy, nhận dạng giọng nói, hay dự báo chuỗi thời gian.
+
+Bằng cách giải quyết bài toán gradient biến mất - vốn là rào cản lớn trong việc huấn luyện các mạng hồi tiếp sâu, LSTM không chỉ đảm bảo quá trình học ổn định mà còn đặc biệt hiệu quả trong các bài toán xử lý văn bản như phân loại tin tức.
+
+Trong cấu trúc của LSTM, mỗi cell được điều khiển bởi ba cổng chính nhằm kiểm soát luồng thông tin. Cổng quên (forget gate) có nhiệm vụ xác định những thông tin nào từ trạng thái trước đó cần được giữ lại hoặc loại bỏ. Cổng này giúp mô hình loại bỏ các thông tin không còn quan trọng, từ đó tránh nhiễu trong quá trình ghi nhớ dài hạn. Tiếp theo, cổng vào (input gate) quyết định những thông tin mới nào từ dữ liệu hiện tại sẽ được cập nhật vào bộ nhớ cell. Sự kết hợp giữa cổng quên và cổng vào cho phép LSTM duy trì và cập nhật trạng thái bộ nhớ một cách có chọn lọc. Cuối cùng, cổng ra (output gate) xác định phần thông tin nào từ bộ nhớ sẽ được sử dụng để tạo ra trạng thái ẩn tại thời điểm hiện tại, từ đó ảnh hưởng đến đầu ra của mô hình. Nhờ cơ chế điều khiển thông tin thông qua các cổng này, LSTM có khả năng học và ghi nhớ các phụ thuộc dài hạn trong chuỗi dữ liệu hiệu quả hơn so với RNN truyền thống.
+
+Tuy nhiên, LSTM tiêu chuẩn chỉ khai thác thông tin theo một chiều thời gian, tức là từ quá khứ đến hiện tại. Trong các bài toán xử lý ngôn ngữ tự nhiên, ngữ nghĩa của một từ không chỉ phụ thuộc vào các từ đứng trước mà còn có thể chịu ảnh hưởng bởi các từ xuất hiện phía sau trong câu. Do đó, để tận dụng thông tin ngữ cảnh theo cả hai hướng, kiến trúc Mạng LSTM hai chiều (Bidirectional LSTM -- BiLSTM) đã được đề xuất nhằm mở rộng khả năng biểu diễn của LSTM trong các bài toán phân loại văn bản như phát hiện tin giả.
+
+
+\subsection{Mạng LSTM hai chiều (Bidirectional LSTM)}
+
+Mạng LSTM hai chiều (Bidirectional LSTM – BiLSTM) là một kiến trúc mở rộng của LSTM nhằm khai thác thông tin ngữ cảnh theo cả hai hướng của chuỗi dữ liệu. Trong khi LSTM truyền thống chỉ xử lý chuỗi theo một chiều thời gian, thường là từ trái sang phải (từ quá khứ đến hiện tại), thì BiLSTM bao gồm hai mạng LSTM hoạt động song song. Một mạng xử lý chuỗi theo chiều thuận (forward), tức là từ phần tử đầu tiên đến phần tử cuối cùng; mạng còn lại xử lý chuỗi theo chiều ngược (backward), tức là từ cuối về đầu.
+
+Cụ thể, với mỗi bước thời gian, mạng LSTM thuận sẽ tạo ra một trạng thái ẩn dựa trên các phần tử đã xuất hiện trước đó trong chuỗi. Đồng thời, mạng LSTM ngược sẽ tạo ra một trạng thái ẩn khác dựa trên các phần tử xuất hiện phía sau. Hai trạng thái ẩn này sau đó được kết hợp lại, thường thông qua phép nối (concatenation), để tạo thành biểu diễn cuối cùng tại thời điểm đó. Nhờ cơ chế này, mô hình có thể đồng thời tận dụng thông tin từ cả ngữ cảnh trước và sau của một từ trong câu.
+
+Trong các bài toán xử lý ngôn ngữ tự nhiên, ý nghĩa của một từ không chỉ phụ thuộc vào các từ đứng trước mà còn chịu ảnh hưởng bởi các từ xuất hiện phía sau. Do đó, BiLSTM cho phép mô hình nắm bắt được mối quan hệ ngữ cảnh toàn diện hơn so với LSTM một chiều. Trong bài toán phát hiện tin giả, việc khai thác đầy đủ ngữ cảnh của câu và đoạn văn giúp mô hình hiểu rõ hơn nội dung và sắc thái của thông tin, từ đó nâng cao hiệu quả phân loại giữa tin “thật” và tin “giả”.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{bilstm.png}
+  \caption{Minh họa cấu trúc mạng LSTM hai chiều~\cite{article}.}
+  \label{fig:BiLSTM}
+\end{figure}
+
+
+\subsection{Cơ chế chú ý (Attention Mechanism)}
+
+
+Cơ chế chú ý (Attention Mechanism)~\cite{bahdanau2015attention} được đề xuất nhằm khắc phục hạn chế của các mô hình xử lý chuỗi khi phải nén toàn bộ thông tin của một câu vào một vector duy nhất. Thay vì xem mọi phần tử trong chuỗi có mức độ quan trọng như nhau, cơ chế chú ý cho phép mô hình tự động học trọng số cho từng bước thời gian, từ đó tập trung nhiều hơn vào những thành phần mang thông tin quan trọng đối với nhiệm vụ dự đoán.
+
+Giả sử $\{h_1, h_2, \dots, h_T\}$ là các trạng thái ẩn thu được từ mô hình LSTM hoặc BiLSTM. 
+Tại mỗi bước thời gian $t$, một điểm số $e_t$ được tính để đo mức độ liên quan của trạng thái ẩn $h_t$ đối với đầu ra cuối cùng:
+\begin{align}
+  e_t &= \mathbf{v}^{\top} \tanh(\mathbf{W}_a \overleftrightarrow{\mathbf{h}}_t)
+\end{align}
+
+Các điểm số này sau đó được chuẩn hóa thông qua hàm softmax để tạo thành trọng số chú ý $\alpha_t$:
+\begin{align}
+  \alpha_t &= \frac{\exp(e_t)}{\sum_{k=1}^{T} \exp(e_k)}
+\end{align}
+
+Cuối cùng, vector ngữ cảnh $c$ được tính bằng tổng có trọng số của các trạng thái ẩn:
+\begin{align}
+  \mathbf{c} &= \sum_{t=1}^{T} \alpha_t \overleftrightarrow{\mathbf{h}}_t
+\end{align}
+
+Trong đó, $\alpha_t$ phản ánh mức độ đóng góp của từng từ hoặc từng bước thời gian vào biểu diễn cuối cùng của câu. Những từ quan trọng sẽ nhận được trọng số lớn hơn, trong khi các từ ít liên quan sẽ có trọng số nhỏ hơn. Nhờ đó, mô hình có khả năng tập trung vào các thành phần mang tính quyết định trong văn bản thay vì xử lý toàn bộ chuỗi một cách đồng đều.
+
+Trong bài toán phát hiện tin giả, cơ chế chú ý giúp mô hình xác định những từ hoặc cụm từ có ảnh hưởng lớn đến nội dung và ý nghĩa của tin tức, chẳng hạn như các từ thể hiện quan điểm cực đoan, thông tin gây hiểu lầm hoặc các chi tiết bất thường. Điều này góp phần nâng cao khả năng phân biệt giữa tin ``thật'' và tin ``giả''.
+
+Đáng chú ý, cơ chế tự chú ý (self-attention) là nền tảng cốt lõi của kiến trúc Transformer. Thay vì chỉ tính trọng số dựa trên một trạng thái ẩn duy nhất, self-attention cho phép mỗi phần tử trong chuỗi tương tác trực tiếp với tất cả các phần tử khác, từ đó xây dựng biểu diễn ngữ cảnh toàn cục hiệu quả hơn. Đây chính là cơ sở cho các mô hình ngôn ngữ hiện đại như BERT và PhoBERT được trình bày ở phần tiếp theo.
+
+\subsection{Mô hình Transformer và PhoBERT}
+
+Transformer là một kiến trúc học sâu dựa trên cơ chế tự chú ý (self-attention)~\cite{vaswani2017attention}, được đề xuất nhằm khắc phục những hạn chế của các mô hình tuần tự như RNN và LSTM trong việc xử lý phụ thuộc dài hạn. Không giống như các mô hình xử lý dữ liệu theo từng bước thời gian, Transformer cho phép xử lý toàn bộ chuỗi đầu vào đồng thời, từ đó tăng khả năng song song hóa và cải thiện hiệu quả huấn luyện.
+
+Kiến trúc Transformer ban đầu bao gồm hai thành phần chính là encoder và decoder. Tuy nhiên, trong các mô hình ngôn ngữ tiền huấn luyện như BERT~\cite{devlin2019bert} và PhoBERT~\cite{phobert2020}, chỉ phần encoder được sử dụng để xây dựng biểu diễn ngữ cảnh cho văn bản. Do đó, trong phạm vi đề tài này, trọng tâm được đặt vào kiến trúc Transformer encoder.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{encoder.jpg}
+  \caption{Minh họa khối encoder của Transformer \cite{vaswani2017attention}.}
+  \label{fig:encoder}
+\end{figure}
+
+Hình trên minh họa cấu trúc của một khối encoder trong Transformer. Đầu vào của mô hình là các vector embedding của từ kết hợp với thông tin vị trí (positional encoding) nhằm bảo toàn thứ tự của các từ trong câu. Vì cơ chế self-attention không xử lý dữ liệu theo thứ tự tuần tự, positional encoding đóng vai trò cung cấp thông tin về vị trí tương đối của các từ trong chuỗi.
+
+Mỗi khối encoder bao gồm hai thành phần chính. Thành phần thứ nhất là cơ chế multi-head self-attention, cho phép mỗi từ trong câu tương tác trực tiếp với tất cả các từ khác để tính toán mức độ liên quan. Nhờ đó, mô hình có thể nắm bắt được các quan hệ ngữ nghĩa dài hạn trong văn bản mà không bị giới hạn bởi khoảng cách vị trí. Kết quả của lớp attention được đưa qua bước cộng và chuẩn hóa (Add \& Norm) nhằm ổn định quá trình huấn luyện.
+
+Thành phần thứ hai là mạng truyền thẳng theo từng vị trí (Positionwise Feed-Forward Network -- FFN), thực hiện các phép biến đổi phi tuyến trên từng vector đầu ra của lớp attention. Sau đó, một bước Add \& Norm tiếp theo được áp dụng. Các khối encoder này được xếp chồng nhiều lần nhằm tăng khả năng biểu diễn của mô hình.
+
+Nhờ khả năng học biểu diễn ngữ cảnh toàn cục thông qua self-attention và xử lý song song hiệu quả, Transformer đã trở thành nền tảng cho nhiều mô hình ngôn ngữ hiện đại. PhoBERT~\cite{phobert2020} được xây dựng dựa trên kiến trúc RoBERTa~\cite{liu2019roberta}, sử dụng Transformer encoder nhiều tầng và được tiền huấn luyện trên lượng lớn dữ liệu tiếng Việt.
+
+Trong bài toán phát hiện tin giả, vector tương ứng với token đặc biệt \texttt{[CLS]} được sử dụng làm biểu diễn toàn cục của văn bản và được đưa qua một lớp phân loại để dự đoán nhãn ``thật'' hoặc ``giả''. Việc tận dụng biểu diễn ngữ cảnh sâu từ PhoBERT giúp mô hình hiểu rõ hơn nội dung và sắc thái của văn bản, từ đó nâng cao hiệu quả phân loại.
+
+\section{Kết luận chương}
+
+Chương này đã trình bày nền tảng lý thuyết cho bốn mô hình so sánh trong nghiên cứu. Từ LR tuyến tính đến SVM phi tuyến, từ BiLSTM tuần tự đến Transformer song song, mỗi mô hình phản ánh một giai đoạn phát triển của NLP. Chương tiếp theo mô tả bộ dữ liệu và quy trình tiền xử lý.
+
+\clearpage
+
+% ============================================================
+%  CHƯƠNG 2 -- BỘ DỮ LIỆU VÀ TIỀN XỬ LÝ
+% ============================================================
+
+\chapter{Bộ dữ liệu và tiền xử lý}
+
+\section{Thu thập và mô tả bộ dữ liệu}
+
+\subsection{Nguồn dữ liệu}
+
+Bộ dữ liệu bao gồm các bài viết tiếng Việt được thu thập từ hai nguồn chính: các bài đăng công khai trên Facebook và một số bài báo cũ trong thời gian diễn ra COVID-19. Mỗi bản ghi chứa tối thiểu hai trường chính:
+
+\begin{itemize}[leftmargin=2em]
+  \item \texttt{text}: nội dung văn bản của bài viết.
+  \item \texttt{label}: nhãn phân loại (0 = Thật, 1 = Giả).
+\end{itemize}
+
+Sau khi thực hiện bước phân đoạn từ (\textit{word segmentation}), dữ liệu được lưu lại và được sử dụng làm đầu vào cho quá trình làm sạch và chia tập.
+
+Tổng số bản ghi ban đầu của bộ dữ liệu là \textbf{\nRaw{} mẫu}.
+
+\subsection{Phân phối nhãn}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{fig0a_overall_distribution}
+  \caption{Phân phối nhãn theo từng tập dữ liệu và tổng quan toàn bộ \nRaw{} mẫu}
+  \label{fig:label_dist}
+\end{figure}
+
+\clearpage
+
+Hình~\ref{fig:label_dist} minh họa phân phối nhãn tổng thể của toàn bộ tập dữ liệu. Có thể thấy, tỷ lệ tin thật và tin giả khá cân bằng, giúp đảm bảo mô hình không bị thiên lệch về một phía trong quá trình huấn luyện và đánh giá. Sự cân bằng này là yếu tố quan trọng để kết quả thực nghiệm phản ánh đúng hiệu quả của các phương pháp phân loại, đặc biệt trong bối cảnh dữ liệu thực tế thường có sự chênh lệch giữa các lớp.
+
+\section{Tiền xử lý văn bản}
+
+\subsection{Làm sạch và lọc dữ liệu}
+
+Trước khi thực hiện bước chia tập huấn luyện, dữ liệu được tiến hành làm sạch 
+nhằm loại bỏ nhiễu và hạn chế nguy cơ rò rỉ thông tin. Quy trình làm sạch bao gồm các bước sau:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textbf{Loại bỏ văn bản trùng lặp:} 
+  Các bản ghi có nội dung \texttt{text} giống hệt nhau được loại bỏ, 
+  chỉ giữ lại lần xuất hiện đầu tiên.
+
+  \item \textbf{Loại bỏ văn bản rỗng hoặc giá trị thiếu:} 
+  Các bản ghi có trường \texttt{text} bị thiếu (NaN) hoặc chuỗi rỗng 
+  sau khi loại bỏ khoảng trắng được loại khỏi tập dữ liệu.
+
+  \item \textbf{Loại bỏ văn bản quá ngắn:} 
+  Những văn bản có ít hơn 10 từ bị loại bỏ do không cung cấp đủ 
+  thông tin ngữ nghĩa cho bài toán phân loại. 
+  Ngưỡng này được cấu hình thông qua tham số \texttt{min\_word\_count = 10}.
+
+  \item \textbf{Đặt lại chỉ mục (index reset):} 
+  Sau khi hoàn tất các bước trên, dữ liệu được đánh lại chỉ mục 
+  nhằm đảm bảo tính nhất quán và thuận tiện cho quá trình xử lý tiếp theo.
+\end{enumerate}
+
+Sau quá trình làm sạch:
+
+\begin{itemize}[leftmargin=2em]
+  \item Số mẫu ban đầu: \nRaw
+  \item Số mẫu bị loại bỏ: \nRemoved
+  \item Số mẫu còn lại: \nClean
+\end{itemize}
+
+Quy trình làm sạch này giúp giảm nhiễu dữ liệu và đảm bảo rằng 
+quá trình huấn luyện cũng như đánh giá mô hình không bị ảnh hưởng 
+bởi các bản ghi trùng lặp hoặc không hợp lệ.
+
+\subsection{Phân đoạn từ bằng VnCoreNLP}
+
+Tiếng Việt là một ngôn ngữ đơn lập, trong đó các âm tiết được phân tách bằng khoảng trắng; tuy nhiên, ranh giới từ không hoàn toàn trùng khớp với ranh giới âm tiết. Chẳng hạn, cụm từ ``Việt Nam'' bao gồm hai âm tiết tách biệt nhưng được xem như một đơn vị từ vựng duy nhất. Đặc điểm này đặt ra thách thức đáng kể cho các hệ thống xử lý ngôn ngữ tự nhiên, bởi việc coi mỗi âm tiết là một từ độc lập có thể làm sai lệch cấu trúc ngữ nghĩa của văn bản. Do đó, phân đoạn từ là bước tiền xử lý cần thiết nhằm đảm bảo tính chính xác trong quá trình biểu diễn và trích xuất đặc trưng.
+
+Trong nghiên cứu này, quá trình phân đoạn từ được thực hiện bởi thư viện \texttt{py\_vncorenlp}, sử dụng bộ tách từ RDRSegmenter của VnCoreNLP~\cite{nguyen2018vncorenlp}. Đây cũng là công cụ phân đoạn được sử dụng trong giai đoạn tiền huấn luyện của mô hình PhoBERT. Việc áp dụng cùng một bộ phân đoạn giúp duy trì tính nhất quán giữa dữ liệu đầu vào và từ vựng của mô hình ngôn ngữ tiền huấn luyện, từ đó giảm thiểu sai lệch trong không gian biểu diễn và nâng cao khả năng tổng quát hóa của mô hình.
+
+Quy trình phân đoạn được triển khai theo các bước sau:
+
+\begin{itemize}[leftmargin=2em]
+  \item Tự động tải và lưu trữ mô hình VnCoreNLP tại thư mục cục bộ (\texttt{.vncorenlp}) nếu chưa tồn tại.
+  \item Thực hiện phân đoạn đối với cả hai trường \texttt{title} và \texttt{text}.
+  \item Chuẩn hóa văn bản trước khi phân đoạn, bao gồm:
+  \begin{itemize}
+    \item Loại bỏ dấu gạch dưới phát sinh từ các lần phân đoạn trước (nếu có).
+    \item Chuẩn hóa khoảng trắng nhằm đảm bảo tính đồng nhất định dạng.
+  \end{itemize}
+\end{itemize}
+
+Sau khi hoàn tất quá trình phân đoạn, các từ đa âm tiết được nối với nhau bằng dấu gạch dưới. Ví dụ:
+
+\begin{quote}
+\textit{Trước:} ``Chính phủ Việt Nam công bố chính sách mới'' \\
+\textit{Sau:} ``Chính\_phủ Việt\_Nam công\_bố chính\_sách mới''
+\end{quote}
+
+Bước phân đoạn từ đóng vai trò then chốt trong việc cải thiện chất lượng biểu diễn đầu vào, đặc biệt đối với các mô hình dựa trên cơ chế \textit{subword tokenization} như PhoBERT. Nhờ đảm bảo sự tương thích giữa dữ liệu đã xử lý và từ điển tiền huấn luyện, quá trình này góp phần nâng cao độ ổn định và hiệu quả của mô hình trong giai đoạn huấn luyện và suy diễn.
+
+\section{Chia tập dữ liệu}
+
+\subsection{Chia phân tầng}
+\label{sec:data_split}
+
+Sau khi thực hiện phân đoạn từ, dữ liệu được chia thành ba tập: 
+huấn luyện (train), kiểm định (validation) và kiểm tra (test). 
+Quy trình này bao gồm bước làm sạch dữ liệu trước khi chia tập.
+
+Việc chia tập được thực hiện theo chiến lược phân tầng 
+(\textit{stratified split}) nhằm duy trì phân phối nhãn đồng đều 
+trong cả ba tập. Cấu hình chia tập như sau:
+
+\begin{itemize}[leftmargin=2em]
+  \item Train: 70\%
+  \item Validation: 15\%
+  \item Test: 15\%
+  \item \texttt{random\_state = 42}
+\end{itemize}
+
+Quy trình chia được thực hiện theo hai bước. 
+Đầu tiên, 15\% dữ liệu được tách ra làm tập kiểm tra (test set). 
+Sau đó, từ 85\% dữ liệu còn lại, tiếp tục tách một phần tương ứng 
+15\% tổng dữ liệu ban đầu (xấp xỉ 17.6\% của phần còn lại) 
+để tạo tập kiểm định (validation set).
+
+Tham số \texttt{stratify = label} đảm bảo rằng phân phối nhãn 
+được bảo toàn giữa các tập:
+
+\[
+P_{\text{train}}(y) \approx 
+P_{\text{val}}(y) \approx 
+P_{\text{test}}(y)
+\]
+
+Nhờ đó, sai lệch phân phối nhãn giữa các tập được hạn chế, 
+giúp quá trình đánh giá mô hình phản ánh chính xác hơn 
+khả năng tổng quát hóa.
+
+Kết quả chia tập cuối cùng:
+
+\begin{itemize}[leftmargin=2em]
+  \item Train: \nTrain{} mẫu
+  \item Validation: \nVal{} mẫu
+  \item Test: \nTest{} mẫu
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig0b_split_distribution}
+  \caption{Phân phối nhãn trong các tập dữ liệu huấn luyện, kiểm định và kiểm tra}
+  \label{fig:split_distribution}
+\end{figure}
+
+
+Bảng~\ref{tab:dataset} mô tả thống kê chi tiết sau khi chia tập:
 \input{tables/table1_dataset}
 
-\subsection{Text Preprocessing}
+Bảng~\ref{tab:dataset} trình bày số lượng mẫu, phân phối nhãn và độ dài trung bình của văn bản trong từng tập dữ liệu. Có thể thấy rằng tin thật chiếm \pctReal\% và tin giả chiếm \pctFake\% ở cả ba tập (huấn luyện, kiểm định và kiểm tra), cho thấy chiến lược chia dữ liệu theo phương pháp phân tầng (\textit{stratified split}) đã bảo toàn phân phối nhãn ban đầu.
 
-Our preprocessing pipeline consists of three stages:
+Độ dài trung bình của văn bản trong tập kiểm định và kiểm tra (\avgLenVal\ từ đối với tập kiểm định và \avgLenTest\ từ đối với tập kiểm tra) cao hơn nhẹ so với tập huấn luyện (\avgLenTrain\ từ), phản ánh sự đa dạng về cấu trúc văn bản trong toàn bộ dữ liệu. Mặc dù tồn tại sự mất cân bằng lớp ở mức vừa phải, tỷ lệ này không quá nghiêm trọng và được xử lý thông qua cơ chế trọng số lớp (\textit{class weighting}) trong quá trình huấn luyện nhằm giảm thiểu sai lệch dự đoán.
+
+\subsection{Kiểm tra rò rỉ dữ liệu}
+Để đảm bảo tính khách quan và độ tin cậy của quá trình đánh giá, nhóm tiến hành kiểm tra hiện tượng rò rỉ dữ liệu (\textit{data leakage}) giữa các tập huấn luyện, kiểm định và kiểm tra sau khi thực hiện chia dữ liệu.
+
+Cụ thể, toàn bộ nội dung văn bản trong từng tập (Train, Validation, Test) được chuyển đổi thành các tập hợp (\textit{set}) dựa trên giá trị của trường \texttt{text}. Sau đó, nhóm thực hiện phép giao giữa từng cặp tập dữ liệu nhằm phát hiện các bản ghi trùng lặp:
+
+\begin{itemize}
+    \item Train và Validation
+    \item Train và Test
+    \item Validation và Test
+\end{itemize}
+
+Kết quả cho thấy:
+
+\[
+\text{Train} \cap \text{Validation} = \varnothing
+\]
+\[
+\text{Train} \cap \text{Test} = \varnothing
+\]
+\[
+\text{Validation} \cap \text{Test} = \varnothing
+\]
+
+Không phát hiện văn bản trùng lặp giữa bất kỳ cặp tập dữ liệu nào.
+
+Việc kiểm tra rò rỉ dữ liệu đặc biệt quan trọng trong các bài toán phân loại văn bản, bởi sự xuất hiện của các mẫu trùng lặp giữa tập huấn luyện và tập kiểm tra có thể dẫn đến đánh giá thiên lệch (\textit{biased evaluation}). Khi đó, mô hình có thể đạt hiệu năng cao một cách giả tạo do đã ``ghi nhớ'' nội dung từ tập huấn luyện, thay vì thực sự học được các đặc trưng có khả năng tổng quát hóa. Do đó, việc đảm bảo tính độc lập giữa các tập dữ liệu là điều kiện tiên quyết để đánh giá chính xác năng lực của mô hình.
+
+\section{Kết luận chương}
+
+Chương này đã trình bày toàn bộ quy trình chuẩn bị dữ liệu cho bài toán 
+phát hiện tin giả tiếng Việt, bao gồm phân đoạn từ, làm sạch và chia tập 
+theo chiến lược phân tầng. Dữ liệu được phân đoạn bằng RDRSegmenter nhằm 
+đảm bảo tính tương thích với mô hình PhoBERT, sau đó được loại bỏ các 
+văn bản trùng lặp, rỗng hoặc quá ngắn nhằm giảm nhiễu và nâng cao chất lượng đầu vào.
+
+Tập dữ liệu sau làm sạch được chia theo tỷ lệ 70\%–15\%–15\% cho các tập 
+huấn luyện, kiểm định và kiểm tra với \texttt{random\_state = 42}. 
+Đồng thời, hệ thống tiến hành kiểm tra nghiêm ngặt rò rỉ dữ liệu giữa các tập 
+để đảm bảo không tồn tại giao nhau về nội dung văn bản.
+
+Quy trình này đảm bảo tính nhất quán, khách quan và khả năng tái lập 
+(\textit{reproducibility}), tạo nền tảng vững chắc cho quá trình huấn luyện 
+và đánh giá mô hình ở chương tiếp theo.
+
+\clearpage
+% ============================================================
+%  CHƯƠNG 3 -- PHƯƠNG PHÁP ĐỀ XUẤT
+% ============================================================
+
+\chapter{Xác định tin giả }
+
+Chương này bắt đầu bằng việc giới thiệu sơ lược bài toán phát hiện tin giả tiếng Việt cũng như ý tưởng tiếp cận của nhóm cho bài toán này. Sau đó, một số phương pháp trích chọn đặc trưng thủ công tiêu biểu và các mô hình học sâu phổ biến mà nhóm áp dụng, bao gồm các mô hình truyền thống và mô hình ngôn ngữ tiền huấn luyện, sẽ được tóm lược thông qua lịch sử hình thành và nguyên lý hoạt động của chúng.
+
+\section{Phương pháp đề xuất}
+
+Bài toán phát hiện tin giả là một trong những bài toán quan trọng thuộc lĩnh vực xử lý ngôn ngữ tự nhiên, đóng vai trò thiết yếu trong bối cảnh thông tin trực tuyến ngày càng phát triển mạnh mẽ. Sự lan truyền nhanh chóng của các nội dung sai lệch có thể gây ảnh hưởng tiêu cực đến nhận thức cộng đồng và đời sống xã hội. Vì vậy, việc không ngừng nghiên cứu và cải thiện các phương pháp phát hiện tin giả là điều cần thiết. 
+
+Cho đến nay, đã có nhiều kỹ thuật trích xuất đặc trưng văn bản được các nhà nghiên cứu đề xuất và áp dụng hiệu quả, chẳng hạn như \textit{Bag-of-Words}, \textit{TF-IDF} hay các biểu diễn dựa trên \textit{word embedding}. Bên cạnh đó, các mô hình học sâu, đặc biệt là các mạng nơ-ron hồi tiếp và các mô hình ngôn ngữ tiền huấn luyện như \textit{Transformer}, cũng chứng minh được tính vượt trội thông qua những kết quả đầy hứa hẹn trên nhiều bộ dữ liệu khác nhau. 
+
+Vì thế, để lựa chọn phương pháp phù hợp và hiệu quả nhất cho bài toán phát hiện tin giả tiếng Việt, nhóm quyết định tiến hành so sánh hiệu năng giữa các phương pháp trích chọn đặc trưng thủ công kết hợp với các mô hình phân lớp truyền thống và các mô hình học sâu hiện đại. Đối với các phương pháp trích chọn đặc trưng thủ công, nhóm sẽ triển khai các thuật toán phân lớp như \textit{Logistic Regression}, \textit{SVM} và các mô hình học sâu như \textit{BiLSTM} và \textit{PhoBERT} nhằm đánh giá và phân tích hiệu năng một cách toàn diện.
+
+
+\section{Lý do lựa chọn các nhóm mô hình}
+\label{sec:model_selection}
+
+Trong bài toán phân loại văn bản, đặc biệt là phát hiện tin giả,
+việc lựa chọn mô hình cần cân bằng giữa ba yếu tố chính:
+
+\begin{itemize}
+    \item \textit{Khả năng diễn giải} của mô hình
+    \item \textit{Chi phí tính toán}
+    \item \textit{Năng lực biểu diễn ngữ nghĩa}
+\end{itemize}
+
+Dựa trên các tiêu chí này, nghiên cứu so sánh hai nhóm phương pháp chính:
 
 \begin{enumerate}
-    \item \textbf{Text Cleaning}: Removal of URLs, HTML tags, special characters, and excessive whitespace. All text is converted to lowercase.
-    \item \textbf{Word Segmentation}: Vietnamese text is segmented using VnCoreNLP~\cite{vncorenlp2018}, which identifies compound words and connects them with underscores (e.g., ``Vi\d{\^e}t\_Nam'', ``th\^ong\_tin'').
-    \item \textbf{Normalization}: Unicode normalization and standardization of punctuation and spacing.
+    \item \textbf{Nhóm học máy truyền thống}
+
+    Bao gồm:
+    \begin{itemize}
+        \item Logistic Regression
+        \item Support Vector Machine
+    \end{itemize}
+
+    Đầu vào của các mô hình này là đặc trưng TF-IDF~\cite{sparkjones1972idf}.
+    Hai mô hình có nền tảng lý thuyết vững chắc, hoạt động ổn định trên dữ
+    liệu văn bản có đặc trưng chiều cao và thưa, đồng thời thuận lợi cho việc
+    phân tích đóng góp của đặc trưng và kiểm soát hiện tượng quá khớp
+    ~\cite{cortes1995svm}.
+
+    Vì vậy, chúng được sử dụng như các \textit{strong baselines} nhằm đánh
+    giá mức cải thiện thực sự của các phương pháp phức tạp hơn.
+
+    \item \textbf{Nhóm học sâu}
+
+    Bao gồm:
+    \begin{itemize}
+        \item BiLSTM
+        \item PhoBERT
+    \end{itemize}
+
+    \textbf{BiLSTM} kế thừa khả năng ghi nhớ phụ thuộc dài hạn của
+    LSTM~\cite{hochreiter1997lstm}. Khi kết hợp với cơ chế attention,
+    mô hình có thể tập trung vào các thành phần thông tin quan trọng
+    trong chuỗi văn bản~\cite{bahdanau2015attention}.
+
+    \textbf{PhoBERT} là mô hình ngôn ngữ tiền huấn luyện dành riêng cho
+    tiếng Việt, được xây dựng trên nền tảng Transformer/RoBERTa
+    ~\cite{vaswani2017attention,liu2019roberta,phobert2020}. Mô hình này
+    cho phép khai thác ngữ cảnh hai chiều ở mức sâu và thường đạt hiệu
+    năng cao trong các tác vụ phân loại tiếng Việt.
 \end{enumerate}
 
-\subsection{Feature Engineering}
+Việc đặt hai nhóm mô hình trong cùng một khung thực nghiệm giúp trả lời
+ba câu hỏi nghiên cứu chính:
 
-\subsubsection{TF-IDF Features (for LR and SVM)}
+\begin{enumerate}
+    \item Mức độ cạnh tranh của các mô hình truyền thống khi đặc trưng
+    được thiết kế tốt.
+    \item Lợi ích biên của học biểu diễn ngữ cảnh sâu so với đặc trưng
+    TF-IDF.
+    \item Giá trị gia tăng của tiền huấn luyện tiếng Việt (PhoBERT)
+    đối với bài toán phát hiện tin giả trong điều kiện dữ liệu thực tế.
+\end{enumerate}
+\section{Tổng quan kiến trúc hệ thống}
 
-We employ Term Frequency--Inverse Document Frequency (TF-IDF) vectorization with the following configuration:
-\begin{itemize}[leftmargin=*]
-    \item Vocabulary size: 10,000 terms
-    \item N-gram range: (1, 2) --- unigrams and bigrams
-    \item Sublinear TF scaling: $\text{tf}(t,d) = 1 + \log(\text{tf}(t,d))$
-    \item L2 normalization applied to each document vector
+Hệ thống được thiết kế theo ba giai đoạn chính:
+
+\begin{enumerate}[leftmargin=3.3em]
+  \item \textbf{Tiền xử lý:} Văn bản được làm sạch nhằm loại bỏ các ký tự không cần thiết, chuẩn hóa dữ liệu và thực hiện phân đoạn từ tiếng Việt. Sau đó, tập dữ liệu được chia thành các tập huấn luyện, kiểm định và kiểm tra theo tỷ lệ phù hợp nhằm đảm bảo tính khách quan trong quá trình đánh giá mô hình.
+
+  \item \textbf{Trích xuất đặc trưng:} Tùy theo từng mô hình, nhóm áp dụng các phương pháp biểu diễn văn bản khác nhau. Cụ thể, \textit{TF-IDF} được sử dụng cho các mô hình \textit{Logistic Regression} và \textit{SVM}; \textit{Word Embedding} (FastText) được sử dụng cho mô hình \textit{BiLSTM}; và phương pháp mã hóa \textit{BPE} (\textit{Byte-Pair Encoding}) được sử dụng trong mô hình \textit{PhoBERT} nhằm khai thác thông tin ngữ cảnh ở mức độ sâu hơn.
+
+  \item \textbf{Phân loại:} Bốn mô hình bao gồm \textit{Logistic Regression}, \textit{SVM}, \textit{BiLSTM} và \textit{PhoBERT} được huấn luyện độc lập trên cùng một tập dữ liệu và được đánh giá thông qua các chỉ số như \textit{Accuracy}, \textit{F1-score} và \textit{ROC-AUC}. Dựa trên các kết quả thu được, nhóm tiến hành so sánh và phân tích hiệu năng của từng phương pháp.
+\end{enumerate}
+
+\section{Trích xuất đặc trưng}
+
+\subsection{TF-IDF cho mô hình học máy truyền thống}
+
+\subsubsection{Lý do lựa chọn TF-IDF}
+
+Trong các bài toán phân loại văn bản, TF-IDF được xem là một phương pháp
+biểu diễn đặc trưng cơ bản nhưng hiệu quả, đặc biệt khi kết hợp với các
+mô hình phân lớp tuyến tính như Hồi quy Logistic (Logistic Regression) và Máy vectơ hỗ trợ (Support Vector Machine). Phương pháp này biểu diễn văn bản dưới dạng các vector thưa
+(\textit{sparse vectors}), trong đó mỗi chiều phản ánh mức độ quan trọng
+của một từ trong văn bản so với toàn bộ tập dữ liệu.
+
+Mặc dù các phương pháp biểu diễn hiện đại như nhúng từ (word embedding) hay các mô
+hình ngôn ngữ tiền huấn luyện có khả năng khai thác ngữ nghĩa sâu hơn,
+TF-IDF vẫn được sử dụng rộng rãi như một baseline mạnh trong nhiều nghiên
+cứu phân loại văn bản. Đặc biệt đối với các mô hình tuyến tính, biểu diễn
+TF-IDF giúp khai thác hiệu quả các tín hiệu từ vựng (\textit{lexical cues})
+có tính phân biệt cao trong văn bản.
+
+Trong bài toán phát hiện tin giả, các cụm từ giật tít, các mẫu ngôn ngữ
+gây chú ý hoặc các từ khóa đặc trưng thường đóng vai trò quan trọng trong
+việc phân biệt giữa tin thật và tin giả. Các tín hiệu này có thể được nắm
+bắt hiệu quả thông qua các đặc trưng n-gram của TF-IDF. Vì vậy, TF-IDF
+kết hợp với Logistic Regression và SVM được sử dụng như một baseline
+mạnh nhằm so sánh với các phương pháp học sâu trong nghiên cứu này.
+
+\subsubsection{Cấu hình TF-IDF}
+
+Để đảm bảo hiệu quả biểu diễn đặc trưng cho các mô hình học máy truyền
+thống, cấu hình TF-IDF được lựa chọn dựa trên kết quả \textit{ablation
+study} (Mục~\ref{sec:ablation}) nhằm tối ưu hóa hiệu năng phân loại.
+Cụ thể, các siêu tham số được xác định như sau:
+
+\begin{itemize}[leftmargin=2em]
+
+  \item \textbf{Kích thước từ điển:}
+  Số lượng đặc trưng được giới hạn ở \tfidfMaxFeatures{} từ/ngữ phổ biến
+  nhất, giúp giảm nhiễu và kiểm soát độ phức tạp của mô hình.
+
+  \item \textbf{N-gram:}
+  Sử dụng kết hợp đơn từ (unigram) và bigram (n-gram = (1, 2)) nhằm khai
+  thác cả thông tin ngữ nghĩa đơn lẻ và các cụm từ liên tiếp, từ đó tăng
+  khả năng nhận diện các mẫu ngữ cảnh đặc trưng của tin giả.
+
+  \item \textbf{Tần số tài liệu:}
+  Các từ xuất hiện quá ít (\texttt{min\_df=5}) hoặc quá phổ biến
+  (\texttt{max\_df=0.95}) đều bị loại bỏ, đảm bảo chỉ giữ lại các đặc
+  trưng có giá trị phân biệt cao.
+
+  \item \textbf{TF sublinear:}
+  Áp dụng phép biến đổi $\text{TF} = 1 + \log f_{t,d}$ nhằm giảm ảnh
+  hưởng của các từ xuất hiện nhiều lần trong cùng một văn bản, giúp
+  mô hình tập trung vào sự hiện diện của từ hơn là tần suất tuyệt đối.
+
 \end{itemize}
 
-The impact of these design choices is evaluated in our ablation study (Section~\ref{sec:ablation}).
+Việc lựa chọn các tham số này được thực hiện một cách hệ thống nhằm cân
+bằng giữa khả năng biểu diễn đặc trưng và nguy cơ quá khớp, đồng thời
+đảm bảo tính tổng quát hóa của mô hình trên các tập dữ liệu kiểm định
+và kiểm tra.
 
-\subsubsection{Word Embeddings (for BiLSTM)}
+\subsection{Nhúng từ (Word Embedding) cho BiLSTM}
 
-For the BiLSTM model, we build a vocabulary from the training data and represent text as sequences of token indices:
-\begin{itemize}[leftmargin=*]
-    \item Vocabulary size: 22,852 unique words
-    \item Embedding dimension: 256 (learned during training)
-    \item Maximum sequence length: 200 tokens (with padding/truncation)
+Để phục vụ cho mô hình BiLSTM, biểu diễn văn bản được thực hiện thông qua kỹ thuật nhúng từ (word embedding) kết hợp giữa embedding tiền huấn luyện và học từ dữ liệu. Từ điển được xây dựng dựa trên toàn bộ tập train, loại bỏ các từ xuất hiện dưới 2 lần nhằm giảm nhiễu và kiểm soát kích thước không gian từ vựng, kết quả thu được \textbf{\bilstmVocab{}} từ.
+
+Hai token đặc biệt được bổ sung: \texttt{<PAD>} (index 0) dùng để đệm các chuỗi ngắn và \texttt{<UNK>} (index 1) đại diện cho các từ ngoài từ điển. Mỗi văn bản sau tiền xử lý được chuyển đổi thành một chuỗi số nguyên với độ dài tối đa \bilstmMaxSeq, đảm bảo tính nhất quán về kích thước đầu vào cho mô hình tuần tự.
+
+Các vector embedding có chiều \bilstmEmbDim{} được khởi tạo từ bộ embedding tiền huấn luyện FastText~\cite{bojanowski2017fasttext} phiên bản tiếng Việt (\texttt{cc.vi.300.bin}). FastText sử dụng thông tin n-gram ký tự để xây dựng biểu diễn từ, cho phép xử lý hiệu quả các từ ngoài từ điển bằng cách tổng hợp vector của các n-gram thành phần. Ma trận embedding tiền huấn luyện được nạp vào lớp embedding của mô hình và tiếp tục được tinh chỉnh trong quá trình huấn luyện thông qua lan truyền ngược, cho phép mô hình điều chỉnh biểu diễn ngữ nghĩa phù hợp với nhiệm vụ phân loại tin giả. Việc kết hợp embedding tiền huấn luyện với fine-tuning giúp tận dụng tri thức ngôn ngữ học được từ ngữ liệu lớn (Common Crawl), đồng thời thích ứng tốt với đặc thù dữ liệu tiếng Việt trong miền bài toán.
+
+\subsection{Tokenization PhoBERT (BPE)}
+
+Quá trình mã hóa đầu vào cho PhoBERT sử dụng thuật toán Byte-Pair Encoding (BPE)~\cite{sennrich2016bpe} với từ điển gồm 64.000 subword, cho phép mô hình xử lý hiệu quả các từ ngoài từ điển và hiện tượng đa hình trong tiếng Việt. Mỗi văn bản được tiền xử lý như sau:
+\begin{itemize}[leftmargin=2em]
+  \item Thêm token đặc biệt \texttt{[CLS]} ở đầu và \texttt{[SEP]} ở cuối chuỗi để đánh dấu ranh giới văn bản.
+  \item Chuỗi token được cắt hoặc đệm về độ dài cố định \phobertMaxSeq{} nhằm đảm bảo tính nhất quán đầu vào.
+  \item Sinh \texttt{attention\_mask} để phân biệt token thực (1) và token đệm (0), hỗ trợ quá trình attention trong mô hình.
+\end{itemize}
+Chiến lược này giúp PhoBERT tận dụng tối đa thông tin ngữ cảnh và đảm bảo khả năng tổng quát hóa trên dữ liệu tiếng Việt đa dạng.
+
+\section{Các mô hình phân loại}
+
+\subsection{Các mô hình học máy truyền thống}
+
+\subsubsection{Hồi quy Logistic}
+
+Mô hình hồi quy Logistic sử dụng điều chuẩn L2 nhằm hạn chế quá khớp và áp dụng cơ chế cân bằng lớp (\texttt{class\_weight=`balanced'}) để xử lý mất cân bằng nhãn. Các siêu tham số được lựa chọn thông qua GridSearchCV 5-fold, đảm bảo tính khách quan và tổng quát hóa:
+
+\begin{itemize}[leftmargin=2em]
+  \item Lưới tìm kiếm: $C \in \{0.5;\ 1;\ 5;\ 10;\ 20;\ 50\}$, solver $\in \{\text{liblinear},\ \text{saga}\}$
+  \item Cấu hình tối ưu: $C = \lrBestC$, solver = saga, max\_iter = 3000
 \end{itemize}
 
-\subsubsection{PhoBERT Tokenization}
+Việc lựa chọn này giúp mô hình đạt hiệu năng tốt nhất trên tập kiểm định mà không bị phụ thuộc vào phân phối nhãn.
 
-PhoBERT uses the SentencePiece~\cite{kudo2018sentencepiece} subword tokenizer:
-\begin{itemize}[leftmargin=*]
-    \item Tokenizer: \texttt{vinai/phobert-base}
-    \item Maximum sequence length: 256 tokens
-    \item Attention masks generated for variable-length inputs
+\subsubsection{Máy vectơ hỗ trợ}
+
+Mô hình máy vectơ hỗ trợ (SVM) sử dụng LinearSVC với trọng số lớp cân bằng để giảm thiểu ảnh hưởng của mất cân bằng nhãn. Quá trình tối ưu siêu tham số được thực hiện qua GridSearchCV với 5-fold cross-validation:
+
+\begin{itemize}[leftmargin=2em]
+  \item Lưới tìm kiếm: $C \in \{0.1;\ 0.5;\ 1;\ 2;\ 5;\ 10\}$
+  \item Cấu hình tối ưu: $C = \svmBestC$, LinearSVC kết hợp hiệu chuẩn xác suất (calibration)
 \end{itemize}
 
-\subsection{Models}
+Chiến lược này đảm bảo SVM vừa tận dụng được đặc trưng TF-IDF vừa duy trì khả năng phân biệt tốt giữa các lớp.
 
-\subsubsection{Logistic Regression (LR)}
+\subsection{Các mô hình học sâu}
 
-A linear model with $L_2$ regularization, trained on TF-IDF features:
-\begin{itemize}[leftmargin=*]
-    \item Regularization: $C = 10$ (selected via 5-fold cross-validation grid search)
-    \item Solver: L-BFGS
-    \item Class weights: Balanced (to handle class imbalance)
+Như đã phân tích ở Mục~\ref{sec:model_selection}, BiLSTM và PhoBERT được lựa chọn lần lượt
+làm đại diện cho nhóm mô hình tuần tự và nhóm mô hình ngôn ngữ tiền
+huấn luyện. Phần này trình bày chi tiết kiến trúc và cấu hình huấn
+luyện của hai mô hình.
+
+\subsubsection{Mạng BiLSTM}
+
+Kiến trúc BiLSTM được thiết kế gồm các thành phần chính sau:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textbf{Embedding:} Ma trận embedding kích thước $(V \times \bilstmEmbDim)$, cho phép học biểu diễn ngữ nghĩa từ dữ liệu.
+  \item \textbf{BiLSTM \bilstmLayers{} tầng:} Mỗi tầng có hidden\_dim=\bilstmHiddenDim{} cho hai chiều (forward/backward), tổng đầu ra mỗi bước là $2\times\bilstmHiddenDim$.
+  \item \textbf{Soft Attention:} Cơ chế soft attention tính trọng số $\alpha_t$ cho từng bước thời gian, giúp mô hình tập trung vào các từ/cụm từ quan trọng.
+  \item \textbf{Classifier:} Hai lớp dropout~\cite{srivastava2014dropout} (0.3) xen kẽ với các lớp tuyến tính và ReLU, giúp giảm overfitting và tăng khả năng biểu diễn phi tuyến.
+\end{enumerate}
+
+Chiến lược huấn luyện sử dụng AdamW~\cite{loshchilov2019adamw}
+($\eta = 10^{-3}$, weight\_decay=$10^{-4}$), hàm mất mát CrossEntropy
+có trọng số lớp để xử lý mất cân bằng, batch=64, tối đa 20 epochs với
+dừng sớm (patience=5). Ngoài ra, áp dụng ReduceLROnPlateau
+(factor=0.5, patience=2) để điều chỉnh tốc độ học và gradient clipping
+(max\_norm=1.0) nhằm đảm bảo ổn định quá trình tối ưu.
+
+\subsubsection{Tinh chỉnh PhoBERT}
+
+Kiến trúc PhoBERT fine-tuning gồm hai thành phần chính:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textbf{Encoder PhoBERT:} 12 lớp Transformer encoder, đầu ra vector \texttt{[CLS]} 768 chiều đại diện toàn cục cho văn bản.
+  \item \textbf{Classifier Head:} Hai lớp Dropout (0.1) xen kẽ với Linear (768→384→2) và ReLU, giúp tăng khả năng biểu diễn phi tuyến và giảm overfitting.
+\end{enumerate}
+
+Chiến lược huấn luyện sử dụng AdamW~\cite{loshchilov2019adamw}
+($\eta = 3 \times 10^{-5}$, weight\_decay=0.01), Linear Warmup (10\%),
+batch=16, tối đa 8 epochs, gradient accumulation steps=4, gradient
+clipping (max\_norm=1.0) và dừng sớm (patience=2).
+
+\section{Chiến lược xử lý mất cân bằng nhãn}
+
+Mặc dù tỷ lệ nhãn trong bộ dữ liệu (\pctReal\% Thật / \pctFake\% Giả) không quá chênh lệch, sự mất cân bằng vẫn có thể ảnh hưởng đến khả năng phân loại, đặc biệt đối với lớp thiểu số (tin giả). Để giảm thiểu tác động này, nhóm áp dụng hai chiến lược bổ trợ nhau:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Chia phân tầng (\textit{stratified split}):} Dữ liệu được chia thành các tập huấn luyện, kiểm định và kiểm tra theo phương pháp phân tầng, đảm bảo tỷ lệ giữa các lớp được bảo toàn đồng đều trong từng tập. Cách tiếp cận này ngăn ngừa tình trạng mô hình bị thiên lệch do sự phân bố nhãn không đều giữa các tập.
+  
+  \item \textbf{Trọng số lớp trong hàm mất mát (\textit{class weighting}):} Mỗi lớp $c$ được gán trọng số nghịch đảo tỷ lệ với tần suất xuất hiện:
+  \[
+    w_c = \frac{N}{K \cdot N_c}
+  \]
+  trong đó $N$ là tổng số mẫu, $K$ là số lớp và $N_c$ là số mẫu thuộc lớp $c$. Trọng số này được tích hợp trực tiếp vào hàm mất mát CrossEntropy, tăng mức phạt cho các mẫu thuộc lớp thiểu số, từ đó cải thiện recall cho lớp tin giả. Đối với các mô hình truyền thống (LR, SVM), cơ chế tương đương được thực hiện thông qua tham số \texttt{class\_weight=`balanced'} trong scikit-learn~\cite{pedregosa2011sklearn}.
 \end{itemize}
 
-\subsubsection{Support Vector Machine (SVM)}
+Sự kết hợp hai chiến lược trên giúp đảm bảo quá trình huấn luyện và đánh giá phản ánh đúng thực tế phân phối nhãn, đồng thời giảm thiểu nguy cơ mô hình bỏ sót các trường hợp thuộc lớp thiểu số.
 
-A kernel-based classifier trained on TF-IDF features:
-\begin{itemize}[leftmargin=*]
-    \item Kernel: Radial Basis Function (RBF)
-    \item Parameters: $C = 10$, $\gamma = \text{scale}$ (selected via grid search)
-    \item Probability calibration enabled via Platt scaling
-    \item Class weights: Balanced
-\end{itemize}
+\section{Kết luận chương}
 
-\subsubsection{Bidirectional LSTM (BiLSTM)}
+Chương này đã trình bày đầy đủ từ trích xuất đặc trưng đến kiến trúc và tham số huấn luyện của bốn mô hình. Thiết kế cho phép so sánh công bằng trên cùng bộ dữ liệu và cùng quy trình đánh giá. Chương sau trình bày kết quả thực nghiệm.
 
-A deep learning model with attention mechanism:
-\begin{itemize}[leftmargin=*]
-    \item Architecture: 2-layer bidirectional LSTM with self-attention
-    \item Embedding dimension: 256; Hidden dimension: 128
-    \item Dropout: 0.3 (embedding, inter-layer, classifier)
-    \item Optimizer: AdamW with learning rate $10^{-3}$ and weight decay $10^{-5}$
-    \item Learning rate scheduler: ReduceLROnPlateau (factor=0.5, patience=2)
-    \item Early stopping: patience 5 epochs, monitoring validation F1
-    \item Gradient clipping: max norm 1.0
-\end{itemize}
+\clearpage
+% ============================================================
+%  CHƯƠNG 4 -- KẾT QUẢ THỰC NGHIỆM
+% ============================================================
 
-\subsubsection{PhoBERT}
+\chapter{Kết quả thực nghiệm}
 
-A fine-tuned pre-trained transformer model:
-\begin{itemize}[leftmargin=*]
-    \item Base model: \texttt{vinai/phobert-base}~\cite{phobert2020} (768 hidden dimensions, 12 attention heads, 12 layers)
-    \item Classifier: 2-layer MLP on [CLS] token output
-    \item Optimizer: AdamW with learning rate $2 \times 10^{-5}$, weight decay 0.01
-    \item Warmup: Linear schedule with warmup ratio 0.1
-    \item Training: 5 epochs, batch size 16
-    \item Differential parameter groups: BERT layers with weight decay, bias/LayerNorm without
-\end{itemize}
+\section{Môi trường thực nghiệm}
+
+% TODO: Verify software version numbers — Python 3.14.2 and PyTorch 2.10
+% do not exist as of 2025. Replace with actual versions used in experiments.
+Thực nghiệm được thực hiện trên hệ thống: GPU NVIDIA (CUDA 12.8), RAM 32~GB, Python 3.14.2, PyTorch 2.10, Transformers 4.44, scikit-learn~\cite{pedregosa2011sklearn} 1.8.
 
 \input{tables/table4_hyperparams}
 
-% ============================================================
-\section{Results}
-% ============================================================
-
-\subsection{Overall Performance}
-
-Table~\ref{tab:results} presents the performance of all models on the test set. PhoBERT achieves the highest scores across all metrics, with 90.58\% accuracy and 0.8961 macro F1-score.
-
-\input{tables/table2_results}
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/fig1_model_comparison.pdf}
-    \caption{Performance comparison across all models and metrics. PhoBERT consistently outperforms all other approaches.}
-    \label{fig:model_comparison}
-\end{figure}
-
-Key observations:
-\begin{itemize}[leftmargin=*]
-    \item PhoBERT outperforms the best baseline (SVM) by 3.0 percentage points in accuracy and 3.2 points in F1-score
-    \item SVM, LR, and BiLSTM achieve similar performance ($\sim$87\% accuracy), suggesting that the choice between traditional ML and basic deep learning has limited impact
-    \item BiLSTM achieves the highest recall among non-transformer models, while SVM achieves the highest precision
-\end{itemize}
-
-\subsection{Statistical Significance}
-
-To ensure the observed performance differences are not due to random chance, we apply McNemar's test for pairwise classifier comparison. Since we perform 6 pairwise comparisons, we apply \textbf{Holm-Bonferroni correction} to control the family-wise error rate (FWER)~\cite{holm1979simple}.
-
-\begin{table}[h]
-\centering
-\caption{McNemar's Test Results with Holm-Bonferroni Correction}
-\label{tab:mcnemar}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Comparison} & $\chi^2$ & \textbf{p (raw)} & \textbf{p (adj.)} & \textbf{Sig.} \\
-\midrule
-PhoBERT vs LR     & 6.51 & 0.011 & 0.064 & No$^\dagger$ \\
-PhoBERT vs SVM    & 6.33 & 0.012 & 0.064 & No$^\dagger$ \\
-PhoBERT vs BiLSTM & 6.39 & 0.011 & 0.064 & No$^\dagger$ \\
-LR vs SVM         & 0.09 & 0.771 & 1.000 & No \\
-LR vs BiLSTM      & 0.01 & 0.918 & 1.000 & No \\
-SVM vs BiLSTM     & 0.04 & 0.842 & 1.000 & No \\
-\bottomrule
-\multicolumn{4}{l}{\small $^\dagger$Marginally non-significant at $\alpha = 0.05$ after Holm-Bonferroni correction} \\
-\end{tabular}
-\end{table}
-
-While the raw McNemar's test shows significant differences between PhoBERT and all baselines ($p \approx 0.011$), after Holm-Bonferroni correction the adjusted p-values are 0.064, which is marginally above the $\alpha = 0.05$ threshold. This result demonstrates the importance of applying multiple comparison correction: without it, one would incorrectly conclude significance. Nevertheless, the consistent direction of improvement across all comparisons, combined with the non-overlapping bootstrap confidence intervals (Table~\ref{tab:bootstrap}), provides practical evidence that PhoBERT's advantage is real, even if it does not reach strict statistical significance. The differences among LR, SVM, and BiLSTM are clearly not significant ($p_{\text{adj}} = 1.000$), confirming that these models perform comparably.
-
-\subsection{Bootstrap Confidence Intervals}
-
-We compute 95\% confidence intervals using bootstrap resampling with 10,000 iterations~\cite{efron1993introduction}:
-
-\begin{table}[h]
-\centering
-\caption{Bootstrap 95\% Confidence Intervals ($n = 10{,}000$)}
-\label{tab:bootstrap}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Model} & \textbf{Accuracy CI} & \textbf{F1-Score CI} \\
-\midrule
-PhoBERT & [0.886, 0.925] & [0.874, 0.917] \\
-SVM & [0.854, 0.898] & [0.840, 0.888] \\
-BiLSTM & [0.850, 0.895] & [0.841, 0.889] \\
-LR & [0.850, 0.895] & [0.840, 0.888] \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The confidence intervals for PhoBERT do not overlap with those of the other models for accuracy, providing additional evidence of a meaningful performance difference.
-
-\subsection{Effect Size Analysis}
-
-We compute Cohen's $d$ to quantify the practical significance of performance differences:
-
-\begin{table}[h]
-\centering
-\caption{Effect Size Analysis (Cohen's $d$)}
-\label{tab:effect_size}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Comparison} & \textbf{Cohen's $d$} & \textbf{Interpretation} \\
-\midrule
-PhoBERT vs LR & 0.105 & Negligible \\
-PhoBERT vs SVM & 0.095 & Negligible \\
-PhoBERT vs BiLSTM & 0.105 & Negligible \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-While the effect sizes are small at the individual sample level---which is expected when comparing binary correct/incorrect classifications across 849 test samples---the aggregate 3+ percentage point improvement in accuracy is practically meaningful for real-world deployment.
-
-\subsection{Per-Class Performance}
-
-\input{tables/table3_perclass}
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/fig2_confusion_matrices.pdf}
-    \caption{Confusion matrices for all four models on the test set.}
-    \label{fig:confusion}
-\end{figure}
-
-Analysis of per-class performance reveals:
-\begin{itemize}[leftmargin=*]
-    \item PhoBERT achieves the best precision for Fake news (0.927) but lowest recall (0.810), indicating conservative predictions
-    \item BiLSTM achieves the highest Fake news recall (0.857), suggesting better sensitivity to deceptive patterns
-    \item SVM has the highest Real news recall (0.933) but lowest Fake news recall (0.781)
-    \item The class imbalance (62.9\% Real vs 37.1\% Fake) contributes to generally higher Real news metrics
-\end{itemize}
-
-\subsection{ROC and Precision-Recall Analysis}
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/fig3_roc_curves.pdf}
-    \caption{ROC curves for all models. PhoBERT achieves the highest AUC of 0.958.}
-    \label{fig:roc}
-\end{figure}
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/fig4_pr_curves.pdf}
-    \caption{Precision-Recall curves showing model performance across different thresholds.}
-    \label{fig:pr_curves}
-\end{figure}
-
-\subsection{Cross-Validation Results}
-
-To provide more robust performance estimates for traditional ML models, we perform stratified 5-fold cross-validation with 3 random seeds (15 total folds) on the combined training and validation sets:
-
-\begin{table}[h]
-\centering
-\caption{Cross-Validation Results (5-fold, 3 seeds)}
-\label{tab:cv}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Model} & \textbf{Accuracy} & \textbf{F1-Score} \\
-\midrule
-LR & $0.877 \pm 0.007$ & $0.868 \pm 0.008$ \\
-SVM & $0.885 \pm 0.008$ & $0.873 \pm 0.009$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The cross-validation results confirm that the test set performance is representative and not an artifact of a particular data split.
-
-\subsection{Model Complexity}
+Bảng~\ref{tab:hyperparams} tóm tắt siêu tham số cuối cùng sau tối ưu hoá.
 
 \input{tables/table5_complexity}
 
-The computational requirements vary dramatically across paradigms. LR trains in 3 seconds while PhoBERT requires over 5 minutes. This trade-off between accuracy and computational cost is an important consideration for practical deployment.
+Bảng~\ref{tab:complexity} so sánh số tham số và thời gian huấn luyện giữa các mô hình.
 
-% ============================================================
-\section{Ablation Study}
+\section{So sánh hiệu năng các mô hình}
+\label{sec:model_comparison}
+
+\subsection{Kết quả tổng thể}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig1_model_comparison}
+  \caption{So sánh các chỉ số hiệu năng (Accuracy, F1-Score, ROC-AUC) của bốn mô hình trên tập kiểm tra}
+  \label{fig:model_comparison}
+\end{figure}
+
+\input{tables/table2_results}
+
+Bảng~\ref{tab:results} trình bày hiệu năng trên tập kiểm tra. \phobert đạt kết quả tốt nhất với \textbf{F1 = \phobertFone\%} và \textbf{AUC = \phobertAUC}, vượt trội LR (+\deltaLR\%), SVM (+\deltaSVM\%) và BiLSTM (+\deltaBiLSTM\%). Đáng chú ý, SVM vượt BiLSTM mặc dù kiến trúc đơn giản hơn, cho thấy đặc trưng TF-IDF chất lượng cao cạnh tranh được với học sâu khi dữ liệu giới hạn.
+
+\subsection{Hiệu năng theo từng lớp}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig5_per_class}
+  \caption{Precision, Recall và F1-Score theo từng lớp (Thật / Giả) cho bốn mô hình}
+  \label{fig:per_class}
+\end{figure}
+
+\input{tables/table3_perclass}
+
+Từ Bảng~\ref{tab:perclass}:
+\begin{itemize}[leftmargin=2em]
+  \item \phobert: Recall = \phobertRecallFake\% cho lớp Giả -- phát hiện tin giả tốt nhất trong bốn mô hình.
+  \item BiLSTM: Recall = \bilstmRecallFake\% cho lớp Giả -- bỏ sót nhiều tin giả nhất (nguy hiểm trong thực tế).
+  \item SVM đạt Recall = \svmRecallFake\% cho lớp Giả, cao hơn LR (\lrRecallFake\%) và BiLSTM.
+\end{itemize}
+
+\subsection{Ma trận nhầm lẫn}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig2_confusion_matrices}
+  \caption{Ma trận nhầm lẫn của bốn mô hình trên tập kiểm tra (\nTest{} mẫu)}
+  \label{fig:confusion}
+\end{figure}
+
+\phobert: \phobertTN~âm tính thật (True Negative -- TN), \phobertTP~dương tính thật (True Positive -- TP), \phobertFP~dương tính giả (False Positive -- FP), \phobertFN~âm tính giả (False Negative -- FN) trên \nTest{} mẫu test. BiLSTM có nhiều lỗi nhất (\bilstmErrors~lỗi, FP=\bilstmFPcount, FN=\bilstmFNcount), trong khi \phobert ít lỗi nhất (\phobertErrors~lỗi).
+
+\subsection{Đường cong ROC và Precision-Recall}
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{fig3_roc_curves}
+    \caption{Đường cong ROC}
+    \label{fig:roc}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{fig4_pr_curves}
+    \caption{Đường cong Precision-Recall}
+    \label{fig:pr}
+  \end{subfigure}
+  \caption{Đường cong ROC và Precision-Recall của bốn mô hình trên tập kiểm tra}
+  \label{fig:curves}
+\end{figure}
+
+\phobert (AUC = \phobertAUC) áp đảo so với SVM (\svmAUC), LR (\lrAUC) và BiLSTM (\bilstmAUC).
+
+\subsection{Phân tích hiệu chuẩn xác suất (Calibration Analysis)}
+\label{sec:calibration}
+
+Bên cạnh các chỉ số phân loại truyền thống, việc đánh giá chất lượng xác suất dự đoán của mô hình cũng đóng vai trò quan trọng trong các ứng dụng thực tế. Một mô hình được coi là có hiệu chuẩn tốt (\textit{well-calibrated}) khi xác suất dự đoán phản ánh đúng tỷ lệ dương tính thực tế: nếu mô hình dự đoán xác suất 80\% cho một nhóm mẫu, thì khoảng 80\% số mẫu đó phải thực sự thuộc lớp dương.
+
+Điều này đặc biệt quan trọng trong bài toán phát hiện tin giả, vì người dùng hoặc hệ thống downstream cần biết mức độ tin cậy thực sự của mỗi dự đoán để quyết định hành động phù hợp (ví dụ: đánh dấu cảnh báo, chuyển sang kiểm tra thủ công, hoặc tự động loại bỏ).
+
+Nghiên cứu sử dụng ba chỉ số đánh giá hiệu chuẩn~\cite{naeini2015ece}:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Expected Calibration Error (ECE):} Sai số hiệu chuẩn kỳ vọng, đo mức chênh lệch trung bình có trọng số giữa xác suất dự đoán và tỷ lệ dương tính thực tế trên các nhóm mẫu (bin):
+  \[
+    \text{ECE} = \sum_{b=1}^{B} \frac{|B_b|}{N} \cdot |\text{acc}(B_b) - \text{conf}(B_b)|
+  \]
+  trong đó $B_b$ là tập mẫu trong bin thứ $b$, $\text{acc}(B_b)$ là tỷ lệ dự đoán đúng và $\text{conf}(B_b)$ là xác suất dự đoán trung bình trong bin đó.
+
+  \item \textbf{Maximum Calibration Error (MCE):} Sai số hiệu chuẩn cực đại, phản ánh bin có độ lệch lớn nhất:
+  \[
+    \text{MCE} = \max_{b} |\text{acc}(B_b) - \text{conf}(B_b)|
+  \]
+
+  \item \textbf{Brier Score:} Trung bình bình phương sai số giữa xác suất dự đoán và nhãn thực:
+  \[
+    \text{BS} = \frac{1}{N} \sum_{i=1}^{N} (p_i - y_i)^2
+  \]
+  Brier Score kết hợp cả khả năng phân loại và hiệu chuẩn trong một chỉ số duy nhất.
+\end{itemize}
+
+Cả ba chỉ số đều có giá trị càng thấp càng tốt (0 = hoàn hảo).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig_calibration_curves}
+  \caption{Biểu đồ hiệu chuẩn (Reliability Diagram) của bốn mô hình trên tập kiểm tra. Đường chéo nét đứt biểu diễn hiệu chuẩn hoàn hảo; các điểm vuông biểu diễn tỷ lệ dương tính thực tế trong mỗi bin xác suất.}
+  \label{fig:calibration}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Chỉ số hiệu chuẩn xác suất của bốn mô hình trên tập kiểm tra}
+\label{tab:calibration}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Mô hình} & \textbf{ECE} $\downarrow$ & \textbf{MCE} $\downarrow$ & \textbf{Brier Score} $\downarrow$ \\
+\midrule
+Logistic Regression & \lrECE & \lrMCE & \lrBrier \\
+SVM & \textbf{\svmECE} & \textbf{\svmMCE} & \svmBrier \\
+BiLSTM & \bilstmECE & \bilstmMCE & \bilstmBrier \\
+PhoBERT & \phobertECE & \phobertMCE & \textbf{\phobertBrier} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Từ Bảng~\ref{tab:calibration} và Hình~\ref{fig:calibration}, có thể rút ra một số quan sát đáng chú ý:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Các mô hình học máy truyền thống có hiệu chuẩn tốt nhất:} SVM đạt ECE thấp nhất (\svmECE) và MCE thấp nhất (\svmMCE), theo sau là LR (ECE = \lrECE). Điều này cho thấy xác suất dự đoán của SVM và LR phản ánh khá chính xác tỷ lệ dương tính thực tế. Kết quả này phù hợp với lý thuyết, vì Logistic Regression được thiết kế để ước lượng xác suất trực tiếp, và SVM sử dụng hiệu chuẩn Platt (CalibratedClassifierCV) trong quá trình huấn luyện.
+
+  \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertBrier), phản ánh khả năng phân loại vượt trội. Tuy nhiên, MCE rất cao (\phobertMCE) cho thấy mô hình có xu hướng \textit{overconfident} -- đưa ra xác suất rất cao (gần 0 hoặc 1) ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu nhỏ.
+
+  \item \textbf{BiLSTM có hiệu chuẩn kém nhất:} Với ECE = \bilstmECE\ và Brier Score = \bilstmBrier, BiLSTM cho thấy xác suất dự đoán không phản ánh tốt độ chính xác thực tế, nhất quán với hiệu năng phân loại thấp nhất trong bốn mô hình.
+\end{itemize}
+
+\textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần áp dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature Scaling hoặc Platt Scaling để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể được sử dụng trực tiếp với độ tin cậy cao hơn.
+
+\section{Kiểm định thống kê}
+\label{sec:statistics}
+
+\subsection{Kiểm định McNemar}
+
+Kiểm định McNemar~\cite{mcnemar1947} được sử dụng để so sánh hiệu năng của hai mô hình phân loại trên cùng một tập kiểm thử, dựa trên các dự đoán theo từng mẫu (paired predictions). Kiểm định này đặc biệt phù hợp trong bối cảnh hai mô hình được đánh giá trên cùng dữ liệu và cần xác định liệu sự khác biệt quan sát được có mang ý nghĩa thống kê hay chỉ do ngẫu nhiên.
+
+Giả thuyết kiểm định được thiết lập như sau:
+
+\begin{itemize}
+    \item $H_0$: Không tồn tại sự khác biệt có ý nghĩa thống kê giữa xác suất dự đoán đúng của hai mô hình.
+    \item $H_1$: Tồn tại sự khác biệt có ý nghĩa thống kê giữa xác suất dự đoán đúng của hai mô hình.
+\end{itemize}
+
+Thống kê kiểm định được tính theo công thức:
+
+$$\chi^2 = \frac{(|b - c| - 1)^2}{b + c}$$
+
+Hai đại lượng $b$ và $c$ đại diện cho các trường hợp bất đồng (discordant pairs) giữa hai mô hình. 
+Các trường hợp cả hai cùng đúng hoặc cùng sai không ảnh hưởng đến thống kê kiểm định 
+vì không phản ánh sự khác biệt tương đối.
+
+Giá trị $\chi^2$ càng lớn cho thấy mức độ chênh lệch giữa $b$ và $c$ càng cao, 
+tức là sự khác biệt có xu hướng mang tính hệ thống thay vì ngẫu nhiên. 
+Giá trị $p$-value được tính dựa trên phân phối Chi-square với $1$ bậc tự do. 
+Nếu $p < \alpha$ (với $\alpha = 0.05$), giả thuyết $H_0$ bị bác bỏ và có thể kết luận 
+sự khác biệt giữa hai mô hình là có ý nghĩa thống kê.
+
+Hệ số điều chỉnh $(-1)$ trong tử số là hiệu chỉnh liên tục 
+(\textit{continuity correction}), giúp giảm sai số loại I 
+khi kích thước mẫu không quá lớn.
+
+Do nghiên cứu thực hiện sáu phép so sánh cặp mô hình, việc tiến hành nhiều kiểm định 
+đồng thời có thể làm gia tăng xác suất sai loại I. 
+Để kiểm soát mức sai số toàn cục (\textit{family-wise error rate}), 
+phương pháp hiệu chỉnh Holm--Bonferroni được áp dụng.
+
+Cụ thể, các $p$-value được sắp xếp theo thứ tự tăng dần và so sánh tuần tự 
+với các ngưỡng hiệu chỉnh tương ứng, bảo đảm rằng xác suất xuất hiện ít nhất 
+một kết luận sai không vượt quá mức ý nghĩa $\alpha$ đã lựa chọn.
+
+Với hiệu chỉnh Holm-Bonferroni~\cite{holm1979} cho 6 phép so sánh:
+
+\begin{table}[H]
+\centering
+\caption{Kết quả kiểm định McNemar (sau hiệu chỉnh Holm-Bonferroni)}
+\label{tab:mcnemar}
+\begin{tabular}{llrrl}
+\toprule
+\textbf{Mô hình 1} & \textbf{Mô hình 2} & \textbf{$\chi^2$} & \textbf{$p$-value} & \textbf{Kết luận} \\
+\midrule
+LR      & SVM     & \mcnLrSvmChi  & \mcnLrSvmP    & Không có ý nghĩa \\
+LR      & BiLSTM  & \mcnLrBilstmChi  & \mcnLrBilstmP    & Không có ý nghĩa \\
+LR      & PhoBERT & \mcnLrPhobertChi & $<$0.001  & Có ý nghĩa (***) \\
+SVM     & BiLSTM  & \mcnSvmBilstmChi  & \mcnSvmBilstmP    & Không có ý nghĩa \\
+SVM     & PhoBERT & \mcnSvmPhobertChi & $<$0.001  & Có ý nghĩa (***) \\
+BiLSTM  & PhoBERT & \mcnBilstmPhobertChi & $<$0.001  & Có ý nghĩa (***) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\phobert vượt trội có ý nghĩa thống kê so với cả ba mô hình còn lại ($p < 0.001$). LR, SVM và BiLSTM không khác biệt đáng kể với nhau ($p \geq 0.05$ sau hiệu chỉnh Holm-Bonferroni) dù kiến trúc khác nhau hoàn toàn.
+
+\subsection{Khoảng tin cậy Bootstrap}
+Bên cạnh kiểm định McNemar, nghiên cứu tiếp tục sử dụng phương pháp 
+Bootstrap nhằm ước lượng độ ổn định của chỉ số F1-score và đánh giá 
+độ tin cậy của sự khác biệt giữa các mô hình.
+
+Bootstrap là kỹ thuật lấy mẫu lặp lại có hoàn lại 
+(\textit{resampling with replacement}) từ tập kiểm thử ban đầu 
+để tạo ra nhiều tập mẫu giả lập. Trong nghiên cứu này, quá trình 
+lấy mẫu được thực hiện 10,000 lần. Với mỗi lần lấy mẫu, 
+F1-score được tính lại, từ đó xây dựng phân phối thực nghiệm 
+của chỉ số này.
+
+Khoảng tin cậy 95\% (95\% Confidence Interval -- CI) được xác định 
+từ phân vị 2.5\% và 97.5\% của phân phối Bootstrap. 
+Khoảng này biểu diễn miền giá trị mà tham số thực 
+(F1-score kỳ vọng trên tổng thể) có khả năng nằm trong đó 
+với mức tin cậy 95\%.
+
+Việc sử dụng Bootstrap mang ý nghĩa quan trọng trong đánh giá 
+thực nghiệm vì:
+
+\begin{itemize}
+    \item Không giả định phân phối chuẩn của F1-score.
+    \item Phản ánh mức độ dao động của mô hình khi dữ liệu thay đổi.
+    \item Cho phép so sánh mức độ chồng lấp giữa các khoảng tin cậy, 
+    từ đó hỗ trợ xác nhận sự khác biệt có tính hệ thống.
+\end{itemize}
+
+Kết quả khoảng tin cậy 95\% cho các mô hình được trình bày 
+trong bảng ~\ref{tab:ci}.
+
+\begin{table}[H]
+\centering
+\caption{Khoảng tin cậy 95\% Bootstrap~\cite{efron1979bootstrap} cho F1-Score (10,000 lần lấy mẫu lại)}
+\label{tab:ci}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Mô hình} & \textbf{F1-Score} & \textbf{95\% CI} \\
+\midrule
+LR      & \lrFone  & \lrFoneCI{} \\
+SVM     & \svmFone & \svmFoneCI{} \\
+BiLSTM  & \bilstmFone & \bilstmFoneCI{} \\
+PhoBERT & \textbf{\phobertFone} & \textbf{\phobertFoneCI{}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Từ Bảng~\ref{tab:ci} có thể quan sát rằng:
+
+\begin{itemize}
+    \item PhoBERT đạt F1-score trung bình cao nhất (\phobertFone  \%)
+    với khoảng tin cậy 95\% là {\phobertFoneCI{}}.
+    
+    \item Khoảng tin cậy của PhoBERT không chồng lấp với bất kỳ 
+    mô hình nào còn lại.
+    
+    \item Các mô hình LR, SVM và BiLSTM có khoảng tin cậy tương đối 
+    gần nhau và tồn tại hiện tượng chồng lấp.
+\end{itemize}
+
+Sự không chồng lấp khoảng tin cậy giữa PhoBERT và các mô hình khác 
+củng cố kết luận từ kiểm định McNemar rằng sự vượt trội của PhoBERT 
+không phải do dao động ngẫu nhiên mà mang tính ổn định thống kê. 
+Ngược lại, sự chồng lấp giữa LR, SVM và BiLSTM cho thấy sự khác biệt 
+hiệu năng giữa ba mô hình này chưa đủ mạnh để kết luận tồn tại 
+ưu thế rõ ràng.
+
+Như vậy, Bootstrap đóng vai trò bổ sung cho kiểm định McNemar: 
+nếu McNemar kiểm tra sự khác biệt ở mức dự đoán từng mẫu 
+(\textit{instance-level comparison}), thì Bootstrap đánh giá 
+độ ổn định của chỉ số tổng hợp (F1-score) dưới biến thiên dữ liệu 
+(\textit{metric-level stability}). Việc kết hợp cả hai phương pháp 
+giúp tăng độ tin cậy và tính thuyết phục cho kết luận thực nghiệm.
+
+\subsection{Kiểm tra chéo (Cross-Validation)}
+
+Bên cạnh việc đánh giá trên tập kiểm thử cố định, nghiên cứu tiếp tục 
+thực hiện kiểm tra chéo phân tầng (\textit{Stratified Cross-Validation}) 
+nhằm đánh giá tính ổn định của mô hình dưới các cách chia dữ liệu khác nhau.
+
+Cụ thể, phương pháp 5-fold cross-validation được áp dụng với 3 seed 
+ngẫu nhiên khác nhau, tạo thành tổng cộng 15 lần huấn luyện và đánh giá. 
+Việc lặp lại trên nhiều seed giúp giảm ảnh hưởng của tính ngẫu nhiên 
+trong quá trình chia dữ liệu và cung cấp ước lượng ổn định hơn 
+về hiệu năng trung bình.
+
+Trong mỗi lần lặp, mô hình được huấn luyện trên 4 folds và kiểm tra 
+trên fold còn lại. Các chỉ số Accuracy và F1-score được ghi nhận 
+cho từng lần chạy, sau đó tính giá trị trung bình và độ lệch chuẩn.
+
+Độ lệch chuẩn ($\pm$) phản ánh mức độ dao động của hiệu năng 
+giữa các lần chia dữ liệu. Giá trị này càng nhỏ cho thấy mô hình 
+càng ổn định và ít phụ thuộc vào cách phân chia tập dữ liệu.
+Do hạn chế về tài nguyên tính toán và thời gian huấn luyện đáng kể của các mô hình học sâu như BiLSTM và PhoBERT, quy trình kiểm tra chéo 5-fold với 3 seed (tổng 15 lần chạy) chỉ được áp dụng cho các mô hình học máy truyền thống (Logistic Regression và SVM). Việc mở rộng quy trình này cho các mô hình học sâu sẽ đòi hỏi chi phí tính toán rất lớn và vượt quá phạm vi thực nghiệm của nghiên cứu.
+
+Kết quả kiểm tra chéo được trình bày trong Bảng~\ref{tab:cv}.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả kiểm tra chéo 5-fold (3 seeds)}
+\label{tab:cv}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Mô hình} & \textbf{Accuracy} & \textbf{F1-Score} \\
+\midrule
+Logistic Regression & $\cvLrAcc \pm \cvLrAccStd$ & $\cvLrFone \pm \cvLrFoneStd$ \\
+SVM                 & $\cvSvmAcc \pm \cvSvmAccStd$ & $\cvSvmFone \pm \cvSvmFoneStd$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Từ Bảng~\ref{tab:cv} có thể quan sát rằng:
+
+\begin{itemize}
+    \item SVM đạt hiệu năng trung bình cao hơn Logistic Regression 
+    ở cả Accuracy và F1-score.
+    
+    \item Độ lệch chuẩn của cả hai mô hình đều nhỏ ($\leq 0.010$), 
+    cho thấy hiệu năng ổn định qua các lần chia dữ liệu.
+    
+    \item Mức dao động thấp xác nhận rằng kết quả không phụ thuộc 
+    đáng kể vào một cấu hình phân chia cụ thể.
+\end{itemize}
+
+So với kiểm định McNemar và Bootstrap, Cross-Validation bổ sung 
+một góc nhìn khác trong đánh giá thực nghiệm: nếu McNemar kiểm tra 
+sự khác biệt ở mức dự đoán từng mẫu (\textit{instance-level comparison}) 
+và Bootstrap đánh giá độ ổn định của chỉ số trên tập kiểm thử cố định, 
+thì Cross-Validation kiểm tra khả năng tổng quát hóa của mô hình 
+khi dữ liệu huấn luyện thay đổi.
+
+Việc kết hợp ba phương pháp đánh giá (McNemar, Bootstrap và 
+Cross-Validation) giúp đảm bảo rằng kết luận về hiệu năng mô hình 
+không chỉ dựa trên một lần thử nghiệm duy nhất, mà được xác nhận 
+dưới nhiều góc độ thống kê khác nhau.
+
+\section{Nghiên cứu triệt bỏ (Ablation Study)}
 \label{sec:ablation}
-% ============================================================
+Ablation Study là phương pháp thực nghiệm nhằm đánh giá mức độ 
+đóng góp của từng thành phần trong một hệ thống bằng cách thay đổi 
+hoặc loại bỏ từng yếu tố riêng lẻ trong khi giữ nguyên các thành phần còn lại. 
+Mục tiêu của phương pháp này không chỉ là tìm cấu hình tốt nhất, 
+mà còn xác định thành phần nào thực sự tạo ra cải thiện hiệu năng.
 
-We conduct ablation studies to quantify the contribution of key design choices using Logistic Regression as the base model.
+Trong nghiên cứu này, Ablation Study được thực hiện trên pipeline 
+TF-IDF + Logistic Regression bằng cách lần lượt thay đổi các yếu tố sau:
 
-\subsection{Vocabulary Size}
-
-We evaluate TF-IDF vocabulary sizes from 1,000 to 50,000 terms. Performance improves from 82.7\% accuracy (1K) to 88.2\% (20K), before slightly declining at 50K (88.0\%). The default 10K setting achieves 87.2\%, suggesting that 20K terms may be more optimal. The diminishing returns beyond 20K features indicate feature sparsity effects.
-
-\subsection{N-gram Range}
-
-We compare unigrams, bigrams, and their combinations. Unigrams alone (87.4\%) slightly outperform the unigram+bigram combination (87.2\%) and unigrams+bigrams+trigrams (86.9\%). Bigrams-only (83.6\%) perform worst, confirming that unigrams carry the primary discriminative signal for this task.
-
-\subsection{Word Segmentation Impact}
-
-Vietnamese word segmentation has a minimal impact on LR classification: accuracy with segmentation is 87.2\% vs. 87.4\% without. This surprising result may reflect that the TF-IDF features can still capture discriminative patterns from individual syllables, though segmented compound words provide slightly better feature interpretability.
-
-\subsection{TF-IDF Scaling}
-
-Sublinear TF scaling ($1 + \log(\text{tf})$) outperforms standard term frequency (87.2\% vs. 86.5\%), as it reduces the influence of very frequent terms and provides better feature discrimination.
-
-\subsection{Regularization Strength}
-
-The regularization parameter C has substantial impact: from 81.2\% (C=0.01) to 87.2\% (C=10), with a slight decline at C=100 (86.6\%). This confirms that moderate regularization is necessary to prevent overfitting on the 10K-dimensional TF-IDF features.
-
-% ============================================================
-\section{Interpretability Analysis}
-% ============================================================
-
-\subsection{Feature Importance}
-
-We analyze the Logistic Regression model coefficients to identify the most predictive words for each class. The analysis reveals distinct linguistic patterns:
-
-\begin{itemize}[leftmargin=*]
-    \item \textbf{Fake news indicators}: Top features include informal/colloquial terms (``ko'', ``cái'', ``bọn'', ``nhé''), sensational references (``corona'', ``vũ\_hán'', ``hồi\_giáo''), and general pronouns (``dân'', ``người'', ``nó''). The prevalence of informal Vietnamese and emotionally charged vocabulary is consistent with the nature of misinformation.
-    \item \textbf{Real news indicators}: Top features include formal reporting elements (``\_url'', ``url''), medical/institutional terms (``dịch covid'', ``bộ y\_tế'', ``bệnh\_nhân'', ``cán\_bộ''), and factual terminology (``thành\_phố'', ``đơn\_giản'', ``đồng''). The prominence of URL references suggests that legitimate news sources consistently include source links.
+\begin{itemize}
+    \item Kích thước từ điển
+    \item Cấu hình $n$-gram
+    \item Phương pháp phân đoạn từ
+    \item Tham số điều chuẩn $C$
+    \item Phương pháp chuẩn hóa TF
 \end{itemize}
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/feature_importance.pdf}
-    \caption{Top 20 LR feature coefficients for Fake (left) and Real (right) class prediction.}
-    \label{fig:feature_importance}
+Mỗi yếu tố được thay đổi độc lập trong khi giữ nguyên các thành phần còn lại, 
+nhằm đảm bảo có thể đánh giá riêng tác động của từng thành phần 
+lên các chỉ số Accuracy và F1-score. 
+Cách tiếp cận này cho phép xác định mức độ nhạy cảm của mô hình 
+đối với từng cấu hình và làm rõ yếu tố nào đóng vai trò quyết định 
+trong việc cải thiện hiệu năng.
+
+Do cấu trúc pipeline TF-IDF + Logistic Regression cho phép 
+tách biệt rõ ràng từng thành phần (kích thước từ điển, cấu hình $n$-gram, 
+tham số điều chuẩn $C$, phương pháp chuẩn hóa TF), phương pháp 
+ablation study được áp dụng chủ yếu cho mô hình này nhằm phân tích 
+đóng góp riêng lẻ của từng yếu tố.
+
+Đối với các mô hình học sâu như BiLSTM và PhoBERT, biểu diễn đặc trưng 
+và quá trình học được tích hợp chặt chẽ trong kiến trúc mạng, 
+khiến việc loại bỏ hoặc thay đổi từng thành phần riêng lẻ 
+trở nên phức tạp và khó diễn giải. 
+Việc điều chỉnh một thành phần (ví dụ: embedding, số tầng, 
+chiều ẩn hoặc cơ chế attention) thường kéo theo thay đổi 
+trong toàn bộ động học huấn luyện, do đó không đảm bảo tính 
+so sánh độc lập như trong pipeline tuyến tính.
+
+Bên cạnh đó, chi phí tính toán và thời gian huấn luyện lớn 
+cũng hạn chế khả năng thực hiện ablation toàn diện cho các mô hình này 
+trong phạm vi nghiên cứu. 
+Vì vậy, ablation study được tập trung vào mô hình truyền thống 
+nhằm đảm bảo tính minh bạch, khả năng diễn giải và hiệu quả thực nghiệm.
+
+Kết quả thực nghiệm được trình bày trong Bảng~\ref{tab:ablation}.
+\begin{table}[H]
+\centering
+\caption{Kết quả Ablation Study trên tập kiểm tra}
+\label{tab:ablation}
+\begin{tabular}{llcc}
+\toprule
+\textbf{Thành phần} & \textbf{Cấu hình} & \textbf{Accuracy} & \textbf{F1-Score} \\
+\midrule
+\multirow{5}{*}{Kích thước từ điển}
+  & 1,000 từ   & \ablVocOneKAcc & \ablVocOneKF \\
+  & 5,000 từ   & \ablVocFiveKAcc & \ablVocFiveKF \\
+  & 10,000 từ  & \ablVocTenKAcc & \ablVocTenKF \\
+  & 20,000 từ  & \ablVocTwentyKAcc & \ablVocTwentyKF \\
+  & 50,000 từ  & \ablVocFiftyKAcc & \ablVocFiftyKF \\
+\midrule
+\multirow{4}{*}{N-gram}
+  & Unigram only   & \ablNgUniAcc & \ablNgUniF \\
+  & Uni + Bigram   & \ablNgUniBiAcc & \ablNgUniBiF \\
+  & Uni+Bi+Trigram & \ablNgUniTriAcc & \ablNgUniTriF \\
+  & Bigram only    & \ablNgBiAcc & \ablNgBiF \\
+\midrule
+\multirow{2}{*}{Phân đoạn từ}
+  & Có phân đoạn    & \ablWsOnAcc & \ablWsOnF \\
+  & Không phân đoạn & \ablWsOffAcc & \ablWsOffF \\
+\midrule
+\multirow{5}{*}{Giá trị $C$ (LR)}
+  & $C = 0.01$ & \ablCaAcc & \ablCaF \\
+  & $C = 0.1$  & \ablCbAcc & \ablCbF \\
+  & $C = 1$      & \textbf{\ablCcAcc} & \textbf{\ablCcF} \\
+  & $C = 10$     & \ablCdAcc & \ablCdF \\
+  & $C = 100$    & \ablCeAcc & \ablCeF \\
+\midrule
+\multirow{2}{*}{TF Scaling}
+  & Standard TF  & \ablTfStdAcc & \ablTfStdF \\
+  & Sublinear TF & \textbf{\ablTfSubAcc} & \textbf{\ablTfSubF} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Phân tích và ý nghĩa}
+
+\begin{enumerate}
+    \item \textbf{Kích thước từ điển}
+
+    Khi tăng kích thước từ điển từ 1,000 lên 10,000 từ, 
+    F1-score cải thiện khoảng +\ablVocDelta\%, cho thấy việc mở rộng 
+    không gian đặc trưng giúp mô hình khai thác tốt hơn thông tin ngữ nghĩa. 
+    Tuy nhiên, sau ngưỡng 10,000 từ, mức cải thiện giảm dần, 
+    phản ánh hiện tượng lợi ích biên giảm dần (\textit{diminishing returns}).  
+
+    Điều này giúp xác định ngưỡng tối ưu giữa độ biểu diễn và độ phức tạp.
+
+    \item \textbf{Cấu hình $n$-gram}
+
+    Cấu hình Uni + Bigram đạt hiệu năng tốt nhất. 
+    Việc bổ sung bigram giúp mô hình nắm bắt quan hệ ngữ cảnh cục bộ 
+    mà unigram đơn lẻ không thể biểu diễn đầy đủ. 
+    Tuy nhiên, thêm trigram không mang lại cải thiện đáng kể, 
+    có thể do hiện tượng thưa dữ liệu (\textit{sparsity}) tăng cao.  
+
+    Ablation cho thấy bigram là thành phần đóng góp quan trọng.
+
+    \item \textbf{Phân đoạn từ}
+
+    Phân đoạn từ không tạo khác biệt lớn đối với TF-IDF + Logistic Regression 
+    ($\Delta \approx \ablWsDelta\%$), cho thấy mô hình tuyến tính ít phụ thuộc 
+    vào cấu trúc ngữ cảnh sâu. 
+    Điều này khác với các mô hình ngữ cảnh như PhoBERT, 
+    nơi phân đoạn từ có vai trò quan trọng hơn.  
+
+    Kết quả giúp làm rõ đặc tính từng nhóm mô hình.
+
+    \item \textbf{Tham số điều chuẩn $C$}
+
+    Giá trị $C = 1$ cho hiệu năng tốt nhất.
+
+    \begin{itemize}
+        \item $C$ nhỏ $\rightarrow$ regularization mạnh $\rightarrow$ nguy cơ underfitting.
+        \item $C$ lớn $\rightarrow$ regularization yếu $\rightarrow$ nguy cơ overfitting.
+    \end{itemize}
+
+    Ablation xác định điểm cân bằng giữa bias và variance.
+
+    \item \textbf{Chuẩn hóa TF}
+
+    Sublinear TF nhỉnh hơn Standard TF (+\ablTfDelta\% F1), 
+    cho thấy log-scaling mang lại lợi ích nhẹ 
+    trên tập dữ liệu hiện tại.
+\end{enumerate}
+
+\textbf{Vậy Ablation Study đã giúp cải tiến gì?}
+
+\begin{enumerate}
+    \item Xác định cấu hình tối ưu cho pipeline TF-IDF + Logistic Regression.
+    \item Loại bỏ các thành phần không đóng góp đáng kể.
+    \item Chứng minh cải thiện hiệu năng đến từ lựa chọn thiết kế cụ thể, 
+    không phải dao động ngẫu nhiên.
+    \item Cung cấp cơ sở thực nghiệm cho cấu hình sử dụng trong so sánh mô hình ở Mục~\ref{sec:model_comparison}.
+\end{enumerate}
+
+Nói cách khác, Ablation Study không chỉ tối ưu tham số, 
+mà còn giải thích vì sao cấu hình cuối cùng được lựa chọn là hợp lý.
+
+\section{Phân tích lỗi}
+
+\subsection{Thống kê lỗi tổng quan}
+
+\subsubsection{So sánh FP và FN}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_fp_fn_comparison}
+\caption{So sánh số lượng False Positive (FP) và False Negative (FN) trong quá trình phân loại}
+\label{fig:fpfn}
 \end{figure}
 
-\subsection{Error Analysis}
+Trong Hình~\ref{fig:fpfn}, số lượng \textit{false positive} (FP) và \textit{false negative} (FN) của từng mô hình được so sánh nhằm làm rõ các kiểu lỗi phổ biến trong bài toán phát hiện tin giả. Có thể quan sát rằng các mô hình khác nhau thể hiện xu hướng lỗi khác nhau. Logistic Regression tạo ra số lượng FP và FN khá cân bằng, trong khi SVM có xu hướng tạo ra nhiều FN hơn FP. Điều này cho thấy SVM thường bỏ sót một số trường hợp tin giả, đặc biệt khi các mẫu này không chứa các từ khóa đặc trưng rõ ràng.
 
-Analysis of misclassified samples reveals:
-\begin{itemize}[leftmargin=*]
-    \item Short texts ($<$ 50 words) account for the largest share of errors across all models (48--51\% of errors), indicating that insufficient context is a primary challenge
-    \item PhoBERT has the lowest total errors (80 vs. 105--108) and lowest false positive rate (20 FP), making it most reliable for flagging content as fake
-    \item BiLSTM shows the highest rate of high-confidence errors (97 out of 108), suggesting overconfident predictions compared to probabilistic models like LR (33 out of 108)
-    \item SVM has a notably asymmetric error profile (36 FP vs. 69 FN), indicating a conservative tendency to classify news as real
-\end{itemize}
+Đối với BiLSTM, số lượng lỗi tổng thể cao hơn so với các mô hình còn lại, với cả FP và FN đều ở mức tương đối lớn. Điều này cho thấy mô hình tuần tự này chưa khai thác được đầy đủ thông tin ngữ nghĩa trong văn bản, có thể do kích thước dữ liệu huấn luyện chưa đủ lớn để học các biểu diễn ngữ cảnh phức tạp. Ngược lại, PhoBERT đạt số lượng lỗi thấp nhất trong bốn mô hình, phản ánh khả năng khai thác ngữ cảnh tốt hơn nhờ được tiền huấn luyện trên lượng lớn dữ liệu tiếng Việt.
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/error_taxonomy.pdf}
-    \caption{Error taxonomy: FP/FN distribution (left) and errors by text length (right).}
-    \label{fig:error_taxonomy}
+Phân tích FP và FN cũng cho thấy một số đặc điểm của bài toán. Các FP thường xuất hiện ở những bài viết có tiêu đề mang tính giật gân hoặc chứa các từ khóa thường xuất hiện trong tin giả, khiến mô hình nhầm lẫn và dự đoán sai. Trong khi đó, các FN chủ yếu xảy ra ở những tin giả được viết theo phong cách trung lập hoặc có cấu trúc tương tự các bài báo chính thống, khiến mô hình khó phân biệt.
+
+\subsubsection{Phân phối lỗi theo độ dài văn bản}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_text_length_analysis}
+\caption{Phân phối lỗi phân loại theo độ dài văn bản}
+\label{fig:textlen}
 \end{figure}
 
+Hình~\ref{fig:textlen} minh họa phân phối các lỗi dự đoán theo độ dài văn bản đối với từng mô hình. Có thể thấy rằng phần lớn các lỗi xảy ra ở các văn bản có độ dài tương đối ngắn. Những văn bản ngắn thường thiếu ngữ cảnh và thông tin bổ sung cần thiết để mô hình có thể xác định chính xác tính xác thực của nội dung. Do đó, cả các mô hình học máy truyền thống và mô hình học sâu đều gặp khó khăn khi xử lý các mẫu này.
+
+Ngược lại, khi độ dài văn bản tăng lên, tỷ lệ lỗi có xu hướng giảm. Các văn bản dài thường chứa nhiều thông tin ngữ nghĩa hơn, giúp mô hình nhận diện các mẫu đặc trưng liên quan đến tin thật hoặc tin giả một cách rõ ràng hơn. Xu hướng này đặc biệt rõ rệt đối với PhoBERT, khi mô hình tận dụng tốt hơn thông tin ngữ cảnh dài nhờ kiến trúc Transformer.
+
+Phân tích này cho thấy độ dài văn bản là một yếu tố ảnh hưởng đáng kể đến hiệu năng của mô hình. Trong các ứng dụng thực tế, các bài viết ngắn hoặc tiêu đề đơn lẻ có thể cần được xử lý bằng các kỹ thuật bổ sung, chẳng hạn như kết hợp thông tin ngữ cảnh từ nguồn dữ liệu khác hoặc sử dụng các đặc trưng bổ sung ngoài nội dung văn bản.
+
+\subsubsection{Hàm ý cải tiến mô hình}
+
+\begin{table}[H]
+\centering
+\caption{Phân tích lỗi trên tập kiểm tra}
+\label{tab:errors}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Mô hình} & \textbf{Tổng lỗi} & \textbf{Tỉ lệ lỗi} & \textbf{FP} & \textbf{FN} \\
+\midrule
+Logistic Regression & \lrErrors & \lrErrorRate\% & \lrFPcount & \lrFNcount \\
+SVM & \svmErrors & \svmErrorRate\% & \svmFPcount & \svmFNcount \\
+BiLSTM & \bilstmErrors & \bilstmErrorRate\% & \bilstmFPcount & \bilstmFNcount \\
+PhoBERT & \phobertErrors & \phobertErrorRate\% & \phobertFP & \phobertFN \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bảng~\ref{tab:errors} tổng hợp số lượng lỗi và phân bố FP/FN của từng mô hình trên tập kiểm tra.
+
+Từ các kết quả phân tích lỗi trên, có thể rút ra một số hướng cải tiến tiềm năng cho hệ thống phát hiện tin giả. Thứ nhất, việc kết hợp các đặc trưng ngữ nghĩa sâu với các đặc trưng bề mặt như từ khóa hoặc cụm từ đặc trưng có thể giúp giảm các trường hợp \textit{false positive} trong các mô hình học máy truyền thống. Thứ hai, các mô hình học sâu có thể được cải thiện bằng cách bổ sung thêm dữ liệu huấn luyện hoặc áp dụng các chiến lược tăng cường dữ liệu nhằm giúp mô hình học tốt hơn các mẫu tin giả được viết theo phong cách trung lập.
+
+Ngoài ra, phân tích cũng cho thấy các văn bản ngắn là một nguồn gây lỗi phổ biến. Điều này gợi ý rằng các phương pháp khai thác ngữ cảnh mở rộng, chẳng hạn như kết hợp tiêu đề với nội dung bài viết hoặc tích hợp thông tin từ nguồn bên ngoài, có thể giúp cải thiện khả năng dự đoán đối với các trường hợp khó.
+
+\subsubsection{Phân tích các trường hợp khó (Hard Examples)}
+
+Mặc dù các phân tích trên đã chỉ ra một số nguyên nhân phổ biến gây ra lỗi phân loại, kết quả thực nghiệm cho thấy vẫn tồn tại một nhóm trường hợp đặc biệt khó mà tất cả các mô hình đều thất bại. Những trường hợp này phản ánh các giới hạn hiện tại của các phương pháp chỉ dựa trên nội dung văn bản và cung cấp thêm góc nhìn sâu hơn về những thách thức của bài toán phát hiện tin giả.
+
+Trong quá trình phân tích lỗi, nhóm phát hiện \textbf{\nHardExamples{} mẫu khó} (\textit{hard examples}) mà tất cả bốn mô hình đều dự đoán sai. Việc kiểm tra thủ công nội dung của các mẫu này cho thấy chúng thường thuộc một số dạng đặc trưng, phản ánh những thách thức phổ biến trong bài toán phát hiện tin giả. Cụ thể, các trường hợp này có thể được chia thành ba nhóm chính: \textit{semantic reasoning}, \textit{knowledge verification}, và \textit{dataset ambiguity}.
+
+Trước hết, một số mẫu yêu cầu suy luận ngữ nghĩa (\textit{semantic reasoning}) để xác định mối quan hệ giữa hai câu. Trong các trường hợp này, hai văn bản có thể không liên quan về mặt nội dung nhưng lại có phong cách viết tương tự, khiến mô hình khó phân biệt. Ví dụ, trong một mẫu dữ liệu, câu ``Uống đủ nước mỗi ngày hỗ trợ quá trình trao đổi chất của cơ thể.'' được ghép với câu ``Tỷ phú Phạm Nhật Vượng đã quyết định tặng 1000 xe VinFast VF9 cho các y bác sĩ chống dịch Covid-19.'' Hai câu này không có quan hệ ngữ nghĩa trực tiếp nhưng đều mang phong cách thông tin trung lập giống các bản tin, dẫn đến việc mô hình nhầm lẫn khi phân loại.
+
+Thứ hai, một số trường hợp thuộc nhóm \textit{knowledge verification}, trong đó việc xác định tính đúng sai của thông tin đòi hỏi kiến thức thực tế ngoài văn bản. Ví dụ, câu ``Máy tính cá nhân đầu tiên được bán ra thị trường vào thế kỷ 18.'' là một khẳng định sai về mặt lịch sử công nghệ. Tuy nhiên, nếu chỉ dựa vào đặc trưng ngôn ngữ trong văn bản, mô hình khó có thể nhận biết được tính sai lệch của thông tin này. Điều này cho thấy các mô hình hiện tại chủ yếu học các mẫu ngôn ngữ bề mặt và chưa thể thực hiện kiểm chứng tri thức.
+
+Cuối cùng, một số lỗi xuất phát từ \textit{dataset ambiguity}, tức là những trường hợp mà nội dung văn bản không cung cấp đủ ngữ cảnh để xác định nhãn một cách rõ ràng. Chẳng hạn, câu ``Hà Nội: học sinh từ cấp 2 trở lên dự kiến đi học trở lại từ 4/5.'' có hình thức giống một bản tin chính thống và không chứa dấu hiệu rõ ràng của thông tin sai lệch. Trong các trường hợp như vậy, việc phân loại có thể phụ thuộc vào bối cảnh thời gian hoặc nguồn tin, điều mà các mô hình chỉ dựa trên văn bản không thể khai thác.
+
+Những quan sát này cho thấy các lỗi còn lại không chỉ xuất phát từ hạn chế của mô hình mà còn phản ánh độ phức tạp của bài toán phát hiện tin giả. Các hệ thống trong tương lai có thể được cải thiện bằng cách tích hợp thêm nguồn tri thức bên ngoài hoặc các cơ chế suy luận ngữ nghĩa sâu hơn.
+\subsection{Phân tích khả năng giải thích}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{feature_importance}
+  \caption{Top 15 đặc trưng TF-IDF có hệ số LR cao nhất (dương = chỉ điểm Giả, âm = chỉ điểm Thật)}
+  \label{fig:feature_importance}
+\end{figure}
+
+Hình~\ref{fig:feature_importance} minh họa 15 đặc trưng TF-IDF có hệ số lớn nhất trong mô hình Logistic Regression. 
+Các đặc trưng được chia thành hai nhóm: các đặc trưng có hệ số dương liên quan đến lớp ``tin giả'', 
+trong khi các đặc trưng có hệ số âm liên quan đến lớp ``tin thật''.
+
+Có thể quan sát rằng nhiều từ khóa liên quan đến tin giả thường mang tính giật gân hoặc gây chú ý, 
+ví dụ các cụm từ mang sắc thái khẳng định mạnh hoặc gây tò mò. 
+Ngược lại, các từ khóa liên quan đến tin thật thường xuất hiện trong văn phong báo chí chính thống, 
+chẳng hạn như các từ liên quan đến cơ quan nhà nước, tổ chức hoặc thuật ngữ chính sách.
+
+Kết quả này cho thấy mô hình Logistic Regression không chỉ học các đặc trưng tần suất đơn thuần 
+mà còn khai thác được những mẫu ngôn ngữ đặc trưng của từng loại tin. 
+Điều này giúp tăng tính minh bạch của mô hình, 
+vì các quyết định phân loại có thể được giải thích trực tiếp thông qua các trọng số đặc trưng.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{error_taxonomy}
+  \caption{Phân loại lỗi theo độ dài văn bản và mức độ tin cậy dự đoán}
+  \label{fig:error_taxonomy}
+\end{figure}
+
+Hình~\ref{fig:error_taxonomy} trình bày phân tích lỗi theo độ dài văn bản 
+và mức độ tin cậy của dự đoán.
+
+Ở biểu đồ bên trái, có thể quan sát rằng số lượng lỗi cao hơn đối với các văn bản ngắn. Điều này có thể được giải thích bởi việc các văn bản ngắn thường thiếu ngữ cảnh 
+và chứa ít đặc trưng TF-IDF hơn, khiến mô hình khó phân biệt giữa tin thật và tin giả.
+
+Biểu đồ bên phải cho thấy phần lớn các lỗi xảy ra ở các dự đoán có mức độ tin cậy thấp hoặc trung bình. 
+Trong khi đó, các dự đoán có độ tin cậy cao hiếm khi bị sai. 
+Kết quả này cho thấy xác suất dự đoán của mô hình có tương quan tốt với độ chính xác thực tế.
+
+Phân tích này gợi ý rằng trong các ứng dụng thực tế, 
+những dự đoán có độ tin cậy thấp có thể được chuyển sang bước kiểm tra thủ công 
+hoặc kết hợp với các hệ thống fact-checking để tăng độ tin cậy tổng thể của hệ thống.
+
+\section{Kết luận chương}
+
+Thực nghiệm toàn diện xác nhận \phobert là mô hình tốt nhất (F1 = \phobertFone\%) và vượt trội có ý nghĩa thống kê. Tiền huấn luyện trên ngữ liệu tiếng Việt là yếu tố quyết định, không phải kiến trúc phức tạp. SVM vượt BiLSTM là minh chứng rõ ràng cho vai trò của đặc trưng chất lượng trong học máy truyền thống.
+
 % ============================================================
-\section{Discussion}
+%  KẾT LUẬN
 % ============================================================
+\chapter*{Kết luận}
+\addcontentsline{toc}{chapter}{Kết luận}
 
-\subsection{Key Findings}
+\section*{Tóm tắt đóng góp}
 
-\begin{enumerate}
-    \item \textbf{PhoBERT achieves best overall performance}: With 90.58\% accuracy and 0.896 F1-score, PhoBERT numerically outperforms all baselines. While raw McNemar p-values are significant ($p \approx 0.011$), Holm-Bonferroni correction yields adjusted $p = 0.064$, highlighting the need for careful multiple comparison correction.
+Nghiên cứu xây dựng và so sánh bốn phương pháp phát hiện tin giả tiếng Việt trên bộ dữ liệu \nClean{} mẫu. Kết quả chính:
 
-    \item \textbf{Traditional ML remains competitive}: LR and SVM achieve $\sim$87\% accuracy with orders-of-magnitude fewer parameters and training time. For resource-constrained environments, these models offer an excellent accuracy-efficiency trade-off.
-
-    \item \textbf{Multiple comparison correction matters}: Raw McNemar p-values suggest significance, but Holm-Bonferroni correction raises them to $p_{\text{adj}} = 0.064$. This demonstrates that studies reporting significance without correction may overstate their claims. Nevertheless, the consistent improvement direction and non-overlapping bootstrap CIs provide practical evidence of PhoBERT's advantage.
-
-    \item \textbf{Word segmentation matters}: Our ablation study confirms that Vietnamese word segmentation is a critical preprocessing step, consistent with prior findings on Vietnamese NLP tasks~\cite{vncorenlp2018}.
-
-    \item \textbf{Paradigm gap is a step function}: The performance gap between traditional ML/BasicDL and transformers ($\sim$3\%) is more significant than the gap within traditional ML and BiLSTM ($<$0.5\%).
-\end{enumerate}
-
-\subsection{Practical Recommendations}
-
-Based on our comprehensive evaluation:
-
-\begin{itemize}[leftmargin=*]
-    \item \textbf{High-accuracy requirements}: PhoBERT is recommended when computational resources (GPU) and latency tolerance permit
-    \item \textbf{Resource-constrained environments}: SVM with TF-IDF provides the best balance of accuracy and efficiency
-    \item \textbf{Real-time applications}: Logistic Regression offers the fastest inference ($<$ 1ms per sample) with competitive accuracy
-    \item \textbf{High recall scenarios}: BiLSTM should be considered when missing fake news (false negatives) is costlier than false alarms
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{PhoBERT} đạt hiệu năng tốt nhất: Accuracy = \phobertAcc\%, F1 = \phobertFone\%, AUC = \phobertAUC.
+  \item Cải thiện \textbf{+\deltaLR\%} F1 so với baseline Logistic Regression.
+  \item Kiểm định McNemar xác nhận sự vượt trội \textbf{có ý nghĩa thống kê} ($p < 0.001$).
+  \item SVM vượt BiLSTM, minh chứng cho tầm quan trọng của chất lượng đặc trưng hơn độ phức tạp kiến trúc.
+  \item Ablation study: tiền huấn luyện trên tiếng Việt là nhân tố quyết định; phân đoạn từ ảnh hưởng ít với TF-IDF nhưng quan trọng với PhoBERT.
+  \item Phân tích lỗi xác định \nHardExamples{} mẫu khó và cho thấy tin giả hay giả mạo phong cách thông tấn quốc tế.
 \end{itemize}
 
-\subsection{Limitations}
+\section*{Hạn chế}
 
-\begin{enumerate}
-    \item \textbf{Dataset size}: With 5,655 samples, our dataset may not capture the full diversity of Vietnamese fake news patterns. Larger-scale datasets would enable more robust conclusions.
-    \item \textbf{Temporal dynamics}: News patterns evolve over time. Our dataset represents a snapshot and may not generalize to future fake news trends.
-    \item \textbf{Domain coverage}: The dataset may not cover all types of fake news (e.g., political, health, entertainment) equally.
-    \item \textbf{Single dataset}: Results are reported on one dataset; cross-dataset evaluation would strengthen generalizability claims.
-    \item \textbf{Effect size}: The individual-level effect size (Cohen's $d \approx 0.10$) is negligible, and Holm-Bonferroni corrected p-values are marginally non-significant ($p_{\text{adj}} = 0.064$), suggesting the practical impact should be evaluated in application context.
-\end{enumerate}
+\begin{itemize}[leftmargin=2em]
+  \item Tập dữ liệu có thể chưa bao phủ đầy đủ tất cả các thể loại và chiến thuật lan truyền tin giả trong thực tế, đặc biệt là các nội dung mới xuất hiện hoặc có tính chuyên biệt theo từng miền.
+  
+  \item Mô hình có thể suy giảm hiệu năng khi áp dụng trên dữ liệu ngoài miền huấn luyện (domain shift), đặc biệt đối với các hình thức ngụy trang tinh vi hoặc biến thể ngôn ngữ mới.
+  
+  \item Mô hình PhoBERT yêu cầu tài nguyên tính toán tương đối lớn, điều này có thể gây hạn chế khi triển khai trong môi trường thực tế quy mô lớn hoặc thời gian thực.
+\end{itemize}
+\section*{Hướng phát triển}
 
-% ============================================================
-\section{Conclusion}
-% ============================================================
-
-This study presents a comprehensive comparison of machine learning approaches for Vietnamese fake news detection. Our evaluation across four models and three paradigms demonstrates that PhoBERT achieves the best performance with 90.58\% accuracy and 0.896 F1-score. While the raw McNemar's test suggests significant improvement over all baselines ($p \approx 0.011$), Holm-Bonferroni correction for 6 pairwise comparisons yields adjusted p-values of 0.064, marginally above $\alpha = 0.05$. This highlights the importance of proper multiple comparison correction in machine learning benchmarks.
-
-Key contributions include: (1) the first systematic benchmark with proper statistical validation for Vietnamese fake news detection, (2) ablation studies quantifying the impact of preprocessing and feature engineering choices, (3) cross-validation results confirming the robustness of our findings, and (4) interpretability analysis identifying discriminative linguistic features.
-
-\subsection{Future Work}
-
-Several directions for future research include:
-\begin{enumerate}
-    \item \textbf{Multimodal detection}: Incorporating images, metadata, and social context alongside text
-    \item \textbf{Explainability}: Attention visualization for PhoBERT and SHAP analysis for traditional models
-    \item \textbf{Cross-domain evaluation}: Testing generalization across different news sources and topics
-    \item \textbf{Larger datasets}: Constructing more comprehensive Vietnamese fake news corpora
-    \item \textbf{Real-time deployment}: Building production-ready API with model selection based on latency requirements
-    \item \textbf{Multi-seed deep learning evaluation}: Running BiLSTM and PhoBERT with multiple random seeds for variance estimation
-\end{enumerate}
-
-% ============================================================
-\section*{Acknowledgment}
-% ============================================================
-We thank the reviewers for their constructive feedback. This work was supported by [funding information].
-
-\begin{thebibliography}{00}
-
-\bibitem{phobert2020} D.~Q.~Nguyen and A.~T.~Nguyen, ``PhoBERT: Pre-trained language models for Vietnamese,'' in \textit{Findings of the Association for Computational Linguistics: EMNLP 2020}, pp.~1037--1042, 2020.
-
-\bibitem{vncorenlp2018} T.~S.~Nguyen, L.~M.~Nguyen, and X.~C.~Pham, ``VnCoreNLP: A Vietnamese natural language processing toolkit,'' in \textit{Proceedings of NAACL-HLT 2018: Demonstrations}, pp.~56--60, 2018.
-
-\bibitem{zhou2020survey} X.~Zhou and R.~Zafarani, ``A survey of fake news: Fundamental theories, detection methods, and opportunities,'' \textit{ACM Computing Surveys}, vol.~53, no.~5, pp.~1--40, 2020.
-
-\bibitem{shu2017fake} K.~Shu, A.~Sliva, S.~Wang, J.~Tang, and H.~Liu, ``Fake news detection on social media: A data mining perspective,'' \textit{ACM SIGKDD Explorations Newsletter}, vol.~19, no.~1, pp.~22--36, 2017.
-
-\bibitem{lazer2018science} D.~M.~J.~Lazer, M.~A.~Baum, Y.~Benkler, et al., ``The science of fake news,'' \textit{Science}, vol.~359, no.~6380, pp.~1094--1096, 2018.
-
-\bibitem{vosoughi2018spread} S.~Vosoughi, D.~Roy, and S.~Aral, ``The spread of true and false news online,'' \textit{Science}, vol.~359, no.~6380, pp.~1146--1151, 2018.
-
-\bibitem{devlin2019bert} J.~Devlin, M.-W.~Chang, K.~Lee, and K.~Toutanova, ``BERT: Pre-training of deep bidirectional transformers for language understanding,'' in \textit{Proceedings of NAACL-HLT 2019}, pp.~4171--4186, 2019.
-
-\bibitem{kaliyar2021fakebert} R.~K.~Kaliyar, A.~Goswami, and P.~Narang, ``FakeBERT: Fake news detection in social media with a BERT-based deep learning approach,'' \textit{Multimedia Tools and Applications}, vol.~80, pp.~11765--11788, 2021.
-
-\bibitem{ruchansky2017csi} N.~Ruchansky, S.~Seo, and Y.~Liu, ``CSI: A hybrid deep model for fake news detection,'' in \textit{Proceedings of CIKM 2017}, pp.~797--806, 2017.
-
-\bibitem{wang2017liar} W.~Y.~Wang, ``Liar, liar pants on fire: A new benchmark dataset for fake news detection,'' in \textit{Proceedings of ACL 2017}, pp.~422--426, 2017.
-
-\bibitem{perez2018automatic} B.~P\'erez-Rosas, B.~Kleinberg, A.~Lefevre, and R.~Mihalcea, ``Automatic detection of fake news,'' in \textit{Proceedings of COLING 2018}, pp.~3391--3401, 2018.
-
-\bibitem{rashkin2017truth} H.~Rashkin, E.~Choi, J.~Y.~Jang, S.~Volkova, and Y.~Choi, ``Truth of varying shades: Analyzing language in fake news and political fact-checking,'' in \textit{Proceedings of EMNLP 2017}, pp.~2931--2937, 2017.
-
-\bibitem{ma2016detecting} J.~Ma, W.~Gao, P.~Mitra, et al., ``Detecting rumors from microblogs with recurrent neural networks,'' in \textit{Proceedings of IJCAI 2016}, pp.~3818--3824, 2016.
-
-\bibitem{vijjali2020two} R.~Vijjali, P.~Potluri, S.~Kumar, and S.~Teki, ``Two stage transformer model for COVID-19 fake news detection and fact checking,'' in \textit{Proceedings of the 3rd NLP4IF Workshop}, pp.~1--10, 2020.
-
-\bibitem{phan2022vit5} L.~T.~Phan, H.~T.~Tran, H.~Nguyen, and T.~H.~Trinh, ``ViT5: Pretrained text-to-text transformer for Vietnamese language generation,'' in \textit{Proceedings of NAACL 2022 Student Research Workshop}, pp.~136--142, 2022.
-
-\bibitem{tran2022bartpho} N.~L.~Tran, L.~M.~Le, and D.~Q.~Nguyen, ``BARTpho: Pre-trained sequence-to-sequence models for Vietnamese,'' in \textit{Proceedings of INTERSPEECH 2022}, pp.~5306--5310, 2022.
-
-\bibitem{underthesea2018} V.~A.~Vu, ``Underthesea: Vietnamese NLP toolkit,'' \textit{GitHub Repository}, 2018. [Online]. Available: \url{https://github.com/undertheseanlp/underthesea}
-
-\bibitem{kudo2018sentencepiece} T.~Kudo and J.~Richardson, ``SentencePiece: A simple and language independent subword tokenizer and detokenizer for neural text processing,'' in \textit{Proceedings of EMNLP 2018: System Demonstrations}, pp.~66--71, 2018.
-
-\bibitem{efron1993introduction} B.~Efron and R.~J.~Tibshirani, \textit{An Introduction to the Bootstrap}. New York: Chapman and Hall/CRC, 1993.
-
-\bibitem{holm1979simple} S.~Holm, ``A simple sequentially rejective multiple test procedure,'' \textit{Scandinavian Journal of Statistics}, vol.~6, no.~2, pp.~65--70, 1979.
-
-\bibitem{nguyen2021vietnamese} H.~T.~Nguyen, M.~L.~Nguyen, and S.~Satoh, ``Vietnamese fake news detection using machine learning,'' in \textit{Proceedings of KSE 2021}, pp.~1--6, 2021.
-
-\bibitem{vo2020fakenews} D.~T.~Vo and Y.~Lee, ``Fake news detection in Vietnamese social media using multi-feature approach,'' \textit{Journal of Information Science}, 2020.
-
-\bibitem{le2021vietnamese} H.~Q.~Le, T.~T.~Pham, and D.~Q.~Nguyen, ``Vietnamese text classification with PhoBERT,'' in \textit{Proceedings of RIVF 2021}, pp.~1--6, 2021.
-
-\bibitem{datareportal2024} S.~Kemp, ``Digital 2024: Vietnam,'' \textit{DataReportal}, 2024. [Online]. Available: \url{https://datareportal.com/reports/digital-2024-vietnam}
-
-\end{thebibliography}
-
-% ============================================================
-\appendix
-% ============================================================
-
-\section{Experimental Setup}
-\label{app:setup}
-
-\begin{itemize}[leftmargin=*]
-    \item \textbf{Hardware}: NVIDIA GPU with CUDA support
-    \item \textbf{Software}: Python 3.14, PyTorch 2.10.0, scikit-learn 1.8.0, Transformers 4.57.6
-    \item \textbf{Random seed}: 42 (for reproducibility)
-    \item \textbf{OS}: Linux
+\begin{itemize}[leftmargin=2em]
+  \item Thu thập thêm dữ liệu đa dạng thể loại tin giả tiếng Việt.
+  \item Tích hợp thông tin đa phương thức (hình ảnh, đồ thị lan truyền mạng xã hội).
+  \item Xây dựng hệ thống phát hiện thời gian thực với PhoBERT được nén nhỏ (knowledge distillation).
+  \item Kết hợp kiểm chứng thực tế (fact-checking) với phân loại tự động.
 \end{itemize}
 
-\section{Hyperparameter Search}
-
-Grid search was performed for traditional ML models with 5-fold stratified cross-validation:
-
-\begin{itemize}[leftmargin=*]
-    \item \textbf{Logistic Regression}: $C \in \{0.1, 1, 10\}$, solver $\in \{\text{lbfgs}, \text{liblinear}\}$
-    \item \textbf{SVM}: $C \in \{0.1, 1, 10\}$, kernel $\in \{\text{linear}, \text{rbf}\}$, $\gamma \in \{\text{scale}\}$
-\end{itemize}
-
-\section{Code Availability}
-
-The source code, trained models, and experimental results are available at: \url{https://github.com/hoanganh0705/FakeNewsDetector}
+% ============================================================
+%  TÀI LIỆU THAM KHẢO
+% ============================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references}
 
 \end{document}

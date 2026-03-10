@@ -1,0 +1,16 @@
+\babel@toc {vietnamese}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces Thống kê tập dữ liệu\relax }}{31}{table.caption.13}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces Siêu tham số các mô hình\relax }}{42}{table.caption.14}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Độ phức tạp và thời gian huấn luyện\relax }}{42}{table.caption.15}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces So sánh hiệu suất các mô hình trên tập kiểm tra\relax }}{43}{table.caption.17}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces Chỉ số hiệu suất theo từng lớp\relax }}{44}{table.caption.19}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces Chỉ số hiệu chuẩn xác suất của bốn mô hình trên tập kiểm tra\relax }}{48}{table.caption.23}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces Kết quả kiểm định McNemar (sau hiệu chỉnh Holm-Bonferroni)\relax }}{50}{table.caption.24}%
+\contentsline {table}{\numberline {4.7}{\ignorespaces Khoảng tin cậy 95\% Bootstrap~\cite {efron1979bootstrap} cho F1-Score (10,000 lần lấy mẫu lại)\relax }}{51}{table.caption.25}%
+\contentsline {table}{\numberline {4.8}{\ignorespaces Kết quả kiểm tra chéo 5-fold (3 seeds)\relax }}{52}{table.caption.26}%
+\contentsline {table}{\numberline {4.9}{\ignorespaces Kết quả Ablation Study trên tập kiểm tra\relax }}{55}{table.caption.27}%
+\contentsline {table}{\numberline {4.10}{\ignorespaces Phân tích lỗi trên tập kiểm tra\relax }}{59}{table.caption.30}%

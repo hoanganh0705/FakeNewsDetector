@@ -1,28 +1,28 @@
 """
 Explainability and Interpretability Analysis
 
+
 Provides interpretability insights for model predictions:
 1. TF-IDF feature importance for LR (top predictive words)
 2. SVM feature analysis
-3. Attention weight visualization for BiLSTM
 4. Error categorization taxonomy
 """
 
 import os
-import sys
 import json
-import pickle
+import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
-import seaborn as sns
-from collections import Counter
-from typing import Dict, List, Tuple
+from typing import Dict
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, BASE_DIR)
+from src.utils.common import MODEL_DIR_MAP, load_csv
+from config import cfg
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 def analyze_lr_feature_importance(top_n: int = 30) -> Dict:
@@ -37,37 +37,34 @@ def analyze_lr_feature_importance(top_n: int = 30) -> Dict:
     Returns:
         Dictionary with feature importance analysis
     """
-    print("\n" + "="*60)
-    print("1. LOGISTIC REGRESSION FEATURE IMPORTANCE")
-    print("="*60)
+    log.info("\n" + "="*60)
+    log.info("1. LOGISTIC REGRESSION FEATURE IMPORTANCE")
+    log.info("="*60)
     
     # Load LR model
-    model_path = os.path.join(BASE_DIR, 'experiments', 'lr', 'lr_model.pkl')
+    model_path = os.path.join(cfg.PATHS.lr_dir, 'lr_model.pkl')
     if not os.path.exists(model_path):
-        print("LR model not found")
+        log.info("LR model not found")
         return {}
     
-    with open(model_path, 'rb') as f:
-        model_data = pickle.load(f)
+    model_data = joblib.load(model_path)
     lr_model = model_data['model']
     
     # Load TF-IDF vectorizer
-    tfidf_path = os.path.join(BASE_DIR, 'data', 'features', 'tfidf', 'tfidf_vectorizer.pkl')
+    tfidf_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_vectorizer.pkl')
     if not os.path.exists(tfidf_path):
         # Try alternative path
-        tfidf_path = os.path.join(BASE_DIR, 'data', 'features', 'tfidf', 'tfidf_features.pkl')
+        tfidf_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_features.pkl')
         if not os.path.exists(tfidf_path):
-            print("TF-IDF vectorizer not found")
+            log.info("TF-IDF vectorizer not found")
             return {}
-        with open(tfidf_path, 'rb') as f:
-            features = pickle.load(f)
+        features = joblib.load(tfidf_path)
         if 'vectorizer' not in features:
-            print("Vectorizer not in features file")
+            log.info("Vectorizer not in features file")
             return {}
         vectorizer = features['vectorizer']
     else:
-        with open(tfidf_path, 'rb') as f:
-            vectorizer_data = pickle.load(f)
+        vectorizer_data = joblib.load(tfidf_path)
         if isinstance(vectorizer_data, dict) and 'vectorizer' in vectorizer_data:
             vectorizer = vectorizer_data['vectorizer']
         else:
@@ -84,13 +81,13 @@ def analyze_lr_feature_importance(top_n: int = 30) -> Dict:
     real_indices = np.argsort(coefficients)[:top_n]
     real_features = [(feature_names[i], round(coefficients[i], 4)) for i in real_indices]
     
-    print(f"\n  Top {top_n} Predictive Words for FAKE News:")
+    log.info(f"\n  Top {top_n} Predictive Words for FAKE News:")
     for word, coef in fake_features[:15]:
-        print(f"    {word:>25s}: {coef:+.4f}")
+        log.info(f"    {word:>25s}: {coef:+.4f}")
     
-    print(f"\n  Top {top_n} Predictive Words for REAL News:")
+    log.info(f"\n  Top {top_n} Predictive Words for REAL News:")
     for word, coef in real_features[:15]:
-        print(f"    {word:>25s}: {coef:+.4f}")
+        log.info(f"    {word:>25s}: {coef:+.4f}")
     
     return {
         'fake_news_features': fake_features,
@@ -111,37 +108,52 @@ def analyze_error_categories() -> Dict:
     - High confidence errors: model was very confident but wrong
     - Low confidence errors: model was uncertain
     """
-    print("\n" + "="*60)
-    print("2. ERROR CATEGORIZATION TAXONOMY")
-    print("="*60)
+    log.info("\n" + "="*60)
+    log.info("2. ERROR CATEGORIZATION TAXONOMY")
+    log.info("="*60)
     
     # Load test data
-    test_path = os.path.join(BASE_DIR, 'data', 'splits', 'test.csv')
-    test_df = pd.read_csv(test_path)
+    test_path = os.path.join(cfg.PATHS.splits_dir, 'test.csv')
+    test_df = load_csv(test_path, required_columns=['text', 'label'])
     
     # Load predictions
-    models = {
-        'Logistic Regression': 'lr',
-        'SVM': 'svm',
-        'BiLSTM': 'bilstm',
-        'PhoBERT': 'bert'
-    }
+    models = MODEL_DIR_MAP
     
     all_errors = {}
     
     for model_name, dir_name in models.items():
-        pred_path = os.path.join(BASE_DIR, 'experiments', dir_name, 'predictions.pkl')
+        pred_path = os.path.join(cfg.PATHS.experiments_dir, dir_name, 'predictions.pkl')
         if not os.path.exists(pred_path):
             continue
         
-        with open(pred_path, 'rb') as f:
-            preds = pickle.load(f)
-        
-        y_true = preds['y_true']
-        y_pred = preds['y_pred']
+        preds = joblib.load(pred_path)
+
+        y_true = np.asarray(preds['y_true']).reshape(-1)
+        y_pred = np.asarray(preds['y_pred']).reshape(-1)
         y_prob = preds.get('y_prob', None)
-        
-        errors_mask = y_pred != y_true
+        if y_prob is not None:
+            y_prob = np.asarray(y_prob).reshape(-1)
+
+        n = min(len(y_true), len(y_pred))
+        if n == 0:
+            log.warning("%s: Empty predictions, skipping", model_name)
+            continue
+
+        if len(y_true) != len(y_pred):
+            log.warning(
+                "%s: Length mismatch y_true=%d, y_pred=%d; truncating to %d",
+                model_name,
+                len(y_true),
+                len(y_pred),
+                n,
+            )
+
+        y_true = y_true[:n]
+        y_pred = y_pred[:n]
+        if y_prob is not None:
+            y_prob = y_prob[:n]
+
+        errors_mask = (y_pred != y_true)
         error_indices = np.where(errors_mask)[0]
         
         # Categorize errors
@@ -175,14 +187,14 @@ def analyze_error_categories() -> Dict:
         
         all_errors[model_name] = error_analysis
         
-        print(f"\n  {model_name}:")
-        print(f"    Total errors: {error_analysis['total_errors']}")
-        print(f"    FP: {error_analysis['false_positives']}, FN: {error_analysis['false_negatives']}")
-        print(f"    By length - Short: {error_analysis['by_text_length']['short']}, "
+        log.info(f"\n  {model_name}:")
+        log.info(f"    Total errors: {error_analysis['total_errors']}")
+        log.info(f"    FP: {error_analysis['false_positives']}, FN: {error_analysis['false_negatives']}")
+        log.info(f"    By length - Short: {error_analysis['by_text_length']['short']}, "
               f"Medium: {error_analysis['by_text_length']['medium']}, "
               f"Long: {error_analysis['by_text_length']['long']}")
         if y_prob is not None:
-            print(f"    High-conf errors: {error_analysis['by_confidence']['high_conf_error']}, "
+            log.info(f"    High-conf errors: {error_analysis['by_confidence']['high_conf_error']}, "
                   f"Low-conf errors: {error_analysis['by_confidence']['low_conf_error']}")
     
     return all_errors
@@ -203,8 +215,8 @@ def create_feature_importance_plot(feature_analysis: Dict, save_dir: str):
     axes[0].barh(range(len(words)), coefs, color='#d62728', alpha=0.8)
     axes[0].set_yticks(range(len(words)))
     axes[0].set_yticklabels(words, fontsize=9)
-    axes[0].set_xlabel('Coefficient', fontsize=11)
-    axes[0].set_title('Top Predictive Words for Fake News', fontsize=13, fontweight='bold')
+    axes[0].set_xlabel('Hệ số', fontsize=11)
+    axes[0].set_title('Từ dự đoán hàng đầu cho Tin giả', fontsize=13, fontweight='bold')
     axes[0].invert_yaxis()
     
     # Real news features
@@ -215,8 +227,8 @@ def create_feature_importance_plot(feature_analysis: Dict, save_dir: str):
     axes[1].barh(range(len(words)), coefs, color='#2ca02c', alpha=0.8)
     axes[1].set_yticks(range(len(words)))
     axes[1].set_yticklabels(words, fontsize=9)
-    axes[1].set_xlabel('|Coefficient|', fontsize=11)
-    axes[1].set_title('Top Predictive Words for Real News', fontsize=13, fontweight='bold')
+    axes[1].set_xlabel('|Hệ số|', fontsize=11)
+    axes[1].set_title('Từ dự đoán hàng đầu cho Tin thật', fontsize=13, fontweight='bold')
     axes[1].invert_yaxis()
     
     plt.tight_layout()
@@ -225,7 +237,7 @@ def create_feature_importance_plot(feature_analysis: Dict, save_dir: str):
     fig.savefig(os.path.join(save_dir, 'feature_importance.png'), dpi=300, bbox_inches='tight')
     fig.savefig(os.path.join(save_dir, 'feature_importance.pdf'), bbox_inches='tight')
     plt.close(fig)
-    print(f"\n  Feature importance plot saved to {save_dir}")
+    log.info(f"\n  Feature importance plot saved to {save_dir}")
 
 
 def create_error_taxonomy_plot(error_analysis: Dict, save_dir: str):
@@ -243,26 +255,27 @@ def create_error_taxonomy_plot(error_analysis: Dict, save_dir: str):
     x = np.arange(len(models))
     width = 0.35
     
-    axes[0].bar(x - width/2, fp_counts, width, label='False Positives', color='#ff7f0e', alpha=0.8)
-    axes[0].bar(x + width/2, fn_counts, width, label='False Negatives', color='#1f77b4', alpha=0.8)
+    axes[0].bar(x - width/2, fp_counts, width, label='Dương tính giả', color='#ff7f0e', alpha=0.8)
+    axes[0].bar(x + width/2, fn_counts, width, label='Âm tính giả', color='#1f77b4', alpha=0.8)
     axes[0].set_xticks(x)
     axes[0].set_xticklabels(models, rotation=15, ha='right', fontsize=9)
-    axes[0].set_ylabel('Count', fontsize=11)
-    axes[0].set_title('Error Type Distribution', fontsize=13, fontweight='bold')
+    axes[0].set_ylabel('Số lượng', fontsize=11)
+    axes[0].set_title('Phân phối loại lỗi', fontsize=13, fontweight='bold')
     axes[0].legend()
     
     # Error by text length
     categories = ['short', 'medium', 'long']
     bottom = np.zeros(len(models))
     colors = ['#e74c3c', '#f39c12', '#27ae60']
+    cat_labels = {'short': 'Văn bản ngắn', 'medium': 'Văn bản vừa', 'long': 'Văn bản dài'}
     
     for cat, color in zip(categories, colors):
         counts = [error_analysis[m]['by_text_length'][cat] for m in models]
-        axes[1].bar(models, counts, bottom=bottom, label=f'{cat.capitalize()} text', color=color, alpha=0.8)
+        axes[1].bar(models, counts, bottom=bottom, label=cat_labels[cat], color=color, alpha=0.8)
         bottom += np.array(counts)
     
-    axes[1].set_ylabel('Error Count', fontsize=11)
-    axes[1].set_title('Errors by Text Length', fontsize=13, fontweight='bold')
+    axes[1].set_ylabel('Số lỗi', fontsize=11)
+    axes[1].set_title('Lỗi theo độ dài văn bản', fontsize=13, fontweight='bold')
     axes[1].legend()
     plt.setp(axes[1].xaxis.get_majorticklabels(), rotation=15, ha='right', fontsize=9)
     
@@ -272,12 +285,13 @@ def create_error_taxonomy_plot(error_analysis: Dict, save_dir: str):
     fig.savefig(os.path.join(save_dir, 'error_taxonomy.png'), dpi=300, bbox_inches='tight')
     fig.savefig(os.path.join(save_dir, 'error_taxonomy.pdf'), bbox_inches='tight')
     plt.close(fig)
-    print(f"  Error taxonomy plot saved to {save_dir}")
+    log.info(f"Error taxonomy plot saved to {save_dir}")
 
 
 def main():
     """Run all explainability analyses."""
-    
+
+
     print("="*60)
     print("EXPLAINABILITY & INTERPRETABILITY ANALYSIS")
     print("="*60)
@@ -293,8 +307,8 @@ def main():
     results['error_taxonomy'] = error_analysis
     
     # Create visualizations
-    figures_dir = os.path.join(BASE_DIR, 'results', 'figures', 'explainability')
-    paper_figures_dir = os.path.join(BASE_DIR, 'paper', 'figures')
+    figures_dir = os.path.join(cfg.PATHS.figures_dir, 'explainability')
+    paper_figures_dir = cfg.PATHS.paper_figures_dir
     
     create_feature_importance_plot(feature_analysis, figures_dir)
     create_feature_importance_plot(feature_analysis, paper_figures_dir)
@@ -302,7 +316,7 @@ def main():
     create_error_taxonomy_plot(error_analysis, paper_figures_dir)
     
     # Save results
-    results_dir = os.path.join(BASE_DIR, 'results', 'tables')
+    results_dir = cfg.PATHS.tables_dir
     os.makedirs(results_dir, exist_ok=True)
     
     with open(os.path.join(results_dir, 'explainability_analysis.json'), 'w') as f:

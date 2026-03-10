@@ -1,22 +1,23 @@
 """
 Generate Publication-Quality Figures for Research Paper
 
+
 Creates high-resolution figures suitable for academic publication.
 """
 
 import os
-import sys
-import json
-import pickle
+import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import seaborn as sns
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, BASE_DIR)
+from src.utils.common import load_all_metrics, MODEL_DIR_MAP, load_csv
+from config import cfg
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
+
 
 # Publication-quality settings
 plt.rcParams.update({
@@ -34,31 +35,112 @@ plt.rcParams.update({
 })
 
 
+def figure0a_overall_distribution(save_path: str):
+    """
+    Figure 0a: Overall Label Distribution (Donut Chart)
+    """
+    fig, ax = plt.subplots(figsize=(6, 5))
+
+    # --- Load data ---
+    raw_df = load_csv(cfg.PATHS.raw_data, required_columns=['label'])
+
+    class_labels = ['Thật (0)', 'Giả (1)']
+    palette = ['#2E86AB', '#C73E1D']  # blue = real, red = fake
+
+    counts = raw_df['label'].value_counts().sort_index().values  # [real, fake]
+    total = counts.sum()
+    wedges, texts, autotexts = ax.pie(
+        counts,
+        labels=class_labels,
+        autopct=lambda pct: f'{pct:.1f}%\n({int(round(pct * total / 100)):,})',
+        startangle=90,
+        colors=palette,
+        pctdistance=0.72,
+        wedgeprops=dict(width=0.45, edgecolor='white', linewidth=2),
+        textprops={'fontsize': 11}
+    )
+    for at in autotexts:
+        at.set_fontsize(10)
+        at.set_fontweight('bold')
+    ax.set_title('Phân phối nhãn tổng thể', fontweight='bold', pad=14)
+    centre_circle = plt.Circle((0, 0), 0.55, fc='white')
+    ax.add_artist(centre_circle)
+    ax.text(0, 0, f'Tổng\n{total:,}', ha='center', va='center',
+            fontsize=13, fontweight='bold', color='#333333')
+
+    plt.tight_layout()
+    plt.savefig(save_path, format='png')
+    plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
+    plt.close()
+    log.info(f"\u2705 Saved: {save_path}")
+
+
+def figure0b_split_distribution(save_path: str):
+    """
+    Figure 0b: Per-Split Label Distribution (Grouped Bar Chart)
+    """
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    # --- Load data ---
+    splits = {}
+    for name in ['train', 'val', 'test']:
+        path = os.path.join(cfg.PATHS.splits_dir, f'{name}.csv')
+        if os.path.exists(path):
+            splits[name] = load_csv(path, required_columns=['label'])
+
+    palette = ['#2E86AB', '#C73E1D']  # blue = real, red = fake
+
+    split_names = ['Huấn luyện', 'Xác thực', 'Kiểm tra']
+    split_keys  = ['train', 'val', 'test']
+    real_counts = [int((splits[k]['label'] == 0).sum()) for k in split_keys if k in splits]
+    fake_counts = [int((splits[k]['label'] == 1).sum()) for k in split_keys if k in splits]
+
+    x = np.arange(len(split_names))
+    width = 0.32
+
+    bars_real = ax.bar(x - width / 2, real_counts, width,
+                       label='Thật (0)', color=palette[0],
+                       edgecolor='black', linewidth=0.5)
+    bars_fake = ax.bar(x + width / 2, fake_counts, width,
+                       label='Giả (1)', color=palette[1],
+                       edgecolor='black', linewidth=0.5)
+
+    # Value labels on bars
+    for bars in (bars_real, bars_fake):
+        for bar in bars:
+            h = bar.get_height()
+            ax.annotate(f'{int(h):,}',
+                        xy=(bar.get_x() + bar.get_width() / 2, h),
+                        xytext=(0, 4), textcoords='offset points',
+                        ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+    ax.set_ylabel('Số lượng mẫu')
+    ax.set_xlabel('Tập dữ liệu')
+    ax.set_title('Phân phối theo tập dữ liệu', fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(split_names)
+    ax.set_ylim(0, max(real_counts + fake_counts) * 1.18)
+    ax.legend(loc='upper right', framealpha=0.9)
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.set_axisbelow(True)
+
+    plt.tight_layout()
+    plt.savefig(save_path, format='png')
+    plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
+    plt.close()
+    log.info(f"\u2705 Saved: {save_path}")
+
+
 def load_all_data():
     """Load metrics and predictions."""
-    metrics = {}
+    metrics = load_all_metrics()
     predictions = {}
-    
-    models = {
-        'LR': ('lr', 'Logistic Regression'),
-        'SVM': ('svm', 'SVM'),
-        'BiLSTM': ('bilstm', 'BiLSTM'),
-        'PhoBERT': ('bert', 'PhoBERT')
-    }
-    
-    for short_name, (dir_name, full_name) in models.items():
-        # Load metrics
-        metrics_path = os.path.join(BASE_DIR, 'experiments', dir_name, 'metrics.json')
-        if os.path.exists(metrics_path):
-            with open(metrics_path, 'r') as f:
-                metrics[full_name] = json.load(f)
-        
-        # Load predictions
-        pred_path = os.path.join(BASE_DIR, 'experiments', dir_name, 'predictions.pkl')
+
+    for full_name, dir_name in MODEL_DIR_MAP.items():
+        pred_path = os.path.join(cfg.PATHS.experiments_dir, dir_name, 'predictions.pkl')
         if os.path.exists(pred_path):
-            with open(pred_path, 'rb') as f:
-                predictions[full_name] = pickle.load(f)
-    
+            predictions[full_name] = joblib.load(pred_path)
+
     return metrics, predictions
 
 
@@ -68,8 +150,8 @@ def figure1_model_comparison_bar(metrics: dict, save_path: str):
     """
     fig, ax = plt.subplots(figsize=(10, 5))
     
-    models = ['Logistic Regression', 'SVM', 'BiLSTM', 'PhoBERT']
-    metrics_list = ['Accuracy', 'Precision', 'Recall', 'F1-Score']
+    models = list(MODEL_DIR_MAP.keys())
+    metrics_list = ['Độ chính xác', 'Precision', 'Recall', 'F1-Score']
     
     data = []
     for model in models:
@@ -99,8 +181,8 @@ def figure1_model_comparison_bar(metrics: dict, save_path: str):
                        xytext=(0, 2), textcoords="offset points",
                        ha='center', va='bottom', fontsize=8)
     
-    ax.set_ylabel('Score')
-    ax.set_xlabel('Model')
+    ax.set_ylabel('Điểm số')
+    ax.set_xlabel('Mô hình')
     ax.set_xticks(x)
     ax.set_xticklabels(models)
     ax.set_ylim(0.8, 1.0)
@@ -116,7 +198,7 @@ def figure1_model_comparison_bar(metrics: dict, save_path: str):
     plt.savefig(save_path, format='png')
     plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
     plt.close()
-    print(f"✅ Saved: {save_path}")
+    log.info(f"Saved: {save_path}")
 
 
 def figure2_confusion_matrices(metrics: dict, save_path: str):
@@ -126,8 +208,8 @@ def figure2_confusion_matrices(metrics: dict, save_path: str):
     fig, axes = plt.subplots(2, 2, figsize=(10, 9))
     axes = axes.flatten()
     
-    models = ['Logistic Regression', 'SVM', 'BiLSTM', 'PhoBERT']
-    class_names = ['Real', 'Fake']
+    models = list(MODEL_DIR_MAP.keys())
+    class_names = ['Thật', 'Giả']
     
     for idx, model in enumerate(models):
         if model not in metrics:
@@ -149,8 +231,8 @@ def figure2_confusion_matrices(metrics: dict, save_path: str):
                              ha='center', va='center', color=color, fontsize=11)
         
         axes[idx].set_title(f'{model}', fontweight='bold', fontsize=12)
-        axes[idx].set_xlabel('Predicted Label')
-        axes[idx].set_ylabel('True Label')
+        axes[idx].set_xlabel('Nhãn dự đoán')
+        axes[idx].set_ylabel('Nhãn thực tế')
         axes[idx].set_xticks([0, 1])
         axes[idx].set_yticks([0, 1])
         axes[idx].set_xticklabels(class_names)
@@ -158,19 +240,19 @@ def figure2_confusion_matrices(metrics: dict, save_path: str):
         
         # Add accuracy
         acc = metrics[model]['test']['accuracy']
-        axes[idx].text(0.5, -0.18, f'Accuracy: {acc:.2%}', 
+        axes[idx].text(0.5, -0.18, f'Độ chính xác: {acc:.2%}', 
                       transform=axes[idx].transAxes, ha='center', fontsize=10)
     
     # Add colorbar
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
     cbar = fig.colorbar(im, cax=cbar_ax)
-    cbar.set_label('Normalized Count')
+    cbar.set_label('Tỷ lệ chuẩn hóa')
     
     plt.tight_layout(rect=[0, 0, 0.9, 1])
     plt.savefig(save_path, format='png')
     plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
     plt.close()
-    print(f"✅ Saved: {save_path}")
+    log.info(f"Saved: {save_path}")
 
 
 def figure3_roc_curves(predictions: dict, save_path: str):
@@ -193,18 +275,18 @@ def figure3_roc_curves(predictions: dict, save_path: str):
                linewidth=2, label=f'{model_name} (AUC = {roc_auc:.3f})')
     
     # Random classifier line
-    ax.plot([0, 1], [0, 1], 'k--', linewidth=1.5, alpha=0.7, label='Random (AUC = 0.500)')
+    ax.plot([0, 1], [0, 1], 'k--', linewidth=1.5, alpha=0.7, label='Ngẫu nhiên (AUC = 0.500)')
     
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
-    ax.set_xlabel('False Positive Rate')
-    ax.set_ylabel('True Positive Rate')
+    ax.set_xlabel('Tỷ lệ dương tính giả (FPR)')
+    ax.set_ylabel('Tỷ lệ dương tính thật (TPR)')
     ax.legend(loc='lower right', framealpha=0.95)
     ax.grid(True, alpha=0.3)
     ax.set_aspect('equal')
     
     # Add annotation for best model
-    ax.annotate('PhoBERT achieves\nhighest AUC', 
+    ax.annotate('PhoBERT đạt\nAUC cao nhất', 
                xy=(0.1, 0.9), fontsize=10, 
                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
     
@@ -212,7 +294,7 @@ def figure3_roc_curves(predictions: dict, save_path: str):
     plt.savefig(save_path, format='png')
     plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
     plt.close()
-    print(f"✅ Saved: {save_path}")
+    log.info(f"Saved: {save_path}")
 
 
 def figure4_precision_recall_curves(predictions: dict, save_path: str):
@@ -233,8 +315,8 @@ def figure4_precision_recall_curves(predictions: dict, save_path: str):
     
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
-    ax.set_xlabel('Recall')
-    ax.set_ylabel('Precision')
+    ax.set_xlabel('Độ phủ (Recall)')
+    ax.set_ylabel('Độ chính xác (Precision)')
     ax.legend(loc='lower left', framealpha=0.95)
     ax.grid(True, alpha=0.3)
     
@@ -242,7 +324,7 @@ def figure4_precision_recall_curves(predictions: dict, save_path: str):
     plt.savefig(save_path, format='png')
     plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
     plt.close()
-    print(f"✅ Saved: {save_path}")
+    log.info(f"Saved: {save_path}")
 
 
 def figure5_per_class_performance(metrics: dict, save_path: str):
@@ -251,7 +333,7 @@ def figure5_per_class_performance(metrics: dict, save_path: str):
     """
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     
-    models = ['Logistic Regression', 'SVM', 'BiLSTM', 'PhoBERT']
+    models = list(MODEL_DIR_MAP.keys())
     x = np.arange(len(models))
     width = 0.35
     
@@ -264,9 +346,9 @@ def figure5_per_class_performance(metrics: dict, save_path: str):
                width, label='Precision', color='#2E86AB', edgecolor='black', linewidth=0.5)
     axes[0].bar(x + width/2, [metrics[m]['test']['recall_per_class'][0] for m in models], 
                width, label='Recall', color='#F18F01', edgecolor='black', linewidth=0.5)
-    axes[0].set_ylabel('Score')
-    axes[0].set_xlabel('Model')
-    axes[0].set_title('Real News (Class 0)', fontweight='bold')
+    axes[0].set_ylabel('Điểm số')
+    axes[0].set_xlabel('Mô hình')
+    axes[0].set_title('Tin thật (Lớp 0)', fontweight='bold')
     axes[0].set_xticks(x)
     axes[0].set_xticklabels(models, rotation=15, ha='right')
     axes[0].set_ylim(0.75, 1.0)
@@ -278,9 +360,9 @@ def figure5_per_class_performance(metrics: dict, save_path: str):
                width, label='Precision', color='#2E86AB', edgecolor='black', linewidth=0.5)
     axes[1].bar(x + width/2, [metrics[m]['test']['recall_per_class'][1] for m in models], 
                width, label='Recall', color='#F18F01', edgecolor='black', linewidth=0.5)
-    axes[1].set_ylabel('Score')
-    axes[1].set_xlabel('Model')
-    axes[1].set_title('Fake News (Class 1)', fontweight='bold')
+    axes[1].set_ylabel('Điểm số')
+    axes[1].set_xlabel('Mô hình')
+    axes[1].set_title('Tin giả (Lớp 1)', fontweight='bold')
     axes[1].set_xticks(x)
     axes[1].set_xticklabels(models, rotation=15, ha='right')
     axes[1].set_ylim(0.75, 1.0)
@@ -291,7 +373,7 @@ def figure5_per_class_performance(metrics: dict, save_path: str):
     plt.savefig(save_path, format='png')
     plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
     plt.close()
-    print(f"✅ Saved: {save_path}")
+    log.info(f"Saved: {save_path}")
 
 
 def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
@@ -302,9 +384,9 @@ def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
     
     # Group models by paradigm
     paradigms = {
-        'Traditional ML\n(TF-IDF)': ['Logistic Regression', 'SVM'],
-        'Deep Learning\n(Word Embeddings)': ['BiLSTM'],
-        'Transformer\n(Pre-trained LM)': ['PhoBERT']
+        'ML truyền thống\n(TF-IDF)': ['Logistic Regression', 'SVM'],
+        'Học sâu\n(Word Embeddings)': ['BiLSTM'],
+        'Transformer\n(Mô hình ngôn ngữ)': ['PhoBERT']
     }
     
     paradigm_names = list(paradigms.keys())
@@ -324,7 +406,7 @@ def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
     x = np.arange(len(paradigm_names))
     width = 0.25
     
-    bars1 = ax.bar(x - width, paradigm_acc, width, label='Accuracy', color='#2E86AB', edgecolor='black')
+    bars1 = ax.bar(x - width, paradigm_acc, width, label='Độ chính xác', color='#2E86AB', edgecolor='black')
     bars2 = ax.bar(x, paradigm_f1, width, label='F1-Score', color='#F18F01', edgecolor='black')
     bars3 = ax.bar(x + width, paradigm_auc, width, label='ROC-AUC', color='#C73E1D', edgecolor='black')
     
@@ -337,8 +419,8 @@ def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
                        xytext=(0, 3), textcoords="offset points",
                        ha='center', va='bottom', fontsize=9)
     
-    ax.set_ylabel('Score')
-    ax.set_xlabel('Model Paradigm')
+    ax.set_ylabel('Điểm số')
+    ax.set_xlabel('Phương pháp mô hình')
     ax.set_xticks(x)
     ax.set_xticklabels(paradigm_names)
     ax.set_ylim(0.85, 1.0)
@@ -348,32 +430,39 @@ def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
     # Add arrow showing improvement
     ax.annotate('', xy=(2.2, 0.96), xytext=(0.2, 0.88),
                arrowprops=dict(arrowstyle='->', color='green', lw=2))
-    ax.text(1.2, 0.90, 'Performance\nImprovement', ha='center', fontsize=10, color='green')
+    ax.text(1.2, 0.90, 'Cải thiện\nhiệu suất', ha='center', fontsize=10, color='green')
     
     plt.tight_layout()
     plt.savefig(save_path, format='png')
     plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
     plt.close()
-    print(f"✅ Saved: {save_path}")
+    log.info(f"Saved: {save_path}")
 
 
 def main():
     """Generate all publication figures."""
-    
+
+
     print("="*70)
-    print("📊 GENERATING PUBLICATION-QUALITY FIGURES")
+    print("GENERATING PUBLICATION-QUALITY FIGURES")
     print("="*70)
     
     # Create output directory
-    figures_dir = os.path.join(BASE_DIR, 'paper', 'figures')
+    figures_dir = cfg.PATHS.paper_figures_dir
     os.makedirs(figures_dir, exist_ok=True)
     
     # Load data
-    print("\n📥 Loading data...")
+    print("\n Loading data...")
     metrics, predictions = load_all_data()
     
     # Generate figures
-    print("\n📈 Generating figures...")
+    print("\n Generating figures...")
+    
+    figure0a_overall_distribution(
+        os.path.join(figures_dir, 'fig0a_overall_distribution.png'))
+    
+    figure0b_split_distribution(
+        os.path.join(figures_dir, 'fig0b_split_distribution.png'))
     
     figure1_model_comparison_bar(
         metrics, os.path.join(figures_dir, 'fig1_model_comparison.png'))
@@ -394,9 +483,9 @@ def main():
         metrics, os.path.join(figures_dir, 'fig6_paradigm_comparison.png'))
     
     print("\n" + "="*70)
-    print("✅ ALL FIGURES GENERATED!")
+    print("ALL FIGURES GENERATED!")
     print("="*70)
-    print(f"\n📁 Figures saved to: {figures_dir}")
+    print(f"\n Figures saved to: {figures_dir}")
     print("\nGenerated files:")
     for f in sorted(os.listdir(figures_dir)):
         print(f"   - {f}")

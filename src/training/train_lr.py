@@ -1,28 +1,25 @@
 """
 Logistic Regression Training Script for Vietnamese Fake News Detection
 
+
 This script trains a Logistic Regression classifier using TF-IDF features.
 Includes hyperparameter tuning with cross-validation.
 """
 
 import os
-import sys
-import pickle
-import json
+import joblib
 import time
 import numpy as np
-from datetime import datetime
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
-from sklearn.utils.class_weight import compute_class_weight
 
-# Add project root to path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, BASE_DIR)
-
-from src.evaluation.metrics import compute_metrics, save_metrics, print_metrics
+from src.evaluation.metrics import compute_metrics, print_metrics
+from src.training.runner import save_training_results
 from config import cfg
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 class LogisticRegressionTrainer:
@@ -30,27 +27,27 @@ class LogisticRegressionTrainer:
     
     def __init__(
         self,
-        C: float = 1.0,
-        max_iter: int = 1000,
-        class_weight: str = 'balanced',
-        random_state: int = 42,
-        n_jobs: int = -1
+        C: float = None,
+        max_iter: int = None,
+        class_weight: str = None,
+        random_state: int = None,
+        n_jobs: int = None
     ):
         """
         Initialize the trainer.
         
         Args:
-            C: Regularization strength (inverse)
-            max_iter: Maximum iterations for solver
-            class_weight: 'balanced' to handle class imbalance
-            random_state: Random seed
-            n_jobs: Number of parallel jobs
+            C: Regularization strength (inverse, defaults to cfg.LR.C)
+            max_iter: Maximum iterations for solver (defaults to cfg.LR.max_iter)
+            class_weight: 'balanced' to handle class imbalance (defaults to cfg.LR.class_weight)
+            random_state: Random seed (defaults to cfg.RANDOM_STATE)
+            n_jobs: Number of parallel jobs (defaults to cfg.LR.n_jobs)
         """
-        self.C = C
-        self.max_iter = max_iter
-        self.class_weight = class_weight
-        self.random_state = random_state
-        self.n_jobs = n_jobs
+        self.C = C if C is not None else cfg.LR.C
+        self.max_iter = max_iter if max_iter is not None else cfg.LR.max_iter
+        self.class_weight = class_weight if class_weight is not None else cfg.LR.class_weight
+        self.random_state = random_state if random_state is not None else cfg.RANDOM_STATE
+        self.n_jobs = n_jobs if n_jobs is not None else cfg.LR.n_jobs
         
         self.model = None
         self.best_params = None
@@ -75,7 +72,7 @@ class LogisticRegressionTrainer:
         Returns:
             self
         """
-        print("Training Logistic Regression...")
+        log.info("Training Logistic Regression...")
         start_time = time.time()
         
         self.model = LogisticRegression(
@@ -83,8 +80,7 @@ class LogisticRegressionTrainer:
             max_iter=self.max_iter,
             class_weight=self.class_weight,
             random_state=self.random_state,
-            n_jobs=self.n_jobs,
-            solver='lbfgs'
+            n_jobs=self.n_jobs
         )
         
         self.model.fit(X_train, y_train)
@@ -99,9 +95,9 @@ class LogisticRegressionTrainer:
         self.training_history['train_time'] = train_time
         self.training_history['train_metrics'] = train_metrics
         
-        print(f"✅ Training complete in {train_time:.2f}s")
-        print(f"   Train Accuracy: {train_metrics['accuracy']:.4f}")
-        print(f"   Train F1: {train_metrics['f1_macro']:.4f}")
+        log.info(f"Training complete in {train_time:.2f}s")
+        log.info(f"Train Accuracy: {train_metrics['accuracy']:.4f}")
+        log.info(f"Train F1: {train_metrics['f1_macro']:.4f}")
         
         # Validation metrics
         if X_val is not None and y_val is not None:
@@ -110,8 +106,8 @@ class LogisticRegressionTrainer:
             val_metrics = compute_metrics(y_val, y_val_pred, y_val_prob)
             self.training_history['val_metrics'] = val_metrics
             
-            print(f"   Val Accuracy: {val_metrics['accuracy']:.4f}")
-            print(f"   Val F1: {val_metrics['f1_macro']:.4f}")
+            log.info(f"Val Accuracy: {val_metrics['accuracy']:.4f}")
+            log.info(f"Val F1: {val_metrics['f1_macro']:.4f}")
         
         return self
     
@@ -120,7 +116,7 @@ class LogisticRegressionTrainer:
         X_train: np.ndarray,
         y_train: np.ndarray,
         param_grid: dict = None,
-        cv: int = 5
+        cv: int = None
     ) -> 'LogisticRegressionTrainer':
         """
         Train with hyperparameter tuning using GridSearchCV.
@@ -135,14 +131,11 @@ class LogisticRegressionTrainer:
             self
         """
         if param_grid is None:
-            param_grid = {
-                'C': [0.01, 0.1, 1, 10, 100],
-                'solver': ['lbfgs', 'liblinear'],
-                'max_iter': [1000]
-            }
+            param_grid = cfg.LR.param_grid
+        cv = cv if cv is not None else cfg.LR.cv_folds
         
-        print("Running GridSearchCV for Logistic Regression...")
-        print(f"Parameter grid: {param_grid}")
+        log.info("Running GridSearchCV for Logistic Regression...")
+        log.info(f"Parameter grid: {param_grid}")
         
         start_time = time.time()
         
@@ -170,9 +163,9 @@ class LogisticRegressionTrainer:
         
         search_time = time.time() - start_time
         
-        print(f"\n✅ GridSearchCV complete in {search_time:.2f}s")
-        print(f"   Best params: {self.best_params}")
-        print(f"   Best CV F1: {grid_search.best_score_:.4f}")
+        log.info(f"\n GridSearchCV complete in {search_time:.2f}s")
+        log.info(f"Best params: {self.best_params}")
+        log.info(f"Best CV F1: {grid_search.best_score_:.4f}")
         
         self.training_history['grid_search_time'] = search_time
         self.training_history['best_params'] = self.best_params
@@ -195,21 +188,19 @@ class LogisticRegressionTrainer:
         return compute_metrics(y, y_pred, y_prob)
     
     def save(self, path: str) -> None:
-        """Save the model."""
+        """Save the model using joblib (safer & faster for sklearn objects)."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'wb') as f:
-            pickle.dump({
-                'model': self.model,
-                'best_params': self.best_params,
-                'training_history': self.training_history
-            }, f)
-        print(f"✅ Model saved to {path}")
+        joblib.dump({
+            'model': self.model,
+            'best_params': self.best_params,
+            'training_history': self.training_history
+        }, path)
+        log.info(f"Model saved to {path}")
     
     @classmethod
     def load(cls, path: str) -> 'LogisticRegressionTrainer':
         """Load a saved model."""
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
+        data = joblib.load(path)
         
         trainer = cls()
         trainer.model = data['model']
@@ -220,78 +211,77 @@ class LogisticRegressionTrainer:
 
 def main():
     """Main training function."""
-    
-    print("="*60)
-    print("🔬 LOGISTIC REGRESSION TRAINING")
-    print("="*60)
-    
+
+    log.info("=" * 60)
+    log.info("LOGISTIC REGRESSION TRAINING")
+    log.info("=" * 60)
+
     # Paths
-    features_path = os.path.join(BASE_DIR, 'data', 'features', 'tfidf', 'tfidf_features.pkl')
-    model_dir = os.path.join(BASE_DIR, 'experiments', 'lr')
+    features_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_features.pkl')
+    model_dir = cfg.PATHS.lr_dir
     os.makedirs(model_dir, exist_ok=True)
-    
+
     # Load features
-    print("\nLoading TF-IDF features...")
-    with open(features_path, 'rb') as f:
-        features = pickle.load(f)
-    
+    log.info("Loading TF-IDF features...")
+    features = joblib.load(features_path)
+
     X_train = features['X_train']
     X_val = features['X_val']
     X_test = features['X_test']
     y_train = features['y_train']
     y_val = features['y_val']
     y_test = features['y_test']
-    
-    print(f"  Train: {X_train.shape}")
-    print(f"  Val: {X_val.shape}")
-    print(f"  Test: {X_test.shape}")
-    
-    # Initialize trainer
-    trainer = LogisticRegressionTrainer(
-        class_weight='balanced',
-        random_state=cfg.RANDOM_STATE
-    )
+
+    log.info("Train: %s", X_train.shape)
+    log.info("Val: %s", X_val.shape)
+    log.info("Test: %s", X_test.shape)
+
+    # Initialize trainer (defaults pulled from cfg.LR)
+    trainer = LogisticRegressionTrainer()
 
     # Train with GridSearchCV
-    print("\n" + "-"*60)
+    log.info("-" * 60)
     trainer.train_with_grid_search(
         X_train, y_train,
-        param_grid=cfg.LR.param_grid,
         cv=cfg.LR.cv_folds
     )
-    
+
     # Evaluate on validation set
-    print("\n" + "-"*60)
-    print("📊 Validation Results:")
+    log.info("-" * 60)
+    log.info("Validation Results:")
     val_metrics = trainer.evaluate(X_val, y_val)
     print_metrics(val_metrics)
-    
+
     # Evaluate on test set
-    print("\n" + "-"*60)
-    print("📊 Test Results:")
-    test_metrics = trainer.evaluate(X_test, y_test)
+    log.info("-" * 60)
+    log.info("Test Results:")
+    y_pred_test = trainer.predict(X_test)
+    y_prob_test = trainer.predict_proba(X_test)
+    test_metrics = compute_metrics(y_test, y_pred_test, y_prob_test)
     print_metrics(test_metrics)
-    
+
     # Save model
     model_path = os.path.join(model_dir, 'lr_model.pkl')
     trainer.save(model_path)
-    
-    # Save metrics
-    metrics_path = os.path.join(model_dir, 'metrics.json')
-    save_metrics({
-        'model': 'Logistic Regression',
-        'best_params': trainer.best_params,
-        'validation': val_metrics,
-        'test': test_metrics,
-        'timestamp': datetime.now().isoformat()
-    }, metrics_path)
-    
-    print("\n" + "="*60)
-    print("✅ TRAINING COMPLETE!")
-    print("="*60)
-    print(f"Model saved to: {model_path}")
-    print(f"Metrics saved to: {metrics_path}")
-    
+
+    # Save results (metrics, predictions, experiment log)
+    save_training_results(
+        model_name='Logistic Regression',
+        model_dir=model_dir,
+        model_path=model_path,
+        metrics_dict={
+            'model': 'Logistic Regression',
+            'best_params': trainer.best_params,
+            'validation': val_metrics,
+            'test': test_metrics,
+        },
+        test_metrics=test_metrics,
+        y_true=y_test,
+        y_pred=y_pred_test,
+        y_prob=y_prob_test,
+        experiment_config={'best_params': trainer.best_params},
+    )
+
     return trainer, test_metrics
 
 

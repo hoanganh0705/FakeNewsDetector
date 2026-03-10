@@ -1,19 +1,25 @@
 """
 Word Embedding Feature Extraction for BiLSTM Model
 
+
 This module provides word embeddings (Word2Vec/FastText) for sequence models.
 Converts text into sequences of word vectors for BiLSTM training.
 """
 
 import pandas as pd
 import numpy as np
-import pickle
+import joblib
 import os
 from typing import Tuple, Optional, List
 from collections import Counter
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
+from config import cfg
+from src.utils.common import load_csv
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 class Vocabulary:
@@ -67,7 +73,7 @@ class Vocabulary:
             self.word2idx[word] = idx
             self.idx2word[idx] = word
         
-        print(f"✅ Built vocabulary with {len(self.word2idx)} words")
+        log.info(f"Built vocabulary with {len(self.word2idx)} words")
         return self
     
     def text_to_indices(self, text: str) -> List[int]:
@@ -91,7 +97,7 @@ class EmbeddingFeatureExtractor:
         max_vocab_size: int = 50000,
         max_seq_length: int = 512,
         min_freq: int = 2,
-        embedding_dim: int = 256
+        embedding_dim: Optional[int] = None
     ):
         """
         Initialize the embedding feature extractor.
@@ -105,7 +111,8 @@ class EmbeddingFeatureExtractor:
         self.max_vocab_size = max_vocab_size
         self.max_seq_length = max_seq_length
         self.min_freq = min_freq
-        self.embedding_dim = embedding_dim
+        # Use central config embedding dim when not provided
+        self.embedding_dim = embedding_dim if embedding_dim is not None else cfg.BILSTM.embedding_dim
         
         self.vocab = Vocabulary(max_size=max_vocab_size, min_freq=min_freq)
         self.is_fitted = False
@@ -120,7 +127,7 @@ class EmbeddingFeatureExtractor:
         Returns:
             self
         """
-        print(f"Building vocabulary from {len(texts)} documents...")
+        log.info(f"Building vocabulary from {len(texts)} documents...")
         self.vocab.build(texts)
         self.is_fitted = True
         return self
@@ -146,7 +153,7 @@ class EmbeddingFeatureExtractor:
                 indices = indices[:self.max_seq_length]
             sequences.append(indices)
         
-        print(f"✅ Transformed {len(texts)} documents to sequences")
+        log.info(f"Transformed {len(texts)} documents to sequences")
         return sequences
     
     def fit_transform(self, texts: pd.Series) -> List[List[int]]:
@@ -162,22 +169,20 @@ class EmbeddingFeatureExtractor:
     def save(self, path: str) -> None:
         """Save the extractor to disk."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'wb') as f:
-            pickle.dump({
-                'vocab': self.vocab,
-                'max_vocab_size': self.max_vocab_size,
-                'max_seq_length': self.max_seq_length,
-                'min_freq': self.min_freq,
-                'embedding_dim': self.embedding_dim,
-                'is_fitted': self.is_fitted
-            }, f)
-        print(f"✅ Saved embedding extractor to {path}")
+        joblib.dump({
+            'vocab': self.vocab,
+            'max_vocab_size': self.max_vocab_size,
+            'max_seq_length': self.max_seq_length,
+            'min_freq': self.min_freq,
+            'embedding_dim': self.embedding_dim,
+            'is_fitted': self.is_fitted
+        }, path)
+        log.info(f"Saved embedding extractor to {path}")
     
     @classmethod
     def load(cls, path: str) -> 'EmbeddingFeatureExtractor':
         """Load extractor from disk."""
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
+        data = joblib.load(path)
         
         extractor = cls(
             max_vocab_size=data['max_vocab_size'],
@@ -188,7 +193,7 @@ class EmbeddingFeatureExtractor:
         extractor.vocab = data['vocab']
         extractor.is_fitted = data['is_fitted']
         
-        print(f"✅ Loaded embedding extractor from {path}")
+        log.info(f"Loaded embedding extractor from {path}")
         return extractor
 
 
@@ -246,7 +251,7 @@ def extract_embedding_features(
     test_path: str,
     output_dir: str,
     max_vocab_size: int = 50000,
-    max_seq_length: int = 512,
+    max_seq_length: Optional[int] = None,
     min_freq: int = 2
 ) -> dict:
     """
@@ -265,16 +270,17 @@ def extract_embedding_features(
         Dictionary with sequences, labels, and extractor
     """
     os.makedirs(output_dir, exist_ok=True)
+    max_seq_length = int(max_seq_length or cfg.BILSTM.max_seq_length)
     
     # Load datasets
-    print("Loading datasets...")
-    train_df = pd.read_csv(train_path)
-    val_df = pd.read_csv(val_path)
-    test_df = pd.read_csv(test_path)
+    log.info("Loading datasets...")
+    train_df = load_csv(train_path, required_columns=['text', 'label'])
+    val_df = load_csv(val_path, required_columns=['text', 'label'])
+    test_df = load_csv(test_path, required_columns=['text', 'label'])
     
-    print(f"  Train: {len(train_df)} samples")
-    print(f"  Val: {len(val_df)} samples")
-    print(f"  Test: {len(test_df)} samples")
+    log.info(f"Train: {len(train_df)} samples")
+    log.info(f"Val: {len(val_df)} samples")
+    log.info(f"Test: {len(test_df)} samples")
     
     # Initialize and fit extractor
     extractor = EmbeddingFeatureExtractor(
@@ -284,7 +290,7 @@ def extract_embedding_features(
     )
     
     # Extract features
-    print("\nExtracting embedding features...")
+    log.info("\nExtracting embedding features...")
     train_sequences = extractor.fit_transform(train_df['text'])
     val_sequences = extractor.transform(val_df['text'])
     test_sequences = extractor.transform(test_df['text'])
@@ -300,22 +306,21 @@ def extract_embedding_features(
     
     # Save features
     features_path = os.path.join(output_dir, 'embedding_features.pkl')
-    with open(features_path, 'wb') as f:
-        pickle.dump({
-            'train_sequences': train_sequences,
-            'val_sequences': val_sequences,
-            'test_sequences': test_sequences,
-            'y_train': y_train,
-            'y_val': y_val,
-            'y_test': y_test,
-            'vocab_size': extractor.vocab_size
-        }, f)
-    print(f"✅ Saved features to {features_path}")
+    joblib.dump({
+        'train_sequences': train_sequences,
+        'val_sequences': val_sequences,
+        'test_sequences': test_sequences,
+        'y_train': y_train,
+        'y_val': y_val,
+        'y_test': y_test,
+        'vocab_size': extractor.vocab_size
+    }, features_path)
+    log.info(f"Saved features to {features_path}")
     
     # Calculate sequence length statistics
     train_lengths = [len(seq) for seq in train_sequences]
-    print(f"\nSequence length statistics (train):")
-    print(f"  Min: {min(train_lengths)}, Max: {max(train_lengths)}, Mean: {np.mean(train_lengths):.0f}")
+    log.info(f"\nSequence length statistics (train):")
+    log.info(f"Min: {min(train_lengths)}, Max: {max(train_lengths)}, Mean: {np.mean(train_lengths):.0f}")
     
     return {
         'train_sequences': train_sequences,
@@ -335,7 +340,7 @@ def create_data_loaders(
     y_train: np.ndarray,
     y_val: np.ndarray,
     y_test: np.ndarray,
-    batch_size: int = 32
+    batch_size: Optional[int] = None
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     """
     Create PyTorch DataLoaders for training.
@@ -352,21 +357,23 @@ def create_data_loaders(
     val_dataset = TextDataset(val_sequences, y_val)
     test_dataset = TextDataset(test_sequences, y_test)
     
+    bs = int(batch_size or cfg.BILSTM.batch_size)
+
     train_loader = DataLoader(
         train_dataset, 
-        batch_size=batch_size, 
+        batch_size=bs, 
         shuffle=True, 
         collate_fn=collate_fn
     )
     val_loader = DataLoader(
         val_dataset, 
-        batch_size=batch_size, 
+        batch_size=bs, 
         shuffle=False, 
         collate_fn=collate_fn
     )
     test_loader = DataLoader(
         test_dataset, 
-        batch_size=batch_size, 
+        batch_size=bs, 
         shuffle=False, 
         collate_fn=collate_fn
     )
@@ -374,16 +381,60 @@ def create_data_loaders(
     return train_loader, val_loader, test_loader
 
 
+def load_fasttext_matrix(vocab, fasttext_path: str, dim: int) -> np.ndarray:
+    """
+    Load FastText .bin model and build an embedding matrix aligned with `vocab`.
+
+    Args:
+        vocab: Vocabulary instance (with .word2idx mapping) or a mapping {word: idx}
+        fasttext_path: Path to the FastText .bin file
+        dim: Embedding dimensionality
+
+    Returns:
+        numpy array of shape (vocab_size, dim)
+    """
+
+
+    try:
+        import fasttext
+    except ImportError:
+        raise ImportError("fasttext library is required to load FastText .bin files")
+
+    # Determine mapping
+    if hasattr(vocab, 'word2idx'):
+        mapping = vocab.word2idx
+    elif isinstance(vocab, dict):
+        mapping = vocab
+    else:
+        raise ValueError("vocab must have .word2idx or be a dict mapping")
+
+    model = fasttext.load_model(fasttext_path)
+
+    vocab_size = max(mapping.values()) + 1
+    matrix = np.random.normal(scale=0.6, size=(vocab_size, dim)).astype(np.float32)
+
+    for word, idx in mapping.items():
+        if idx >= vocab_size:
+            continue
+        try:
+            vec = model.get_word_vector(word)
+            if vec is not None and len(vec) == dim:
+                matrix[idx] = vec
+        except (KeyError, ValueError):
+            # keep random init for missing words
+            continue
+
+    return matrix
+
+
 if __name__ == "__main__":
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    
     features = extract_embedding_features(
-        train_path=os.path.join(BASE_DIR, 'data', 'splits', 'train.csv'),
-        val_path=os.path.join(BASE_DIR, 'data', 'splits', 'val.csv'),
-        test_path=os.path.join(BASE_DIR, 'data', 'splits', 'test.csv'),
-        output_dir=os.path.join(BASE_DIR, 'data', 'features', 'embedding'),
+        train_path=os.path.join(cfg.PATHS.splits_dir, 'train.csv'),
+        val_path=os.path.join(cfg.PATHS.splits_dir, 'val.csv'),
+        test_path=os.path.join(cfg.PATHS.splits_dir, 'test.csv'),
+        output_dir=cfg.PATHS.embedding_dir,
         max_vocab_size=50000,
-        max_seq_length=512,
+        max_seq_length=cfg.BILSTM.max_seq_length,
         min_freq=2
     )
     

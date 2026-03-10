@@ -1,20 +1,17 @@
 """
 Text preprocessing module for Vietnamese fake news detection.
-Handles text cleaning, tokenization, and feature extraction.
+Handles text cleaning and normalization.
+
+Vectorization has been consolidated into ``src.features.tfidf_features.TfidfFeatureExtractor``
+to avoid duplication.  This module focuses exclusively on text-level cleaning.
 """
 
 import re
-import string
-from typing import List, Optional
+from typing import List
 import pandas as pd
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-import pickle
-import os
-import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from src.utils.logger import get_logger
+from config import cfg
 
 _log = get_logger(__name__)
 
@@ -22,51 +19,11 @@ _log = get_logger(__name__)
 class TextPreprocessor:
     """
     Text preprocessing pipeline for Vietnamese text.
-    Includes cleaning, normalization, and vectorization.
+    Provides cleaning / normalization utilities only.
+
+    For TF-IDF vectorization use :class:`src.features.tfidf_features.TfidfFeatureExtractor`.
     """
-    
-    def __init__(
-        self,
-        vectorizer_type: str = 'tfidf',
-        max_features: int = 10000,
-        ngram_range: tuple = (1, 2),
-        min_df: int = 2,
-        max_df: float = 0.95
-    ):
-        """
-        Initialize the text preprocessor.
-        
-        Args:
-            vectorizer_type: 'tfidf' or 'count'
-            max_features: Maximum number of features
-            ngram_range: Range of n-grams to extract
-            min_df: Minimum document frequency
-            max_df: Maximum document frequency
-        """
-        self.vectorizer_type = vectorizer_type
-        self.max_features = max_features
-        self.ngram_range = ngram_range
-        self.min_df = min_df
-        self.max_df = max_df
-        
-        if vectorizer_type == 'tfidf':
-            self.vectorizer = TfidfVectorizer(
-                max_features=max_features,
-                ngram_range=ngram_range,
-                min_df=min_df,
-                max_df=max_df,
-                sublinear_tf=True
-            )
-        else:
-            self.vectorizer = CountVectorizer(
-                max_features=max_features,
-                ngram_range=ngram_range,
-                min_df=min_df,
-                max_df=max_df
-            )
-        
-        self.is_fitted = False
-    
+
     def clean_text(self, text: str) -> str:
         """
         Clean and normalize Vietnamese text.
@@ -83,8 +40,11 @@ class TextPreprocessor:
         # Convert to lowercase
         text = text.lower()
         
-        # Remove URLs
-        text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
+        # Remove markdown-style URL patterns like [<URL>](<URL>) or [text](https://...)
+        text = re.sub(r'\[.*?\]\([^)]*\)', '', text)
+
+        # Remove bare URLs and <URL> placeholder tags
+        text = re.sub(r'https?://\S+|www\.\S+', '', text, flags=re.MULTILINE)
         text = re.sub(r'<URL>', '', text)
         
         # Remove email addresses
@@ -112,101 +72,86 @@ class TextPreprocessor:
             List of cleaned text strings
         """
         return [self.clean_text(text) for text in texts]
-    
-    def fit(self, texts: List[str]):
-        """
-        Fit the vectorizer on training texts.
-        
-        Args:
-            texts: List of training texts
-        """
-        cleaned_texts = self.preprocess_texts(texts)
-        self.vectorizer.fit(cleaned_texts)
-        self.is_fitted = True
-        return self
-    
-    def transform(self, texts: List[str]) -> np.ndarray:
-        """
-        Transform texts to feature vectors.
-        
-        Args:
-            texts: List of texts to transform
-            
-        Returns:
-            Feature matrix
-        """
-        if not self.is_fitted:
-            raise ValueError("Preprocessor must be fitted before transform")
-        
-        cleaned_texts = self.preprocess_texts(texts)
-        return self.vectorizer.transform(cleaned_texts)
-    
-    def fit_transform(self, texts: List[str]) -> np.ndarray:
-        """
-        Fit and transform texts in one step.
-        
-        Args:
-            texts: List of training texts
-            
-        Returns:
-            Feature matrix
-        """
-        cleaned_texts = self.preprocess_texts(texts)
-        self.is_fitted = True
-        return self.vectorizer.fit_transform(cleaned_texts)
-    
-    def get_feature_names(self) -> List[str]:
-        """Get the feature names from the vectorizer."""
-        if not self.is_fitted:
-            raise ValueError("Preprocessor must be fitted first")
-        return self.vectorizer.get_feature_names_out().tolist()
-    
-    def save(self, path: str):
-        """Save the preprocessor to disk."""
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'wb') as f:
-            pickle.dump({
-                'vectorizer': self.vectorizer,
-                'vectorizer_type': self.vectorizer_type,
-                'max_features': self.max_features,
-                'ngram_range': self.ngram_range,
-                'min_df': self.min_df,
-                'max_df': self.max_df,
-                'is_fitted': self.is_fitted
-            }, f)
-        _log.info("Preprocessor saved to %s", path)
-    
-    @classmethod
-    def load(cls, path: str) -> 'TextPreprocessor':
-        """Load a preprocessor from disk."""
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
-        
-        preprocessor = cls(
-            vectorizer_type=data['vectorizer_type'],
-            max_features=data['max_features'],
-            ngram_range=data['ngram_range'],
-            min_df=data['min_df'],
-            max_df=data['max_df']
-        )
-        preprocessor.vectorizer = data['vectorizer']
-        preprocessor.is_fitted = data['is_fitted']
-        return preprocessor
 
 
-def load_data(data_path: str, text_col: str = 'text', label_col: str = 'label'):
+def clean_dataset(
+    df: pd.DataFrame,
+    text_col: str = 'text',
+    date_col: str = 'date',
+    min_words: int = None
+) -> pd.DataFrame:
     """
-    Load data from CSV file.
-    
+    Apply full dataset-level quality fixes based on the dataset quality report.
+
+    Steps applied (in order):
+      1. Deduplicate on text column — prevents data leakage across splits.
+      2. Drop very-short / broken records (< min_words valid words).
+      3. Standardize date column to ISO 8601 (YYYY-MM-DD).
+      4. Re-number the 'id' column sequentially.
+
     Args:
-        data_path: Path to CSV file
-        text_col: Name of text column
-        label_col: Name of label column
-        
+        df:        DataFrame loaded from raw.csv (or any raw CSV).
+        text_col:  Name of the text column.
+        date_col:  Name of the date column.
+        min_words: Minimum number of whitespace-separated words required.
+
+    Returns:
+        Cleaned DataFrame with reset index.
+    """
+    min_words = min_words if min_words is not None else cfg.DATA.min_word_count
+
+    original_len = len(df)
+
+    # 1. Deduplicate
+    df = df.drop_duplicates(subset=text_col).reset_index(drop=True)
+    after_dedup = len(df)
+    _log.info("Deduplication: %d → %d rows (removed %d duplicates)",
+              original_len, after_dedup, original_len - after_dedup)
+
+    # 2. Drop very-short / broken records
+    df = df[df[text_col].fillna('').astype(str).str.split().str.len() >= min_words]
+    df = df.reset_index(drop=True)
+    after_short = len(df)
+    _log.info("Short-record filter (<%d words): %d → %d rows (removed %d records)",
+              min_words, after_dedup, after_short, after_dedup - after_short)
+
+    # 3. Standardize date column to YYYY-MM-DD
+    if date_col in df.columns:
+        df[date_col] = pd.to_datetime(df[date_col], errors='coerce').dt.strftime('%Y-%m-%d')
+        _log.info("Date column '%s' standardized to ISO 8601.", date_col)
+
+    # 4. Re-number IDs
+    if 'id' in df.columns:
+        df['id'] = range(1, len(df) + 1)
+
+    _log.info("Dataset cleaning complete. Final size: %d records.", len(df))
+    return df
+
+
+def load_data(
+    data_path: str,
+    text_col: str = 'text',
+    label_col: str = 'label',
+    apply_cleaning: bool = True
+):
+    """
+    Load data from CSV file with optional dataset-level cleaning.
+
+    Args:
+        data_path:      Path to CSV file (e.g. data/raw/raw.csv).
+        text_col:       Name of text column.
+        label_col:      Name of label column.
+        apply_cleaning: If True, run clean_dataset() before returning.
+
     Returns:
         Tuple of (texts, labels)
     """
     df = pd.read_csv(data_path)
+    _log.info("Loaded %d records from %s", len(df), data_path)
+
+    if apply_cleaning:
+        df = clean_dataset(df, text_col=text_col, min_words=cfg.DATA.min_word_count)
+
     texts = df[text_col].fillna('').astype(str).tolist()
     labels = df[label_col].values
     return texts, labels
