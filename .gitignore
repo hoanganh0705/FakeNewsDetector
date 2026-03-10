@@ -45,3 +45,4 @@ results/
 
 # Generated PDFs (reproducible from scripts, PNGs are tracked instead)
 paper/figures/*.pdf
+data/fasttext/

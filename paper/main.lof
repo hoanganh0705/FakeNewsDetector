@@ -1,0 +1,21 @@
+\babel@toc {vietnamese}{}\relax 
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces Các bước tiền xử lý văn bản trước khi đưa vào mô hình học máy.\relax }}{13}{figure.caption.6}%
+\contentsline {figure}{\numberline {1.2}{\ignorespaces Minh họa thuật toán nhị phân SVM (phỏng theo \cite {cortes1995svm})\relax }}{16}{figure.caption.7}%
+\contentsline {figure}{\numberline {1.3}{\ignorespaces Minh họa cấu trúc mạng LSTM~\cite {jm3}.\relax }}{21}{figure.caption.8}%
+\contentsline {figure}{\numberline {1.4}{\ignorespaces Minh họa cấu trúc mạng LSTM hai chiều~\cite {article}.\relax }}{23}{figure.caption.9}%
+\contentsline {figure}{\numberline {1.5}{\ignorespaces Minh họa khối encoder của Transformer \cite {vaswani2017attention}.\relax }}{25}{figure.caption.10}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Phân phối nhãn theo từng tập dữ liệu và tổng quan toàn bộ 15,789{} mẫu\relax }}{27}{figure.caption.11}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Phân phối nhãn trong các tập dữ liệu huấn luyện, kiểm định và kiểm tra\relax }}{31}{figure.caption.12}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces So sánh các chỉ số hiệu năng (Accuracy, F1-Score, ROC-AUC) của bốn mô hình trên tập kiểm tra\relax }}{43}{figure.caption.16}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Precision, Recall và F1-Score theo từng lớp (Thật / Giả) cho bốn mô hình\relax }}{44}{figure.caption.18}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Ma trận nhầm lẫn của bốn mô hình trên tập kiểm tra (2,094{} mẫu)\relax }}{45}{figure.caption.20}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Đường cong ROC và Precision-Recall của bốn mô hình trên tập kiểm tra\relax }}{46}{figure.caption.21}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Biểu đồ hiệu chuẩn (Reliability Diagram) của bốn mô hình trên tập kiểm tra. Đường chéo nét đứt biểu diễn hiệu chuẩn hoàn hảo; các điểm vuông biểu diễn tỷ lệ dương tính thực tế trong mỗi bin xác suất.\relax }}{48}{figure.caption.22}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces So sánh số lượng False Positive (FP) và False Negative (FN) trong quá trình phân loại\relax }}{57}{figure.caption.28}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Phân phối lỗi phân loại theo độ dài văn bản\relax }}{58}{figure.caption.29}%
+\contentsline {figure}{\numberline {4.8}{\ignorespaces Top 15 đặc trưng TF-IDF có hệ số LR cao nhất (dương = chỉ điểm Giả, âm = chỉ điểm Thật)\relax }}{61}{figure.caption.31}%
+\contentsline {figure}{\numberline {4.9}{\ignorespaces Phân loại lỗi theo độ dài văn bản và mức độ tin cậy dự đoán\relax }}{62}{figure.caption.32}%

@@ -4,6 +4,7 @@ Evaluation metrics module for fake news detection.
 
 import numpy as np
 from sklearn.metrics import (
+
     accuracy_score,
     precision_score,
     recall_score,
@@ -19,6 +20,9 @@ from typing import Dict, Any, Optional, Tuple
 import matplotlib.pyplot as plt
 import os
 import json
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 def compute_metrics(
@@ -42,7 +46,7 @@ def compute_metrics(
         Dictionary containing all metrics
     """
     if target_names is None:
-        target_names = ['Real (0)', 'Fake (1)']
+        target_names = ['Thật (0)', 'Giả (1)']
     
     metrics = {
         'accuracy': accuracy_score(y_true, y_pred),
@@ -85,37 +89,37 @@ def print_metrics(metrics: Dict[str, Any], title: str = "Evaluation Results"):
         metrics: Dictionary of metrics
         title: Title for the output
     """
-    print("\n" + "=" * 60)
-    print(f" {title}")
-    print("=" * 60)
+    log.info("\n" + "=" * 60)
+    log.info(f" {title}")
+    log.info("=" * 60)
     
-    print(f"\n📊 Overall Metrics:")
-    print(f"   Accuracy:          {metrics['accuracy']:.4f}")
-    print(f"   Precision (macro): {metrics['precision_macro']:.4f}")
-    print(f"   Recall (macro):    {metrics['recall_macro']:.4f}")
-    print(f"   F1-Score (macro):  {metrics['f1_macro']:.4f}")
+    log.info(f"\n Overall Metrics:")
+    log.info(f"Accuracy:          {metrics['accuracy']:.4f}")
+    log.info(f"Precision (macro): {metrics['precision_macro']:.4f}")
+    log.info(f"Recall (macro):    {metrics['recall_macro']:.4f}")
+    log.info(f"F1-Score (macro):  {metrics['f1_macro']:.4f}")
     
     if 'roc_auc' in metrics:
-        print(f"   ROC-AUC:           {metrics['roc_auc']:.4f}")
-        print(f"   Avg Precision:     {metrics['average_precision']:.4f}")
+        log.info(f"ROC-AUC:           {metrics['roc_auc']:.4f}")
+        log.info(f"Avg Precision:     {metrics['average_precision']:.4f}")
     
-    print(f"\n📋 Per-Class Metrics:")
-    print(f"   {'Class':<12} {'Precision':<12} {'Recall':<12} {'F1-Score':<12}")
-    print(f"   {'-'*48}")
+    log.info(f"\n Per-Class Metrics:")
+    log.info(f"   {'Class':<12} {'Precision':<12} {'Recall':<12} {'F1-Score':<12}")
+    log.info(f"   {'-'*48}")
     
     class_names = ['Real (0)', 'Fake (1)']
     for i, name in enumerate(class_names):
-        print(f"   {name:<12} {metrics['precision_per_class'][i]:<12.4f} "
+        log.info(f"   {name:<12} {metrics['precision_per_class'][i]:<12.4f} "
               f"{metrics['recall_per_class'][i]:<12.4f} {metrics['f1_per_class'][i]:<12.4f}")
     
-    print(f"\n📉 Confusion Matrix:")
+    log.info(f"\n Confusion Matrix:")
     cm = metrics['confusion_matrix']
-    print(f"                 Predicted")
-    print(f"                 Real    Fake")
-    print(f"   Actual Real   {cm[0][0]:<7} {cm[0][1]:<7}")
-    print(f"   Actual Fake   {cm[1][0]:<7} {cm[1][1]:<7}")
+    log.info(f"                 Predicted")
+    log.info(f"                 Real    Fake")
+    log.info(f"Actual Real   {cm[0][0]:<7} {cm[0][1]:<7}")
+    log.info(f"Actual Fake   {cm[1][0]:<7} {cm[1][1]:<7}")
     
-    print("=" * 60 + "\n")
+    log.info("=" * 60 + "\n")
 
 
 def plot_confusion_matrix(
@@ -139,13 +143,13 @@ def plot_confusion_matrix(
     im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     ax.figure.colorbar(im, ax=ax)
     
-    classes = ['Real (0)', 'Fake (1)']
+    classes = ['Thật (0)', 'Giả (1)']
     ax.set(xticks=np.arange(cm.shape[1]),
            yticks=np.arange(cm.shape[0]),
            xticklabels=classes, yticklabels=classes,
            title=title,
-           ylabel='Actual',
-           xlabel='Predicted')
+           ylabel='Thực tế',
+           xlabel='Dự đoán')
     
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
     
@@ -163,7 +167,7 @@ def plot_confusion_matrix(
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Confusion matrix saved to {save_path}")
+        log.info(f"Confusion matrix saved to {save_path}")
     
     plt.close()
 
@@ -191,11 +195,11 @@ def plot_roc_curve(
     
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.4f})')
-    ax.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Random')
+    ax.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Ngẫu nhiên')
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
-    ax.set_xlabel('False Positive Rate')
-    ax.set_ylabel('True Positive Rate')
+    ax.set_xlabel('Tỷ lệ dương tính giả (FPR)')
+    ax.set_ylabel('Tỷ lệ dương tính thật (TPR)')
     ax.set_title(title)
     ax.legend(loc="lower right")
     ax.grid(True, alpha=0.3)
@@ -205,7 +209,7 @@ def plot_roc_curve(
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"ROC curve saved to {save_path}")
+        log.info(f"ROC curve saved to {save_path}")
     
     plt.close()
 
@@ -236,8 +240,8 @@ def plot_precision_recall_curve(
             label=f'PR curve (AP = {avg_precision:.4f})')
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
-    ax.set_xlabel('Recall')
-    ax.set_ylabel('Precision')
+    ax.set_xlabel('Độ phủ (Recall)')
+    ax.set_ylabel('Độ chính xác (Precision)')
     ax.set_title(title)
     ax.legend(loc="lower left")
     ax.grid(True, alpha=0.3)
@@ -247,7 +251,7 @@ def plot_precision_recall_curve(
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Precision-Recall curve saved to {save_path}")
+        log.info(f"Precision-Recall curve saved to {save_path}")
     
     plt.close()
 
@@ -260,6 +264,8 @@ def save_metrics(metrics: Dict[str, Any], path: str):
         metrics: Dictionary of metrics
         path: Path to save the file
     """
+
+
     os.makedirs(os.path.dirname(path), exist_ok=True)
     
     # Convert numpy arrays to lists for JSON serialization
@@ -281,4 +287,4 @@ def save_metrics(metrics: Dict[str, Any], path: str):
     with open(path, 'w') as f:
         json.dump(serializable_metrics, f, indent=2)
     
-    print(f"Metrics saved to {path}")
+    log.info(f"Metrics saved to {path}")

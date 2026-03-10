@@ -1,6 +1,7 @@
 """
 PhoBERT Feature Extraction for Transformer Model
 
+
 PhoBERT is a pre-trained language model for Vietnamese, based on RoBERTa architecture.
 This module provides tokenization and dataset creation for PhoBERT fine-tuning.
 """
@@ -8,34 +9,57 @@ This module provides tokenization and dataset creation for PhoBERT fine-tuning.
 import pandas as pd
 import numpy as np
 import os
-import pickle
+import joblib
 from typing import Optional, Tuple, Dict
 import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer
+from config import cfg
+from src.utils.common import load_csv
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 class PhoBertFeatureExtractor:
     """
     PhoBERT tokenizer wrapper for Vietnamese text classification.
     
-    Uses vinai/phobert-base tokenizer to convert text to input IDs and attention masks.
+    Uses tokenizer defined in `cfg.PHOBERT.model_name` to convert text to input IDs and attention masks.
     """
     
-    MODEL_NAME = "vinai/phobert-base"
-    
-    def __init__(self, max_length: int = 256):
+    # Use centralized config for model name and max length
+    MODEL_NAME = cfg.PHOBERT.model_name
+
+    def __init__(self, max_length: int = None):
         """
         Initialize PhoBERT tokenizer.
-        
+
         Args:
-            max_length: Maximum sequence length (PhoBERT max is 256)
+            max_length: Maximum sequence length; defaults to `cfg.PHOBERT.max_seq_len`
         """
-        self.max_length = min(max_length, 256)  # PhoBERT max is 256
-        
-        print(f"Loading PhoBERT tokenizer ({self.MODEL_NAME})...")
-        self.tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME)
-        print(f"✅ Tokenizer loaded. Vocab size: {self.tokenizer.vocab_size}")
+        self.max_length = int(max_length or cfg.PHOBERT.max_seq_len)
+
+        # Try local cache first, then fall back to HuggingFace Hub download
+        local_cache_dir = os.path.join(cfg.PATHS.features_dir, 'phobert_tokenizer_cache')
+        log.info(f"Loading PhoBERT tokenizer ({self.MODEL_NAME})...")
+        try:
+            if os.path.isdir(local_cache_dir) and os.listdir(local_cache_dir):
+                self.tokenizer = AutoTokenizer.from_pretrained(local_cache_dir)
+                log.info("Tokenizer loaded from local cache.")
+            else:
+                self.tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME)
+                os.makedirs(local_cache_dir, exist_ok=True)
+                self.tokenizer.save_pretrained(local_cache_dir)
+                log.info("Tokenizer downloaded and cached locally.")
+        except OSError:
+            # Offline or air-gapped: try local cache as last resort
+            if os.path.isdir(local_cache_dir):
+                self.tokenizer = AutoTokenizer.from_pretrained(local_cache_dir)
+                log.info("Tokenizer loaded from local cache (offline fallback).")
+            else:
+                raise
+        log.info(f"Vocab size: {self.tokenizer.vocab_size}")
     
     def tokenize(
         self, 
@@ -52,7 +76,7 @@ class PhoBertFeatureExtractor:
         Returns:
             Dictionary with 'input_ids' and 'attention_mask'
         """
-        print(f"Tokenizing {len(texts)} documents...")
+        log.info(f"Tokenizing {len(texts)} documents...")
         
         # Convert to list of strings
         text_list = texts.astype(str).tolist()
@@ -66,7 +90,7 @@ class PhoBertFeatureExtractor:
             return_tensors='pt' if return_tensors else None
         )
         
-        print(f"✅ Tokenized to shape: {encoded['input_ids'].shape}")
+        log.info(f"Tokenized to shape: {encoded['input_ids'].shape}")
         
         return {
             'input_ids': encoded['input_ids'],
@@ -76,18 +100,16 @@ class PhoBertFeatureExtractor:
     def save_config(self, path: str) -> None:
         """Save configuration (tokenizer is loaded from HuggingFace)."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'wb') as f:
-            pickle.dump({
-                'model_name': self.MODEL_NAME,
-                'max_length': self.max_length
-            }, f)
-        print(f"✅ Saved config to {path}")
+        joblib.dump({
+            'model_name': self.MODEL_NAME,
+            'max_length': self.max_length
+        }, path)
+        log.info(f"Saved config to {path}")
     
     @classmethod
     def load(cls, path: str) -> 'PhoBertFeatureExtractor':
         """Load extractor from config."""
-        with open(path, 'rb') as f:
-            config = pickle.load(f)
+        config = joblib.load(path)
         return cls(max_length=config['max_length'])
 
 
@@ -130,7 +152,7 @@ def extract_phobert_features(
     val_path: str,
     test_path: str,
     output_dir: str,
-    max_length: int = 256
+    max_length: int = None
 ) -> dict:
     """
     Extract PhoBERT features from train/val/test datasets.
@@ -148,20 +170,20 @@ def extract_phobert_features(
     os.makedirs(output_dir, exist_ok=True)
     
     # Load datasets
-    print("Loading datasets...")
-    train_df = pd.read_csv(train_path)
-    val_df = pd.read_csv(val_path)
-    test_df = pd.read_csv(test_path)
+    log.info("Loading datasets...")
+    train_df = load_csv(train_path, required_columns=['text', 'label'])
+    val_df = load_csv(val_path, required_columns=['text', 'label'])
+    test_df = load_csv(test_path, required_columns=['text', 'label'])
     
-    print(f"  Train: {len(train_df)} samples")
-    print(f"  Val: {len(val_df)} samples")
-    print(f"  Test: {len(test_df)} samples")
+    log.info(f"Train: {len(train_df)} samples")
+    log.info(f"Val: {len(val_df)} samples")
+    log.info(f"Test: {len(test_df)} samples")
     
-    # Initialize tokenizer
+    # Initialize tokenizer (use cfg.PHOBERT.max_seq_len when max_length is None)
     extractor = PhoBertFeatureExtractor(max_length=max_length)
     
     # Tokenize texts
-    print("\nTokenizing texts...")
+    log.info("\nTokenizing texts...")
     train_encoded = extractor.tokenize(train_df['text'])
     val_encoded = extractor.tokenize(val_df['text'])
     test_encoded = extractor.tokenize(test_df['text'])
@@ -177,19 +199,18 @@ def extract_phobert_features(
     
     # Save features
     features_path = os.path.join(output_dir, 'phobert_features.pkl')
-    with open(features_path, 'wb') as f:
-        pickle.dump({
-            'train_input_ids': train_encoded['input_ids'],
-            'train_attention_mask': train_encoded['attention_mask'],
-            'val_input_ids': val_encoded['input_ids'],
-            'val_attention_mask': val_encoded['attention_mask'],
-            'test_input_ids': test_encoded['input_ids'],
-            'test_attention_mask': test_encoded['attention_mask'],
-            'y_train': y_train,
-            'y_val': y_val,
-            'y_test': y_test
-        }, f)
-    print(f"✅ Saved features to {features_path}")
+    joblib.dump({
+        'train_input_ids': train_encoded['input_ids'],
+        'train_attention_mask': train_encoded['attention_mask'],
+        'val_input_ids': val_encoded['input_ids'],
+        'val_attention_mask': val_encoded['attention_mask'],
+        'test_input_ids': test_encoded['input_ids'],
+        'test_attention_mask': test_encoded['attention_mask'],
+        'y_train': y_train,
+        'y_val': y_val,
+        'y_test': y_test
+    }, features_path)
+    log.info(f"Saved features to {features_path}")
     
     return {
         'train_encoded': train_encoded,
@@ -209,7 +230,7 @@ def create_phobert_data_loaders(
     y_train: np.ndarray,
     y_val: np.ndarray,
     y_test: np.ndarray,
-    batch_size: int = 16
+    batch_size: int = None
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     """
     Create PyTorch DataLoaders for PhoBERT training.
@@ -222,6 +243,8 @@ def create_phobert_data_loaders(
     Returns:
         Tuple of (train_loader, val_loader, test_loader)
     """
+
+
     train_dataset = PhoBertDataset(
         train_encoded['input_ids'],
         train_encoded['attention_mask'],
@@ -238,22 +261,22 @@ def create_phobert_data_loaders(
         y_test
     )
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    # Default to config batch size when not provided
+    bs = int(batch_size or cfg.PHOBERT.batch_size)
+    train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=bs, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False)
     
     return train_loader, val_loader, test_loader
 
 
 if __name__ == "__main__":
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    
     features = extract_phobert_features(
-        train_path=os.path.join(BASE_DIR, 'data', 'splits', 'train.csv'),
-        val_path=os.path.join(BASE_DIR, 'data', 'splits', 'val.csv'),
-        test_path=os.path.join(BASE_DIR, 'data', 'splits', 'test.csv'),
-        output_dir=os.path.join(BASE_DIR, 'data', 'features', 'phobert'),
-        max_length=256
+        train_path=os.path.join(cfg.PATHS.splits_dir, 'train.csv'),
+        val_path=os.path.join(cfg.PATHS.splits_dir, 'val.csv'),
+        test_path=os.path.join(cfg.PATHS.splits_dir, 'test.csv'),
+        output_dir=cfg.PATHS.phobert_dir,
+        max_length=cfg.PHOBERT.max_seq_len
     )
     
     print("\n" + "="*50)

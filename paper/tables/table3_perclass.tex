@@ -1,23 +1,23 @@
 
 \begin{table}[h]
 \centering
-\caption{Per-Class Performance Metrics}
+\caption{Chỉ số hiệu suất theo từng lớp}
 \label{tab:perclass}
 \begin{tabular}{llccc}
 \toprule
-\textbf{Model} & \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+\textbf{Mô hình} & \textbf{Lớp} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
 \midrule
-\multirow{2}{*}{Logistic Regression} & Real & 0.8753 & 0.8786 & 0.8770 \\
- & Fake & 0.8289 & 0.8245 & 0.8267 \\
+\multirow{2}{*}{Logistic Regression} & Thật & \lrRealPrec & \lrRealRec & \lrRealFone \\
+ & Giả & \lrFakePrec & \lrFakeRec & \lrFakeFone \\
 \midrule
-\multirow{2}{*}{SVM} & Real & 0.8620 & 0.9317 & 0.8955 \\
- & Fake & 0.8920 & 0.7908 & 0.8383 \\
+\multirow{2}{*}{SVM} & Thật & \svmRealPrec & \svmRealRec & \svmRealFone \\
+ & Giả & \svmFakePrec & \svmFakeRec & \svmFakeFone \\
 \midrule
-\multirow{2}{*}{BiLSTM} & Real & 0.8653 & 0.9014 & 0.8830 \\
- & Fake & 0.8531 & 0.8032 & 0.8274 \\
+\multirow{2}{*}{BiLSTM} & Thật & \bilstmRealPrec & \bilstmRealRec & \bilstmRealFone \\
+ & Giả & \bilstmFakePrec & \bilstmFakeRec & \bilstmFakeFone \\
 \midrule
-\multirow{2}{*}{PhoBERT} & Real & 0.9375 & 0.9292 & 0.9333 \\
- & Fake & 0.9019 & 0.9131 & 0.9075 \\
+\multirow{2}{*}{PhoBERT} & Thật & \phobertRealPrec & \phobertRealRec & \phobertRealFone \\
+ & Giả & \phobertFakePrec & \phobertFakeRec & \phobertFakeFone \\
 \bottomrule
 \end{tabular}
 \end{table}

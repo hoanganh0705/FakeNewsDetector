@@ -1,0 +1,15 @@
+\begin{table}[H]
+\centering
+\caption{Chỉ số hiệu chuẩn xác suất của bốn mô hình trên tập kiểm tra}
+\label{tab:calibration}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Mô hình} & \textbf{ECE} $\downarrow$ & \textbf{MCE} $\downarrow$ & \textbf{Brier Score} $\downarrow$ \\
+\midrule
+Logistic Regression & 0{,}0242 & 0{,}1329 & 0{,}1136 \\
+SVM & \textbf{0{,}0229} & \textbf{0{,}0740} & 0{,}1134 \\
+BiLSTM & 0{,}0884 & 0{,}2135 & 0{,}1348 \\
+PhoBERT & 0{,}0911 & 0{,}6622 & \textbf{0{,}0925} \\
+\bottomrule
+\end{tabular}
+\end{table}

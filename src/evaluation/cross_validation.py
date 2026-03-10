@@ -1,6 +1,7 @@
 """
 Cross-Validation Evaluation for Traditional ML Models
 
+
 Performs stratified k-fold cross-validation for Logistic Regression and SVM
 to provide more robust performance estimates beyond a single train/test split.
 
@@ -9,26 +10,25 @@ the validity of reported results.
 """
 
 import os
-import sys
 import json
-import pickle
+import joblib
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.model_selection import StratifiedKFold, cross_validate
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, 
-    f1_score, roc_auc_score, make_scorer
+    precision_score, recall_score,
+    f1_score, make_scorer
 )
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, BASE_DIR)
-
 from config import cfg
+
+from src.utils.logger import get_logger
+log = get_logger(__name__)
 
 
 def get_scorers() -> Dict:
@@ -47,9 +47,9 @@ def run_cross_validation(
     X: np.ndarray, 
     y: np.ndarray, 
     model_name: str,
-    n_folds: int = 5,
+    n_folds: int = None,
     n_seeds: int = 3,
-    random_state: int = 42
+    random_state: int = None
 ) -> Dict:
     """
     Run stratified k-fold cross-validation with multiple random seeds.
@@ -66,13 +66,17 @@ def run_cross_validation(
     Returns:
         Dictionary with CV results
     """
+    if random_state is None:
+        random_state = cfg.RANDOM_STATE
+    if n_folds is None:
+        n_folds = cfg.LR.cv_folds
     scorers = get_scorers()
     all_results = {metric: [] for metric in scorers.keys()}
     
-    print(f"\n{'='*60}")
-    print(f"Cross-Validation: {model_name}")
-    print(f"{'='*60}")
-    print(f"  Folds: {n_folds}, Seeds: {n_seeds}")
+    log.info(f"\n{'='*60}")
+    log.info(f"Cross-Validation: {model_name}")
+    log.info(f"{'='*60}")
+    log.info(f"Folds: {n_folds}, Seeds: {n_seeds}")
     
     for seed_idx in range(n_seeds):
         seed = random_state + seed_idx * 100
@@ -92,7 +96,7 @@ def run_cross_validation(
             all_results[metric].extend(cv_results[key].tolist())
         
         mean_f1 = np.mean(cv_results['test_f1_macro'])
-        print(f"  Seed {seed}: Mean F1 = {mean_f1:.4f}")
+        log.info(f"Seed {seed}: Mean F1 = {mean_f1:.4f}")
     
     # Compute summary statistics
     summary = {}
@@ -108,34 +112,37 @@ def run_cross_validation(
             'all_scores': [float(s) for s in scores]
         }
     
-    print(f"\n  Summary ({n_folds * n_seeds} total folds):")
-    print(f"    Accuracy:  {summary['accuracy']['mean']:.4f} +/- {summary['accuracy']['std']:.4f}")
-    print(f"    F1-Score:  {summary['f1_macro']['mean']:.4f} +/- {summary['f1_macro']['std']:.4f}")
-    print(f"    Precision: {summary['precision_macro']['mean']:.4f} +/- {summary['precision_macro']['std']:.4f}")
-    print(f"    Recall:    {summary['recall_macro']['mean']:.4f} +/- {summary['recall_macro']['std']:.4f}")
-    print(f"    ROC-AUC:   {summary['roc_auc']['mean']:.4f} +/- {summary['roc_auc']['std']:.4f}")
+    log.info(f"\n  Summary ({n_folds * n_seeds} total folds):")
+    log.info(f"    Accuracy:  {summary['accuracy']['mean']:.4f} +/- {summary['accuracy']['std']:.4f}")
+    log.info(f"    F1-Score:  {summary['f1_macro']['mean']:.4f} +/- {summary['f1_macro']['std']:.4f}")
+    log.info(f"    Precision: {summary['precision_macro']['mean']:.4f} +/- {summary['precision_macro']['std']:.4f}")
+    log.info(f"    Recall:    {summary['recall_macro']['mean']:.4f} +/- {summary['recall_macro']['std']:.4f}")
+    log.info(f"    ROC-AUC:   {summary['roc_auc']['mean']:.4f} +/- {summary['roc_auc']['std']:.4f}")
     
     return summary
 
 
 def main():
     """Run cross-validation for LR and SVM."""
-    
+
+
+    cv_folds = cfg.LR.cv_folds
+    cv_seeds = 3
+
     print("="*60)
     print("CROSS-VALIDATION EVALUATION")
     print("="*60)
-    print("Running stratified 5-fold CV with 3 random seeds")
-    print("Total: 15 folds per model for robust estimates")
+    print(f"Running stratified {cv_folds}-fold CV with {cv_seeds} random seeds")
+    print(f"Total: {cv_folds * cv_seeds} folds per model for robust estimates")
     
     # Load TF-IDF features (combine train + val for CV)
-    features_path = os.path.join(BASE_DIR, 'data', 'features', 'tfidf', 'tfidf_features.pkl')
+    features_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_features.pkl')
     
     if not os.path.exists(features_path):
         print(f"Features not found: {features_path}")
         return
     
-    with open(features_path, 'rb') as f:
-        features = pickle.load(f)
+    features = joblib.load(features_path)
     
     # Combine train and validation for cross-validation
     from scipy.sparse import vstack
@@ -155,32 +162,32 @@ def main():
     
     # 1. Logistic Regression
     lr_model = LogisticRegression(
-        C=10, max_iter=1000, solver='lbfgs',
-        class_weight='balanced', random_state=cfg.RANDOM_STATE, n_jobs=-1
+        C=cfg.LR.C, max_iter=cfg.LR.max_iter, solver='liblinear',
+        class_weight=cfg.LR.class_weight, random_state=cfg.RANDOM_STATE, n_jobs=cfg.LR.n_jobs
     )
     results['Logistic Regression'] = run_cross_validation(
         lr_model, X_cv, y_cv, 'Logistic Regression',
-        n_folds=5, n_seeds=3
+        n_folds=cv_folds, n_seeds=cv_seeds
     )
     
     # 2. SVM
     svm_model = SVC(
-        C=10, kernel='rbf', gamma='scale',
-        class_weight='balanced', random_state=cfg.RANDOM_STATE, probability=True
+        C=cfg.SVM.C, kernel=cfg.SVM.kernel, gamma=cfg.SVM.gamma,
+        class_weight=cfg.SVM.class_weight, random_state=cfg.RANDOM_STATE, probability=True
     )
     results['SVM'] = run_cross_validation(
         svm_model, X_cv, y_cv, 'SVM',
-        n_folds=5, n_seeds=3
+        n_folds=cv_folds, n_seeds=cv_seeds
     )
     
     # Save results
-    results_dir = os.path.join(BASE_DIR, 'results', 'tables')
+    results_dir = cfg.PATHS.tables_dir
     os.makedirs(results_dir, exist_ok=True)
     
     # Save detailed results
     cv_output = {
-        'description': 'Stratified 5-fold cross-validation with 3 random seeds',
-        'total_folds_per_model': 15,
+        'description': f'Stratified {cv_folds}-fold cross-validation with {cv_seeds} random seeds',
+        'total_folds_per_model': cv_folds * cv_seeds,
         'timestamp': datetime.now().isoformat(),
         'results': {}
     }
@@ -211,7 +218,7 @@ def main():
     
     # Save LaTeX table
     with open(os.path.join(results_dir, 'cross_validation.tex'), 'w') as f:
-        f.write("% Cross-Validation Results (5-fold, 3 seeds)\n")
+        f.write(f"% Kết quả kiểm chéo ({cv_folds}-fold, {cv_seeds} seed)\n")
         f.write(cv_df.to_latex(index=False, escape=True))
     
     print(f"\n{'='*60}")

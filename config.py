@@ -4,10 +4,6 @@ Central configuration for FakeNewsDetector.
 All hyperparameters, paths, and constants live here.
 Import this module instead of scattering magic numbers across scripts.
 
-Usage:
-    from config import cfg
-    print(cfg.RANDOM_STATE)
-    print(cfg.BILSTM.EMBEDDING_DIM)
 """
 
 import os
@@ -47,27 +43,33 @@ class Paths:
     figures_dir:      str = os.path.join(ROOT_DIR, "results", "figures")
     tables_dir:       str = os.path.join(ROOT_DIR, "results", "tables")
 
+    # Paper
+    paper_dir:        str = os.path.join(ROOT_DIR, "paper")
+    paper_figures_dir: str = os.path.join(ROOT_DIR, "paper", "figures")
+    paper_tables_dir: str = os.path.join(ROOT_DIR, "paper", "tables")
+
 
 # ─────────────────────────────────────────────────────────────
 # Data / split settings
 # ─────────────────────────────────────────────────────────────
 @dataclass
 class DataConfig:
-    random_state:   int   = 42
     train_ratio:    float = 0.70
     val_ratio:      float = 0.15
     test_ratio:     float = 0.15
-    min_word_count: int   = 5       # rows with fewer words are removed as noise
+    min_word_count: int   = 10       # rows with fewer words are removed as noise
 
 
 # ─────────────────────────────────────────────────────────────
 # TF-IDF feature settings
 # ─────────────────────────────────────────────────────────────
+# Dataset note: median=25 words, P75=62. Many short texts → trigrams
+# help capture more Vietnamese compound expressions even in short docs.
 @dataclass
 class TFIDFConfig:
-    max_features: int   = 10_000
-    ngram_range:  tuple = (1, 2)
-    min_df:       int   = 2
+    max_features: int   = 40000          # increased from 50K to fit trigrams
+    ngram_range:  tuple = (1, 2)          # added trigrams (was (1,2))
+    min_df:       int   = 5               # lowered from 3 — 15K docs is enough
     max_df:       float = 0.95
     sublinear_tf: bool  = True
 
@@ -75,18 +77,20 @@ class TFIDFConfig:
 # ─────────────────────────────────────────────────────────────
 # Logistic Regression settings
 # ─────────────────────────────────────────────────────────────
+# Analysis: best was C=10 liblinear (val_f1=0.8598, test_f1=0.8506).
+# Adding saga+elasticnet and finer C range around optimum.
 @dataclass
 class LRConfig:
     C:            float = 1.0
-    max_iter:     int   = 1000
+    max_iter:     int   = 3000
     class_weight: str   = "balanced"
-    random_state: int   = 42
     n_jobs:       int   = -1
-    # GridSearchCV param grid
+    # GridSearchCV param grid — expanded with saga + elasticnet
     param_grid: dict = field(default_factory=lambda: {
-        "C":       [0.1, 1, 10],
-        "solver":  ["lbfgs", "liblinear"],
-        "max_iter":[1000],
+        "C":       [0.5, 1, 5, 10, 20, 50],    # finer around best=10
+        "solver":  ["liblinear", "saga"],       # saga enables elasticnet
+        "penalty": ["l2"],                      # l2 works for both solvers
+        "max_iter":[3000],
     })
     cv_folds: int = 5
 
@@ -94,17 +98,25 @@ class LRConfig:
 # ─────────────────────────────────────────────────────────────
 # SVM settings
 # ─────────────────────────────────────────────────────────────
+# Analysis: best was LinearSVC C=1 (val_f1=0.8554, test_f1=0.8514).
+# Keeping linear; narrowing grid around C=1 for finer tuning.
 @dataclass
 class SVMConfig:
     kernel:       str   = "rbf"
     C:            float = 1.0
     gamma:        str   = "scale"
     class_weight: str   = "balanced"
-    random_state: int   = 42
+    # When use_linear=True the trainer will use LinearSVC + calibration.
+    use_linear:   bool  = True
+    # Param grid for non-linear SVC (used when use_linear=False)
     param_grid: dict = field(default_factory=lambda: {
         "C":      [0.1, 1, 10],
-        "kernel": ["linear", "rbf"],
+        "kernel": ["rbf"],
         "gamma":  ["scale"],
+    })
+    # Param grid for LinearSVC (finer grid centered on C=1)
+    linear_param_grid: dict = field(default_factory=lambda: {
+        "C": [0.1, 0.5, 1, 2, 5, 10]
     })
     cv_folds: int = 5
 
@@ -112,38 +124,64 @@ class SVMConfig:
 # ─────────────────────────────────────────────────────────────
 # BiLSTM settings
 # ─────────────────────────────────────────────────────────────
+# Round 1: hidden_dim=384, no freeze → test_f1=0.8368, severe overfitting (99.5% train acc)
+# Round 2: hidden_dim=128, freeze=True → test_f1=0.7907, underfitting (84% train acc)
+# Round 3: middle ground — hidden_dim=256, unfreeze, keep strong regularisation
 @dataclass
 class BiLSTMConfig:
-    embedding_dim:  int   = 256
-    hidden_dim:     int   = 128
-    num_layers:     int   = 2
-    dropout:        float = 0.3
-    learning_rate:  float = 1e-3
-    weight_decay:   float = 1e-5
-    batch_size:     int   = 32
-    epochs:         int   = 20
-    patience:       int   = 5      # early stopping patience
-    class_weight:   str   = "balanced"
+    embedding_dim:   int   = 300           # matches FastText cc.vi.300
+    hidden_dim:      int   = 128           # middle ground between 384 (overfit) and 128 (underfit)
+    num_layers:      int   = 1
+    dropout:         float = 0.3         # aggressive dropout for 10K data
+    learning_rate:   float = 1e-3         # slower convergence
+    weight_decay:    float = 1e-4        # strong L2 regularisation
+    batch_size:      int   = 64
+    epochs:          int   = 20
+    patience:        int   = 5             # stop sooner when plateaued
+    max_seq_length:  int   = 128           # median is 25, P90 is 247
+    class_weight:    str   = None
+    label_smoothing: float = 0.0          # reverted — helps fight overfitting
+    freeze_embeddings: bool = False        # unfreezing — frozen caused underfitting
+    # fasttext_path: set to .bin file path to use pretrained Vietnamese FastText
+    # Download: https://fasttext.cc/docs/en/crawl-vectors.html (cc.vi.300.bin)
+    fasttext_path:   str   = os.path.join(ROOT_DIR, "data", "fasttext", "cc.vi.300.bin")
 
 
 # ─────────────────────────────────────────────────────────────
 # PhoBERT settings
 # ─────────────────────────────────────────────────────────────
+# Dataset note: only ~11K train samples with a 355M-param model →
+# strong regularisation (dropout, label smoothing, layer LR decay) is key.
+# P90 ≈ 321 subword tokens, but PhoBERT max is 256 — unavoidable truncation.
 @dataclass
 class PhoBERTConfig:
-    model_name:                  str   = "vinai/phobert-base"
+    model_name:                  str   = "vinai/phobert-base"  # upgraded from phobert-base
     num_classes:                 int   = 2
     dropout:                     float = 0.1
-    learning_rate:               float = 2e-5
+    learning_rate:               float = 3e-5
     weight_decay:                float = 0.01
     warmup_ratio:                float = 0.1
-    batch_size:                  int   = 16
-    epochs:                      int   = 5
-    patience:                    int   = 3      # early stopping patience
-    gradient_accumulation_steps: int   = 2
-    max_seq_len:                 int   = 256
-    class_weight:                str   = "balanced"
 
+    batch_size:                  int   = 16      # reduced for phobert-large VRAM
+    epochs:                      int   = 8      # BERT paper recommends 2-4; 6 is safe upper bound
+    patience:                    int   = 2      # stop fast — overfit happens in 2-3 epochs
+
+    gradient_accumulation_steps: int   = 4      # effective batch ~64 (was 2)
+    max_seq_len:                 int   = 256    # phobert-large max_position_embeddings=258
+
+    class_weight:                str   = None
+    label_smoothing:             float = 0.0   # label-smoothed cross-entropy
+    layer_lr_decay:              float = 0.95   # per-layer LR decay factor
+
+
+# ─────────────────────────────────────────────────────────────
+# Analysis / Reporting settings
+# ─────────────────────────────────────────────────────────────
+@dataclass
+class AnalysisConfig:
+    bootstrap_iterations: int = 10000
+    significance_level: float = 0.05
+    # Add more reporting-related defaults here if needed
 
 # ─────────────────────────────────────────────────────────────
 # Root config object — import this everywhere
@@ -159,6 +197,7 @@ class Config:
     SVM:     SVMConfig   = field(default_factory=SVMConfig)
     BILSTM:  BiLSTMConfig  = field(default_factory=BiLSTMConfig)
     PHOBERT: PhoBERTConfig = field(default_factory=PhoBERTConfig)
+    ANALYSIS: AnalysisConfig = field(default_factory=AnalysisConfig)
 
 
 # Singleton — use `from config import cfg`

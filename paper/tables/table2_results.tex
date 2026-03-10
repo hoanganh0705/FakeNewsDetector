@@ -1,16 +1,16 @@
 
 \begin{table}[h]
 \centering
-\caption{Model Performance Comparison on Test Set}
+\caption{So sánh hiệu suất các mô hình trên tập kiểm tra}
 \label{tab:results}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{ROC-AUC} \\
+\textbf{Mô hình} & \textbf{Độ chính xác} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{ROC-AUC} \\
 \midrule
-Logistic Regression & 0.8561 & 0.8521 & 0.8516 & 0.8518 & 0.9334 \\
-SVM & 0.8731 & 0.8770 & 0.8613 & 0.8669 & 0.9388 \\
-BiLSTM & 0.8605 & 0.8592 & 0.8523 & 0.8552 & 0.9332 \\
-PhoBERT & \textbf{0.9225} & \textbf{0.9197} & \textbf{0.9212} & \textbf{0.9204} & \textbf{0.9747} \\
+Logistic Regression & \lrAccTab & \lrPrecTab & \lrRecTab & \lrFoneTab & \lrAucTab \\
+SVM & \svmAccTab & \svmPrecTab & \svmRecTab & \svmFoneTab & \svmAucTab \\
+BiLSTM & \bilstmAccTab & \bilstmPrecTab & \bilstmRecTab & \bilstmFoneTab & \bilstmAucTab \\
+PhoBERT & \textbf{\phobertAccTab} & \textbf{\phobertPrecTab} & \textbf{\phobertRecTab} & \textbf{\phobertFoneTab} & \textbf{\phobertAucTab} \\
 \bottomrule
 \end{tabular}
 \end{table}

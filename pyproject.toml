@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fake-news-detector"
+version = "0.1.0"
+description = "Vietnamese Fake News Detection — NCKH research project"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy~=2.4.1",
+    "pandas~=3.0.0",
+    "scikit-learn~=1.8.0",
+    "scipy~=1.17.0",
+    "matplotlib~=3.10.8",
+    "seaborn~=0.13.2",
+    "nltk~=3.9.2",
+    "torch~=2.10.0",
+    "transformers~=4.57.6",
+    "sentencepiece~=0.2.1",
+    "py_vncorenlp~=0.1.4",
+    "underthesea~=9.1.4",
+    "tqdm~=4.67.1",
+    "joblib~=1.5.3",
+    "fasttext-wheel~=0.9.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0.2"]
+
+[project.scripts]
+fakenews = "src.cli:main"
+
+# ──────────────────────────────────────────────────────────────
+# setuptools: make `import config`, `import src.*` work
+# after `pip install -e .`  (eliminates all sys.path hacks)
+# ──────────────────────────────────────────────────────────────
+[tool.setuptools]
+py-modules = ["config"]          # config.py at the root
+
+[tool.setuptools.packages.find]
+include = ["src*"]               # includes src/ and all sub-packages
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes (unused imports, undefined names, etc.)
+    "W",    # pycodestyle warnings
+    "I",    # isort (import ordering)
+    "UP",   # pyupgrade (modern Python idioms)
+    "B",    # flake8-bugbear (common pitfalls)
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long — handled by formatter
+    "E741",  # ambiguous variable name (l, O, I) — common in ML code
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401"]  # unused imports OK in test re-export shims
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

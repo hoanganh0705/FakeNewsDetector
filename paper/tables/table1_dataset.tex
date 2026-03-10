@@ -1,15 +1,15 @@
 
 \begin{table}[h]
 \centering
-\caption{Dataset Statistics}
+\caption{Thống kê tập dữ liệu}
 \label{tab:dataset}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Split} & \textbf{Total} & \textbf{Real News} & \textbf{Fake News} & \textbf{Avg. Length} \\
+\textbf{Tập} & \textbf{Tổng} & \textbf{Tin thật} & \textbf{Tin giả} & \textbf{Độ dài TB} \\
 \midrule
-Training & 6321 & 3688 (58.3%) & 2633 (41.7%) & 206.8 \\
-Validation & 1355 & 791 (58.4%) & 564 (41.6%) & 202.3 \\
-Test & 1355 & 791 (58.4%) & 564 (41.6%) & 207.8 \\
+Huấn luyện & \nTrain & \nTrainReal (\pctReal\%) & \nTrainFake (\pctFake\%) & \avgLenTrain \\
+Xác thực & \nVal & \nValReal (\pctReal\%) & \nValFake (\pctFake\%) & \avgLenVal \\
+Kiểm tra & \nTest & \nValReal (\pctReal\%) & \nValFake (\pctFake\%) & \avgLenTest \\
 \bottomrule
 \end{tabular}
 \end{table}
