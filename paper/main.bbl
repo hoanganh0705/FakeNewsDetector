@@ -37,6 +37,12 @@ D.~Naik and C.~Jaidhar, ``A novel multi-layer attention framework for visual des
 \bibitem{vaswani2017attention}
 A.~Vaswani, N.~Shazeer, N.~Parmar, J.~Uszkoreit, L.~Jones, A.~N. Gomez, L.~Kaiser, and I.~Polosukhin, ``Attention is all you need,'' in \emph{Advances in Neural Information Processing Systems}, 2017, pp. 5998--6008.
 
+\bibitem{shu2017fakenews}
+K.~Shu, A.~Sliva, S.~Wang, J.~Tang, and H.~Liu, ``Fake news detection on social media: A data mining perspective,'' \emph{ACM SIGKDD Explorations Newsletter}, vol.~19, no.~1, pp. 22--36, 2017.
+
+\bibitem{nguyen2025fakenews}
+T.~T. Nguyen \emph{et~al.}, ``Exposure to fake news on social media, coping mechanisms and mental health impact among vietnamese adolescents and young adults,'' \emph{Scientific Reports}, vol.~15, 2025.
+
 \bibitem{nguyen2018vncorenlp}
 T.~Vu, D.~Q. Nguyen, D.~Q. Nguyen, M.~Dras, and M.~Johnson, ``{VnCoreNLP}: A vietnamese natural language processing toolkit,'' in \emph{Proceedings of NAACL-HLT 2018: Demonstrations}, 2018, pp. 56--60.
 
@@ -51,6 +57,18 @@ D.~R. Cox, ``The regression analysis of binary sequences,'' \emph{Journal of the
 
 \bibitem{sparkjones1972idf}
 K.~S. Jones, ``A statistical interpretation of term specificity and its application in retrieval,'' \emph{Journal of Documentation}, vol.~28, no.~1, pp. 11--21, 1972.
+
+\bibitem{rumelhart1986backprop}
+D.~E. Rumelhart, G.~E. Hinton, and R.~J. Williams, ``Learning representations by back-propagating errors,'' \emph{Nature}, vol. 323, pp. 533--536, 1986.
+
+\bibitem{elman1990rnn}
+J.~L. Elman, ``Finding structure in time,'' \emph{Cognitive Science}, vol.~14, no.~2, pp. 179--211, 1990.
+
+\bibitem{bengio1994vanishing}
+Y.~Bengio, P.~Simard, and P.~Frasconi, ``Learning long-term dependencies with gradient descent is difficult,'' \emph{IEEE Transactions on Neural Networks}, vol.~5, no.~2, pp. 157--166, 1994.
+
+\bibitem{pascanu2013gradient}
+R.~Pascanu, T.~Mikolov, and Y.~Bengio, ``On the difficulty of training recurrent neural networks,'' in \emph{Proceedings of the 30th International Conference on Machine Learning (ICML 2013)}, 2013, pp. 1310--1318.
 
 \bibitem{hochreiter1997lstm}
 S.~Hochreiter and J.~Schmidhuber, ``Long short-term memory,'' \emph{Neural Computation}, vol.~9, no.~8, pp. 1735--1780, 1997.
@@ -70,8 +88,14 @@ Y.~Liu, M.~Ott, N.~Goyal, J.~Du, M.~Joshi, D.~Chen, O.~Levy, M.~Lewis, L.~Zettle
 \bibitem{sennrich2016bpe}
 R.~Sennrich, B.~Haddow, and A.~Birch, ``Neural machine translation of rare words with subword units,'' in \emph{Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (ACL 2016)}, 2016, pp. 1715--1725.
 
+\bibitem{platt1999calibration}
+J.~C. Platt, ``Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods,'' in \emph{Advances in Large Margin Classifiers}.\hskip 1em plus 0.5em minus 0.4em\relax MIT Press, 1999, pp. 61--74.
+
 \bibitem{srivastava2014dropout}
 N.~Srivastava, G.~Hinton, A.~Krizhevsky, I.~Sutskever, and R.~Salakhutdinov, ``Dropout: A simple way to prevent neural networks from overfitting,'' \emph{Journal of Machine Learning Research}, vol.~15, no.~56, pp. 1929--1958, 2014.
+
+\bibitem{nair2010relu}
+V.~Nair and G.~E. Hinton, ``Rectified linear units improve restricted {Boltzmann} machines,'' in \emph{Proceedings of the 27th International Conference on Machine Learning (ICML 2010)}, 2010, pp. 807--814.
 
 \bibitem{loshchilov2019adamw}
 I.~Loshchilov and F.~Hutter, ``Decoupled weight decay regularization,'' in \emph{Proceedings of the International Conference on Learning Representations (ICLR 2019)}, 2019.
@@ -82,10 +106,16 @@ F.~Pedregosa, G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel, M.~Bl
 \bibitem{naeini2015ece}
 M.~P. Naeini, G.~F. Cooper, and M.~Hauskrecht, ``Obtaining well calibrated probabilities using bayesian binning into quantiles,'' in \emph{Proceedings of the Twenty-Ninth AAAI Conference on Artificial Intelligence (AAAI 2015)}, 2015, pp. 2901--2907.
 
+\bibitem{guo2017calibration}
+C.~Guo, G.~Pleiss, Y.~Sun, and K.~Q. Weinberger, ``On calibration of modern neural networks,'' in \emph{Proceedings of the 34th International Conference on Machine Learning (ICML 2017)}, 2017, pp. 1321--1330.
+
 \bibitem{mcnemar1947}
 Q.~McNemar, ``Note on the sampling error of the difference between correlated proportions or percentages,'' \emph{Psychometrika}, vol.~12, no.~2, pp. 153--157, 1947.
 
 \bibitem{holm1979}
 S.~Holm, ``A simple sequentially rejective multiple test procedure,'' \emph{Scandinavian Journal of Statistics}, vol.~6, no.~2, pp. 65--70, 1979.
+
+\bibitem{hinton2015distilling}
+G.~Hinton, O.~Vinyals, and J.~Dean, ``Distilling the knowledge in a neural network,'' in \emph{NIPS Deep Learning and Representation Learning Workshop}, 2015.
 
 \end{thebibliography}
