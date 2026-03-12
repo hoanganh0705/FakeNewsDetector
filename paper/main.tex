@@ -14,6 +14,7 @@
 \usepackage[top=3cm, bottom=3cm, left=3.5cm, right=2cm]{geometry}
 \usepackage{setspace}
 \usepackage{longtable}
+\usepackage{csquotes}
 \onehalfspacing
 
 % ── Typography ───────────────────────────────────────────────
@@ -383,7 +384,7 @@
 {\large\textit{Báo cáo Nghiên cứu Khoa học Sinh viên}}\\[3cm]
 
 \begin{tabular}{r l}
-  \textbf{Sinh viên thực hiện:} & Nguyễn Hoàng Anh \\[0.3em]
+  \textbf{Sinh viên thực hiện:} & Nguyễn Hoàng Anh\\[0.3em]
   \textbf{Giảng viên hướng dẫn:} & Dương Hữu Thành \\[0.3em]
   \textbf{Năm học:} & 2025--2026 \\
 \end{tabular}
@@ -552,11 +553,11 @@ $\lambda$       & Hệ số phân rã trọng số (weight decay) \\
 \label{abstract}
 \addcontentsline{toc}{chapter}{Tóm tắt đề tài}
 
-Tin giả trên các nền tảng số tiếng Việt đang đặt ra thách thức cấp bách cho các nhà nghiên cứu NLP, do đặc điểm hình thái học của tiếng Việt -- ngôn ngữ đơn lập, không biến hình -- vốn đòi hỏi những kỹ thuật tiền xử lý và biểu diễn đặc trưng riêng biệt. Trong khi nhiều nghiên cứu quốc tế đã đạt kết quả đáng chú ý trên dữ liệu tiếng Anh, hiệu quả của các phương pháp tương tự trên tiếng Việt chưa được khảo sát đầy đủ.
+Dạo gần đây tin giả trên các nền tảng mạng xã hội đang ngày càng phổ biến do đó đặt ra nhiều thách thức cho các hệ thống nhận diện tin giả, đặc biệt là các hệ thống nhận diện tin giả trên tiếng Việt. Một phần nguyên nhân đến từ đặc điểm hình thái học của tiếng Việt, đây là một ngôn ngữ đơn lập, không biến hình, nên thường đòi hỏi các kỹ thuật tiền xử lý và biểu diễn đặc trưng riêng biệt. Trong khi đó, nhiều nghiên cứu quốc tế đã đạt được kết quả đáng chú ý trên dữ liệu tiếng Anh~\cite{shu2017fakenews}. Tuy nhiên, hiệu quả của các phương pháp tương tự trên tiếng Việt vẫn chưa được khảo sát đầy đủ.
 
-Nghiên cứu này đề xuất và so sánh bốn phương pháp phân loại tin tức Việt Nam: Hồi quy Logistic (LR) và Máy vectơ hỗ trợ (SVM) sử dụng đặc trưng tần suất từ -- tần suất tài liệu nghịch đảo (Term Frequency -- Inverse Document Frequency, TF-IDF), Mạng LSTM hai chiều (BiLSTM) với cơ chế chú ý, và mô hình ngôn ngữ PhoBERT tinh chỉnh theo tác vụ. Thực nghiệm được thực hiện trên bộ dữ liệu gồm \nClean{} mẫu sau khi làm sạch, được chia theo tỉ lệ \splitRatio{} (huấn luyện/kiểm định/kiểm tra).
+Nghiên cứu của nhóm sẽ đề xuất và so sánh bốn phương pháp dùng để phân loại tin giả. Trong đó có 2 mô hình học máy truyền thống là Hồi quy Logistic (LR) và Máy vectơ hỗ trợ (SVM) được triển khai với trích xuất đặc trưng là TF-IDF (Term Frequency–Inverse Document Frequency). Ngoài ra, nghiên cứu cũng đánh giá các mô hình học sâu. Cụ thể, chúng tôi sử dụng Mạng LSTM hai chiều (BiLSTM) với cơ chế chú ý và mô hình ngôn ngữ PhoBERT được tinh chỉnh tùy theo tác vụ. Nghiên cứu được thực hiện trên bộ dữ liệu gồm \nClean{} mẫu sau khi làm sạch. Tập dữ liệu được chia theo tỉ lệ \splitRatio{} cho ba tập huấn luyện, kiểm định và kiểm tra.
 
-Kết quả cho thấy PhoBERT đạt hiệu năng tốt nhất (F1 = \phobertFone\%, ROC-AUC = \phobertAUC), vượt trội rõ rệt so với LR (\lrFone\%), SVM (\svmFone\%) và BiLSTM (\bilstmFone\%). Đáng chú ý, SVM lại vượt BiLSTM bất chấp kiến trúc đơn giản hơn nhiều, cho thấy chất lượng biểu diễn đặc trưng có thể bù đắp cho độ phức tạp của mô hình khi dữ liệu có giới hạn. Kiểm định McNemar với hiệu chỉnh Holm-Bonferroni xác nhận sự vượt trội của PhoBERT có ý nghĩa thống kê ($p < 0.001$). Nghiên cứu ablation cho thấy tiền huấn luyện trên ngữ liệu tiếng Việt quy mô lớn là nhân tố quyết định; phân đoạn từ và kích thước từ điển chỉ đóng vai trò thứ yếu đối với các mô hình học máy truyền thống.
+Kết quả thực nghiệm cho thấy PhoBERT đạt hiệu năng cao nhất, với điểm F1 = \phobertFone\ và ROC-AUC = \phobertAUC. Kết quả này cao hơn so với LR (\lrFone\%), SVM (\svmFone\%) và BiLSTM (\bilstmFone\%). Bên cạnh đó có một điều đáng chú ý là SVM lại vượt BiLSTM dù mô hình này có kiến trúc đơn giản hơn nhiều, qua đó ta có thể thấy rằng chất lượng biểu diễn đặc trưng có thể bù đắp cho độ phức tạp của mô hình khi dữ liệu có quy mô hạn chế. Kiểm định McNemar với hiệu chỉnh Holm–Bonferroni cũng xác nhận rằng sự vượt trội của PhoBERT là có ý nghĩa thống kê ($p < 0.001$). Ngoài ra, nghiên cứu ablation cho thấy tiền huấn luyện trên ngữ liệu tiếng Việt quy mô lớn là yếu tố quan trọng nhất. Ngược lại, phân đoạn từ và kích thước từ điển chỉ đóng vai trò thứ yếu đối với các mô hình học máy truyền thống.
 
 \bigskip
 \noindent\textbf{Từ khoá:} phát hiện tin giả, tiếng Việt, PhoBERT, BiLSTM, TF-IDF, xử lý ngôn ngữ tự nhiên.
@@ -572,7 +573,7 @@ Kết quả cho thấy PhoBERT đạt hiệu năng tốt nhất (F1 = \phobertFo
 
 \section*{1. Đặt vấn đề}
 
-Mạng xã hội và các nền tảng tin tức trực tuyến tại Việt Nam đã rút ngắn tối thiểu khoảng cách giữa sự kiện và công chúng, nhưng cũng đồng thời tạo ra môi trường thuận lợi cho tin sai lệch phát tán rộng rãi trước khi được kiểm chứng. Theo thống kê, Việt Nam nằm trong nhóm các quốc gia có tỉ lệ tiếp xúc với tin giả cao nhất tại Đông Nam Á. Việc kiểm chứng thủ công không thể theo kịp quy mô sản xuất và lưu truyền nội dung hiện nay; đó là lý do các hệ thống phát hiện tin giả tự động bằng học máy và học sâu trở nên cấp thiết.
+Vai trò của mạng xã hội và các nền tảng thông tin báo chí trực tuyến ở Việt Nam hiện nay đang rất phổ biến và gần gữi với chúng ta, nhưng cũng đồng thời tạo điều kiện thuận lợi để những luồng thông tin sai lệch được lan truyền trước khi được kiểm chứng. Gần đây đã có một khảo sát cho thấy rằng khoảng 68,8\% số người tham gia ở Việt Nam đã từng ít nhất thỉnh thoảng tiếp xúc với tin giả trên các nền tảng mạng xã hội\cite{nguyen2025fakenews}. Điều này dường như là hiển nhiên do tốc độ lan truyền thông tin trên môi trường số thường vượt qua khả năng kiểm chứng của các cơ quan báo chí và các tổ chức kiểm chứng thông tin, vì vậy việc phát triển các giải pháp phát hiện tin giả dựa trên máy học và học sâu ngày càng trở nên cần thiết.
 
 \section*{2. Mục tiêu nghiên cứu}
 
@@ -585,7 +586,7 @@ Mạng xã hội và các nền tảng tin tức trực tuyến tại Việt Nam
 
 \section*{3. Phạm vi nghiên cứu}
 
-Nghiên cứu tập trung vào phân loại nhị phân văn bản tiếng Việt (Thật/Giả) dựa trên tiêu đề và nội dung bài viết. Dữ liệu được thu thập từ các bài đăng công khai trên mạng xã hội (Facebook) và bào điện tử trong giai đoạn COVID-19, bao gồm ngôn ngữ tự nhiên, không được kiểm soát
+Trong nghiên cứu này, nhóm nghiên cứu tập trung vào việc phân loại nhị phân văn bản tiếng Việt "Thật/Giả" dựa trên nội dung của bài viết. Dữ liệu của nghiên cứu được nhóm nghiên cứu thu thập từ các bài đăng trên mạng xã hội (Facebook) và báo điện tử về các vấn đề COVID-19. Dữ liệu là các mẫu ngôn ngữ tự nhiên, không được kiểm soát và thường chứa các đặc trưng đặc trưng của mạng xã hội, chẳng hạn như lỗi chính tả, ký tự viết tắt, biểu cảm, cách diễn đạt không chuẩn mực và cấu trúc câu không đầy đủ.
 
 \section*{4. Bố cục báo cáo}
 
@@ -604,15 +605,17 @@ Báo cáo gồm bốn chương chính:
 
 \chapter{Cơ sở lý thuyết}
 
-Chương này thiết lập nền tảng lý thuyết cho bốn mô hình được khảo sát trong nghiên cứu. Phần đầu làm rõ các khái niệm biểu diễn văn bản và đặc thù ngôn ngữ tiếng Việt; phần tiếp theo phân tích nguyên lý hoạt động của hai thuật toán học máy truyền thống -- LR và SVM. Phần cuối đi sâu vào các kiến trúc học sâu: từ LSTM tuần tự, BiLSTM hai chiều, đến Transformer song song, qua đó lý giải vì sao PhoBERT -- nhờ cơ chế self-attention nắm bắt ngữ cảnh toàn cục -- đạt hiệu năng vượt trội trong bài toán phát hiện tin giả tiếng Việt.
+Chương này đưa ra cơ sở lý luận cho bốn mô hình được nghiên cứu ở phần sau. Ở phần đầu tiên, khái niệm biểu diễn văn bản và đặc trưng ngôn ngữ đặc thù được cụ thể hóa. Phần tiếp theo nghiên cứu nguyên lý áp dụng hai thuật toán học máy truyền thống LR và SVM. Phần cuối cùng đi sâu vào các kiến trúc học sâu từ LSTM tuần tự và BiLSTM hai chiều đến Transformer song song và đưa ra lời giải thích về vì sao PhoBERT với cơ chế self-attention sở hữu hiệu năng ưu việt trên bài toán phát hiện tin giả tiếng Việt.
 
 \section{Một số khái niệm cơ bản}
 
 \subsection{Văn bản và biểu diễn văn bản}
-Mô hình học máy không xử lý trực tiếp chuỗi ký tự mà yêu cầu văn bản phải được chuyển sang dạng số trong một không gian đặc trưng xác định. Hai trường phái biểu diễn chính đối lập nhau về bản chất: Bag-of-Words và TF-IDF ánh xạ mỗi tài liệu thành một vectơ thưa (\textit{sparse vector}) trong không gian từ vựng, hoàn toàn bỏ qua thứ tự từ; ngược lại, các phương pháp embedding chiếu từng từ vào một không gian dày (\textit{dense}) có số chiều thấp, nơi quan hệ ngữ nghĩa được mã hóa ngầm qua cấu trúc hình học của các vectơ. Sự lựa chọn giữa hai trường phái này gắn chặt với kiến trúc mô hình: LR và SVM vận hành hiệu quả trên vectơ TF-IDF thưa nhờ khả năng tối ưu trong không gian chiều cao, còn BiLSTM và PhoBERT đòi hỏi biểu diễn embedding liên tục để khai thác ngữ cảnh tuần tự hoặc toàn cục.
+Mô hình học máy không thực hiện trực tiếp trên chuỗi ký tự mà cần biểu diễn văn bản dưới dạng số trong một không gian đặc trưng. Có hai trường phái biểu diễn đối lập nhau về bản chất là:Bag-of-Words và TF-IDF biểu diễn văn bản dưới dạng một vectơ thưa(\textit{sparse vector}) trong không gian từ vựng, hoàn toàn bỏ qua thứ tự từ. Ngược lại, các phương pháp biểu diễn từ ngữ (embedding) biểu diễn từng từ ngữ dưới dạng một không gian đầy (\textit{dense space}) với chiều thấp và thông tin ngữ nghĩa được mã hóa ngầm thông qua cấu trúc hình học của các vectơ. Nên chọn mô hình biểu diễn thưa hay đầy gắn liền với cấu trúc của từng mô hình là:
+LR và SVM thích hợp với mô hình biểu diễn thưa TF-IDF nhờ khả năng tối ưu tốt trong không gian chiều cao;
+BiLSTM và PhoBERT thích hợp với mô hình biểu diễn đầy nhờ khả năng khai thác ngữ cảnh toàn cục.
 
 \subsection{Đặc trưng văn bản và tiền xử lý}
-Tiền xử lý biến đổi văn bản thô thành đầu vào đồng nhất cho mô hình thông qua chuẩn hóa chữ viết, loại bỏ ký tự nhiễu, tách từ và lọc từ dừng. Đối với tiếng Việt, \textit{phân đoạn từ} (\textit{word segmentation}) đóng vai trò then chốt hơn hẳn so với các ngôn ngữ biến hình: khoảng trắng trong tiếng Việt phân tách âm tiết chứ không phân tách từ, nên nhiều đơn vị từ vựng bao gồm hai hoặc nhiều âm tiết liền kề (``kiến\_trúc'', ``tiền\_huấn\_luyện''). Bỏ qua bước này khiến từ vựng phân mảnh nghiêm trọng, đồng thời làm giảm chất lượng vectơ TF-IDF và gây bất tương thích giữa dữ liệu đầu vào với từ điển tiền huấn luyện của PhoBERT.
+Tiền xử lý sẽ biến đổi văn bản thô thành đầu vào cho mô hình bằng cách chuẩn hóa chữ viết, loại bỏ ký tự nhiễu, tách từ và lọc từ dừng. Đối với tiếng Việt, \textit{phân đoạn từ} (\textit{word segmentation}) được xem là quan trọng hơn nhiều so với các phương pháp biến hình khác. Khác với tiếng Anh, các khoảng trắng trong tiếng Việt được sử dụng để phân tách \textit{âm tiết} chứ không phải \textit{từ}, do đó nhiều từ vựng thực chất được tạo thành từ hai hoặc nhiều âm tiết liền kề nhau (``kiến\_trúc'', ``tiền\_huấn\_luyện''). Đây là bước quan trọng không thể bỏ qua vì nếu bỏ qua, dữ liệu sẽ bị phân mảnh nghiêm trọng, làm giảm chất lượng biểu diễn vectơ TF-IDF và dẫn đến sự không tương thích giữa dữ liệu đầu vào với từ điển tiền huấn luyện của PhoBERT.
 
 \begin{figure}[H]
   \centering
@@ -622,7 +625,7 @@ Tiền xử lý biến đổi văn bản thô thành đầu vào đồng nhất 
 \end{figure}
 
 \subsection{Bài toán phân loại văn bản}
-Phát hiện tin giả về bản chất là bài toán phân loại nhị phân: mỗi văn bản được gán nhãn “thật” hoặc “giả”. Mô hình cần học một hàm ánh xạ từ không gian đặc trưng của văn bản sang tập nhãn, sao cho ranh giới quyết định phân tách tốt nhất hai lớp trên dữ liệu chưa quan sát.
+Phát hiện tin giả về bản chất là bài toán phân loại nhị phân trong đó mỗi văn bản được gán nhãn “thật” hoặc “giả”. Mô hình cần học một hàm ánh xạ từ không gian đặc trưng của văn bản sang tập nhãn, sao cho ranh giới quyết định phân tách tốt nhất hai lớp trên dữ liệu chưa quan sát.
 
 
 \section{Xử lý ngôn ngữ tự nhiên tiếng Việt}
@@ -638,28 +641,28 @@ Tiếng Việt là ngôn ngữ đơn lập, không biến hình, với các đ�
   \item \textbf{Ngôn ngữ cô lập:} Quan hệ ngữ pháp được biểu đạt qua trật tự từ và các hư từ, không qua biến đổi hình thái.
 \end{itemize}
 
-Những đặc điểm này đòi hỏi bước tiền xử lý đặc thù -- đặc biệt là \textit{phân đoạn từ} -- trước khi áp dụng các mô hình học máy.
+Những đặc điểm nàysâu của tiếng Việt đòi hỏi bước tiền xử lý đặc thù -- đặc biệt là \textit{phân đoạn từ} -- trước khi được dùng trong các mô hình học máy và học sâu.
 
 \subsection{Phân đoạn từ (Word Segmentation)}
 
-Phân đoạn từ là bước xác định ranh giới các từ trong câu tiếng Việt. Hầu hết các mô hình xử lý ngôn ngữ tự nhiên (Natural Language Processing -- NLP), đặc biệt là PhoBERT, được huấn luyện trên dữ liệu đã được phân đoạn.
+Phân đoạn từ là bước xác định ranh giới các từ trong câu. Đối với tiếng Việt hiện nay, các mô hình xử lý ngôn ngữ tự nhiên (Natural Language Processing -- NLP), đặc biệt là PhoBERT, được huấn luyện trên dữ liệu đã được phân đoạn.
 
 \textbf{Ví dụ:}
 \begin{quote}
 \textit{Trước:} ``Thành phố Hồ Chí Minh là trung tâm kinh tế lớn nhất Việt Nam.''\\
-\textit{Sau:} ``Thành\_phố Hồ\_Chí\_Minh là trung\_tâm kinh\_tế lớn nhất Việt\_Nam .''
+\textit{Sau:} ``Thành\_phố Hồ\_Chí\_Minh là trung\_tâm kinh\_tế lớn nhất Việt\_Nam.''
 \end{quote}
 
-Trong nghiên cứu này, nhóm sử dụng \textbf{VnCoreNLP RDRSegmenter}~\cite{nguyen2018vncorenlp} thông qua thư viện \texttt{py\_vncorenlp}. Đây là bộ phân đoạn cùng với bộ tokenizer mà \phobert được tiền huấn luyện, đảm bảo sự nhất quán về từ vựng.
+Trong nghiên cứu này, nhóm sử dụng \textbf{VnCoreNLP RDRSegmenter}~\cite{nguyen2018vncorenlp} thông qua thư viện \texttt{py\_vncorenlp}. Đây là bộ phân đoạn cùng với bộ tokenizer mà mô hình \phobert được tiền huấn luyện,do đó đảm bảo được sự nhất quán về từ vựng
 
 \subsection{Biểu diễn văn bản số}
 
-Các mô hình học máy cần chuyển đổi văn bản thô sang dạng số. Nghiên cứu này sử dụng ba phương pháp:
+Để các mô hình có thể học được, dữ liệu cần phải được chuyển đổi sang dạng số. Nghiên cứu này sử dụng ba phương pháp:
 
 \begin{enumerate}[leftmargin=2.5em]
-  \item \textbf{TF-IDF:} Vectơ đặc trưng dựa trên tần suất từ, phù hợp cho LR và SVM.
+  \item \textbf{TF-IDF:} Vectơ đặc trưng dựa trên tần suất từ, phương pháp này phù hợp cho LR và SVM.
   \item \textbf{Nhúng từ (Word Embedding):} Vectơ dày đặc học được~\cite{mikolov2013word2vec}, khởi tạo từ FastText tiếng Việt~\cite{bojanowski2017fasttext}, phù hợp cho BiLSTM.
-  \item \textbf{Mã hóa cặp byte (Byte-Pair Encoding -- BPE):} Tách từ thành các đơn vị con, dùng cho PhoBERT.
+  \item \textbf{Mã hóa cặp byte (Byte-Pair Encoding -- BPE):} Tách từ thành các đơn vị con, phương pháp này được dùng cho PhoBERT.
 \end{enumerate}
 
 \section{Học máy}
@@ -736,7 +739,7 @@ Kết quả thu được là một trọng số thực phản ánh mức độ q
 \subsection{Định nghĩa}
 Học sâu (Deep Learning) là một nhánh của học máy dựa trên các mô hình mạng nơ-ron nhân tạo có nhiều lớp ẩn, cho phép hệ thống học được các đặc trưng phức tạp từ dữ liệu đầu vào. Khác với các phương pháp học máy truyền thống, trong đó đặc trưng thường được thiết kế thủ công, học sâu có khả năng tự động trích xuất và biểu diễn đặc trưng thông qua quá trình huấn luyện trên tập dữ liệu lớn.
 
-Mỗi mô hình học sâu được cấu thành từ nhiều lớp nơ-ron liên kết với nhau theo từng tầng. Dữ liệu đầu vào sẽ được truyền qua các lớp này theo cơ chế lan truyền tiến (feedforward), tại đó mỗi lớp sẽ thực hiện các phép biến đổi tuyến tính kết hợp với hàm kích hoạt phi tuyến nhằm tạo ra biểu diễn ở mức trừu tượng cao hơn. Trong quá trình huấn luyện, các tham số của mô hình được điều chỉnh thông qua thuật toán lan truyền ngược (backpropagation) nhằm tối thiểu hóa hàm mất mát.
+Mỗi mô hình học sâu được cấu thành từ nhiều lớp nơ-ron liên kết với nhau theo từng tầng. Dữ liệu đầu vào sẽ được truyền qua các lớp này theo cơ chế lan truyền tiến (feedforward), tại đó mỗi lớp sẽ thực hiện các phép biến đổi tuyến tính kết hợp với hàm kích hoạt phi tuyến nhằm tạo ra biểu diễn ở mức trừu tượng cao hơn. Trong quá trình huấn luyện, các tham số của mô hình được điều chỉnh thông qua thuật toán lan truyền ngược (backpropagation)~\cite{rumelhart1986backprop} nhằm tối thiểu hóa hàm mất mát.
 
 Nhờ cấu trúc nhiều tầng và khả năng học biểu diễn tự động, học sâu đã đạt được hiệu quả cao trong nhiều lĩnh vực như thị giác máy tính, xử lý ngôn ngữ tự nhiên và nhận dạng tiếng nói. Trong bài toán phát hiện tin giả, các mô hình học sâu như BiLSTM và PhoBERT cho phép khai thác thông tin ngữ cảnh và quan hệ giữa các từ trong văn bản một cách hiệu quả hơn so với các phương pháp truyền thống.
 
@@ -770,11 +773,11 @@ Trong quá trình huấn luyện các mạng nhiều tầng, có thể xuất hi
 
 \subsection{Mạng nơ-ron hồi quy (Recurrent Neural Network -- RNN)}
 
-RNN là một mô hình học sâu được thiết kế để xử lý dữ liệu tuần tự bằng cách duy trì thông tin từ các trạng thái trước đó. Điều này giúp RNN có khả năng ghi nhớ và sử dụng các mối liên hệ giữa các phần tử trong chuỗi dữ liệu, tạo ra đầu ra có ngữ cảnh và ý nghĩa hơn. 
+RNN là một mô hình học sâu được thiết kế để xử lý dữ liệu tuần tự bằng cách duy trì thông tin từ các trạng thái trước đó~\cite{elman1990rnn}. Điều này giúp RNN có khả năng ghi nhớ và sử dụng các mối liên hệ giữa các phần tử trong chuỗi dữ liệu, tạo ra đầu ra có ngữ cảnh và ý nghĩa hơn. 
 
 Dữ liệu tuần tự có thể bao gồm văn bản, chuỗi thời gian, hoặc tín hiệu âm thanh, trong đó các thành phần có sự liên kết với nhau dựa trên ngữ nghĩa hoặc quy luật cụ thể. Khác với các mạng nơ-ron truyền thống xử lý dữ liệu đầu vào độc lập, RNN có một vòng lặp bên trong, cho phép lưu trữ trạng thái và truyền tải thông tin qua từng bước thời gian.
 
-Tuy nhiên, mặc dù có khả năng ghi nhớ thông tin qua các bước thời gian, RNN truyền thống vẫn tồn tại một số hạn chế. Khi chuỗi dữ liệu có độ dài lớn, quá trình lan truyền ngược sai số qua nhiều bước thời gian có thể làm cho gradient trở nên rất nhỏ hoặc rất lớn. Hiện tượng này được gọi là mất mát gradient (vanishing gradient) hoặc bùng nổ gradient (exploding gradient). Khi gradient bị suy giảm quá mức, mô hình sẽ gặp khó khăn trong việc học và ghi nhớ các phụ thuộc dài hạn giữa các phần tử trong chuỗi. Điều này ảnh hưởng trực tiếp đến hiệu quả của RNN trong các bài toán xử lý văn bản, nơi mà ngữ nghĩa của một từ có thể phụ thuộc vào các từ xuất hiện ở vị trí xa trong câu hoặc đoạn văn. Để khắc phục những hạn chế này, các kiến trúc cải tiến như Bộ nhớ dài-ngắn hạn (Long Short-Term Memory -- LSTM) đã được đề xuất nhằm tăng cường khả năng ghi nhớ thông tin dài hạn và cải thiện hiệu suất của mô hình trên dữ liệu tuần tự.
+Tuy nhiên, mặc dù có khả năng ghi nhớ thông tin qua các bước thời gian, RNN truyền thống vẫn tồn tại một số hạn chế. Khi chuỗi dữ liệu có độ dài lớn, quá trình lan truyền ngược sai số qua nhiều bước thời gian có thể làm cho gradient trở nên rất nhỏ hoặc rất lớn. Hiện tượng này được gọi là mất mát gradient (vanishing gradient) hoặc bùng nổ gradient (exploding gradient)~\cite{bengio1994vanishing,pascanu2013gradient}. Khi gradient bị suy giảm quá mức, mô hình sẽ gặp khó khăn trong việc học và ghi nhớ các phụ thuộc dài hạn giữa các phần tử trong chuỗi. Điều này ảnh hưởng trực tiếp đến hiệu quả của RNN trong các bài toán xử lý văn bản, nơi mà ngữ nghĩa của một từ có thể phụ thuộc vào các từ xuất hiện ở vị trí xa trong câu hoặc đoạn văn. Để khắc phục những hạn chế này, các kiến trúc cải tiến như Bộ nhớ dài-ngắn hạn (Long Short-Term Memory -- LSTM) đã được đề xuất nhằm tăng cường khả năng ghi nhớ thông tin dài hạn và cải thiện hiệu suất của mô hình trên dữ liệu tuần tự.
 
 \subsection{Bộ nhớ dài-ngắn hạn (Long Short-Term Memory -- LSTM)}
 Bộ nhớ dài-ngắn hạn (Long Short-Term Memory -- LSTM)~\cite{hochreiter1997lstm} là một kiến trúc RNN được thiết kế nhằm khắc phục hạn chế trong việc ghi nhớ thông tin dài hạn. Trong khi RNN chỉ sử dụng một trạng thái ẩn đơn giản để truyền thông tin qua các bước thời gian, thì LSTM bổ sung một bộ nhớ tế bào (memory cell) cùng với ba cơ chế cổng kiểm soát: cổng quên, cổng đầu vào và cổng đầu ra. Các cổng này cho phép mô hình lựa chọn thông tin cần ghi nhớ hoặc loại bỏ, nhờ đó duy trì được ngữ cảnh trong các chuỗi dữ liệu dài.
@@ -1085,7 +1088,7 @@ Chương này bắt đầu bằng việc giới thiệu sơ lược bài toán p
 
 Bài toán phát hiện tin giả là một trong những bài toán quan trọng thuộc lĩnh vực xử lý ngôn ngữ tự nhiên, đóng vai trò thiết yếu trong bối cảnh thông tin trực tuyến ngày càng phát triển mạnh mẽ. Sự lan truyền nhanh chóng của các nội dung sai lệch có thể gây ảnh hưởng tiêu cực đến nhận thức cộng đồng và đời sống xã hội. Vì vậy, việc không ngừng nghiên cứu và cải thiện các phương pháp phát hiện tin giả là điều cần thiết. 
 
-Cho đến nay, đã có nhiều kỹ thuật trích xuất đặc trưng văn bản được các nhà nghiên cứu đề xuất và áp dụng hiệu quả, chẳng hạn như \textit{Bag-of-Words}, \textit{TF-IDF} hay các biểu diễn dựa trên \textit{word embedding}. Bên cạnh đó, các mô hình học sâu, đặc biệt là các mạng nơ-ron hồi tiếp và các mô hình ngôn ngữ tiền huấn luyện như \textit{Transformer}, cũng chứng minh được tính vượt trội thông qua những kết quả đầy hứa hẹn trên nhiều bộ dữ liệu khác nhau. 
+Cho đến nay, đã có nhiều kỹ thuật trích xuất đặc trưng văn bản được các nhà nghiên cứu đề xuất và áp dụng hiệu quả, chẳng hạn như \textit{Bag-of-Words}, \textit{TF-IDF}~\cite{sparkjones1972idf} hay các biểu diễn dựa trên \textit{word embedding}~\cite{mikolov2013word2vec}. Bên cạnh đó, các mô hình học sâu, đặc biệt là các mạng nơ-ron hồi tiếp và các mô hình ngôn ngữ tiền huấn luyện như \textit{Transformer}~\cite{vaswani2017attention}, cũng chứng minh được tính vượt trội thông qua những kết quả đầy hứa hẹn trên nhiều bộ dữ liệu khác nhau. 
 
 Vì thế, để lựa chọn phương pháp phù hợp và hiệu quả nhất cho bài toán phát hiện tin giả tiếng Việt, nhóm quyết định tiến hành so sánh hiệu năng giữa các phương pháp trích chọn đặc trưng thủ công kết hợp với các mô hình phân lớp truyền thống và các mô hình học sâu hiện đại. Đối với các phương pháp trích chọn đặc trưng thủ công, nhóm sẽ triển khai các thuật toán phân lớp như \textit{Logistic Regression}, \textit{SVM} và các mô hình học sâu như \textit{BiLSTM} và \textit{PhoBERT} nhằm đánh giá và phân tích hiệu năng một cách toàn diện.
 
@@ -1265,7 +1268,7 @@ Mô hình máy vectơ hỗ trợ (SVM) sử dụng LinearSVC với trọng số 
 
 \begin{itemize}[leftmargin=2em]
   \item Lưới tìm kiếm: $C \in \{0.1;\ 0.5;\ 1;\ 2;\ 5;\ 10\}$
-  \item Cấu hình tối ưu: $C = \svmBestC$, LinearSVC kết hợp hiệu chuẩn xác suất (calibration)
+  \item Cấu hình tối ưu: $C = \svmBestC$, LinearSVC kết hợp hiệu chuẩn xác suất Platt~\cite{platt1999calibration} (calibration)
 \end{itemize}
 
 Chiến lược này đảm bảo SVM vừa tận dụng được đặc trưng TF-IDF vừa duy trì khả năng phân biệt tốt giữa các lớp.
@@ -1285,14 +1288,14 @@ Kiến trúc BiLSTM được thiết kế gồm các thành phần chính sau:
   \item \textbf{Embedding:} Ma trận embedding kích thước $(V \times \bilstmEmbDim)$, cho phép học biểu diễn ngữ nghĩa từ dữ liệu.
   \item \textbf{BiLSTM \bilstmLayers{} tầng:} Mỗi tầng có hidden\_dim=\bilstmHiddenDim{} cho hai chiều (forward/backward), tổng đầu ra mỗi bước là $2\times\bilstmHiddenDim$.
   \item \textbf{Soft Attention:} Cơ chế soft attention tính trọng số $\alpha_t$ cho từng bước thời gian, giúp mô hình tập trung vào các từ/cụm từ quan trọng.
-  \item \textbf{Classifier:} Hai lớp dropout~\cite{srivastava2014dropout} (0.3) xen kẽ với các lớp tuyến tính và ReLU, giúp giảm overfitting và tăng khả năng biểu diễn phi tuyến.
+  \item \textbf{Classifier:} Hai lớp dropout~\cite{srivastava2014dropout} (0.3) xen kẽ với các lớp tuyến tính và ReLU~\cite{nair2010relu}, giúp giảm overfitting và tăng khả năng biểu diễn phi tuyến.
 \end{enumerate}
 
 Chiến lược huấn luyện sử dụng AdamW~\cite{loshchilov2019adamw}
 ($\eta = 10^{-3}$, weight\_decay=$10^{-4}$), hàm mất mát CrossEntropy
 có trọng số lớp để xử lý mất cân bằng, batch=64, tối đa 20 epochs với
 dừng sớm (patience=5). Ngoài ra, áp dụng ReduceLROnPlateau
-(factor=0.5, patience=2) để điều chỉnh tốc độ học và gradient clipping
+(factor=0.5, patience=2) để điều chỉnh tốc độ học và gradient clipping~\cite{pascanu2013gradient}
 (max\_norm=1.0) nhằm đảm bảo ổn định quá trình tối ưu.
 
 \subsubsection{Tinh chỉnh PhoBERT}
@@ -1301,13 +1304,13 @@ Kiến trúc PhoBERT fine-tuning gồm hai thành phần chính:
 
 \begin{enumerate}[leftmargin=2.5em]
   \item \textbf{Encoder PhoBERT:} 12 lớp Transformer encoder, đầu ra vector \texttt{[CLS]} 768 chiều đại diện toàn cục cho văn bản.
-  \item \textbf{Classifier Head:} Hai lớp Dropout (0.1) xen kẽ với Linear (768→384→2) và ReLU, giúp tăng khả năng biểu diễn phi tuyến và giảm overfitting.
+  \item \textbf{Classifier Head:} Hai lớp Dropout (0.1) xen kẽ với Linear (768→384→2) và ReLU~\cite{nair2010relu}, giúp tăng khả năng biểu diễn phi tuyến và giảm overfitting.
 \end{enumerate}
 
 Chiến lược huấn luyện sử dụng AdamW~\cite{loshchilov2019adamw}
 ($\eta = 3 \times 10^{-5}$, weight\_decay=0.01), Linear Warmup (10\%),
 batch=16, tối đa 8 epochs, gradient accumulation steps=4, gradient
-clipping (max\_norm=1.0) và dừng sớm (patience=2).
+clipping~\cite{pascanu2013gradient} (max\_norm=1.0) và dừng sớm (patience=2).
 
 \section{Chiến lược xử lý mất cân bằng nhãn}
 
@@ -1471,14 +1474,14 @@ PhoBERT & \phobertECE & \phobertMCE & \textbf{\phobertBrier} \\
 Từ Bảng~\ref{tab:calibration} và Hình~\ref{fig:calibration}, có thể rút ra một số quan sát đáng chú ý:
 
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{Các mô hình học máy truyền thống có hiệu chuẩn tốt nhất:} SVM đạt ECE thấp nhất (\svmECE) và MCE thấp nhất (\svmMCE), theo sau là LR (ECE = \lrECE). Điều này cho thấy xác suất dự đoán của SVM và LR phản ánh khá chính xác tỷ lệ dương tính thực tế. Kết quả này phù hợp với lý thuyết, vì Logistic Regression được thiết kế để ước lượng xác suất trực tiếp, và SVM sử dụng hiệu chuẩn Platt (CalibratedClassifierCV) trong quá trình huấn luyện.
+  \item \textbf{Các mô hình học máy truyền thống có hiệu chuẩn tốt nhất:} SVM đạt ECE thấp nhất (\svmECE) và MCE thấp nhất (\svmMCE), theo sau là LR (ECE = \lrECE). Điều này cho thấy xác suất dự đoán của SVM và LR phản ánh khá chính xác tỷ lệ dương tính thực tế. Kết quả này phù hợp với lý thuyết, vì Logistic Regression được thiết kế để ước lượng xác suất trực tiếp, và SVM sử dụng hiệu chuẩn Platt~\cite{platt1999calibration} (CalibratedClassifierCV) trong quá trình huấn luyện.
 
-  \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertBrier), phản ánh khả năng phân loại vượt trội. Tuy nhiên, MCE rất cao (\phobertMCE) cho thấy mô hình có xu hướng \textit{overconfident} -- đưa ra xác suất rất cao (gần 0 hoặc 1) ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu nhỏ.
+  \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertBrier), phản ánh khả năng phân loại vượt trội. Tuy nhiên, MCE rất cao (\phobertMCE) cho thấy mô hình có xu hướng \textit{overconfident} -- đưa ra xác suất rất cao (gần 0 hoặc 1) ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu nhỏ~\cite{guo2017calibration}.
 
   \item \textbf{BiLSTM có hiệu chuẩn kém nhất:} Với ECE = \bilstmECE\ và Brier Score = \bilstmBrier, BiLSTM cho thấy xác suất dự đoán không phản ánh tốt độ chính xác thực tế, nhất quán với hiệu năng phân loại thấp nhất trong bốn mô hình.
 \end{itemize}
 
-\textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần áp dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature Scaling hoặc Platt Scaling để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể được sử dụng trực tiếp với độ tin cậy cao hơn.
+\textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần áp dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature Scaling~\cite{guo2017calibration} hoặc Platt Scaling~\cite{platt1999calibration} để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể được sử dụng trực tiếp với độ tin cậy cao hơn.
 
 \section{Kiểm định thống kê}
 \label{sec:statistics}
@@ -1982,7 +1985,7 @@ Nghiên cứu xây dựng và so sánh bốn phương pháp phát hiện tin gi�
 \begin{itemize}[leftmargin=2em]
   \item Thu thập thêm dữ liệu đa dạng thể loại tin giả tiếng Việt.
   \item Tích hợp thông tin đa phương thức (hình ảnh, đồ thị lan truyền mạng xã hội).
-  \item Xây dựng hệ thống phát hiện thời gian thực với PhoBERT được nén nhỏ (knowledge distillation).
+  \item Xây dựng hệ thống phát hiện thời gian thực với PhoBERT được nén nhỏ (knowledge distillation)~\cite{hinton2015distilling}.
   \item Kết hợp kiểm chứng thực tế (fact-checking) với phân loại tự động.
 \end{itemize}
 

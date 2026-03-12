@@ -26,7 +26,7 @@
 \contentsline {subsection}{\numberline {1.4.1}Định nghĩa}{17}{subsection.1.4.1}%
 \contentsline {subsection}{\numberline {1.4.2}Mạng nơ-ron nhân tạo (Artificial Neural Network)}{18}{subsection.1.4.2}%
 \contentsline {subsubsection}{\numberline {1.4.2.1}Một số thành phần cần chú ý}{19}{subsubsection.1.4.2.1}%
-\contentsline {subsection}{\numberline {1.4.3}Mạng nơ-ron hồi quy (Recurrent Neural Network -- RNN)}{19}{subsection.1.4.3}%
+\contentsline {subsection}{\numberline {1.4.3}Mạng nơ-ron hồi quy (Recurrent Neural Network -- RNN)}{20}{subsection.1.4.3}%
 \contentsline {subsection}{\numberline {1.4.4}Bộ nhớ dài-ngắn hạn (Long Short-Term Memory -- LSTM)}{20}{subsection.1.4.4}%
 \contentsline {subsection}{\numberline {1.4.5}Mạng LSTM hai chiều (Bidirectional LSTM)}{22}{subsection.1.4.5}%
 \contentsline {subsection}{\numberline {1.4.6}Cơ chế chú ý (Attention Mechanism)}{23}{subsection.1.4.6}%

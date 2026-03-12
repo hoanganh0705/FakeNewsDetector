@@ -14,45 +14,45 @@ Database file #1: references.bib
 Warning--missing publisher in jm3
 
 Done.
-You've used 22 entries,
+You've used 32 entries,
             4087 wiz_defined-function locations,
-            949 strings with 11750 characters,
-and the built_in function-call counts, 19223 in all, are:
-= -- 1515
-> -- 497
-< -- 184
-+ -- 277
-- -- 83
-* -- 928
-:= -- 2726
-add.period$ -- 43
-call.type$ -- 22
-change.case$ -- 23
-chr.to.int$ -- 444
-cite$ -- 23
-duplicate$ -- 1328
-empty$ -- 1531
-format.name$ -- 100
-if$ -- 4522
+            1006 strings with 13519 characters,
+and the built_in function-call counts, 27436 in all, are:
+= -- 2182
+> -- 676
+< -- 264
++ -- 379
+- -- 110
+* -- 1312
+:= -- 3907
+add.period$ -- 64
+call.type$ -- 32
+change.case$ -- 33
+chr.to.int$ -- 636
+cite$ -- 33
+duplicate$ -- 1909
+empty$ -- 2206
+format.name$ -- 135
+if$ -- 6465
 int.to.chr$ -- 0
-int.to.str$ -- 22
-missing$ -- 228
-newline$ -- 91
-num.names$ -- 22
-pop$ -- 530
+int.to.str$ -- 32
+missing$ -- 322
+newline$ -- 121
+num.names$ -- 32
+pop$ -- 743
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 1495
+skip$ -- 2141
 stack$ -- 0
-substring$ -- 1046
-swap$ -- 1124
-text.length$ -- 36
+substring$ -- 1504
+swap$ -- 1605
+text.length$ -- 52
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 22
+type$ -- 32
 warning$ -- 1
-while$ -- 91
-width$ -- 24
-write$ -- 237
+while$ -- 133
+width$ -- 34
+write$ -- 333
 (There was 1 warning)

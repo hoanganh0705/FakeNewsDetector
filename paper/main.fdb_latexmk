@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex main"] 1773142543.9706 "main.aux" "main.bbl" "main" 1773144011.33836 0
-  "./references.bib" 1773136536.52169 7208 21dc88d657d843d783f191641a7b5072 ""
+["bibtex main"] 1773328740.36639 "main.aux" "main.bbl" "main" 1773329826.05775 0
+  "./references.bib" 1773327805.00787 10172 8fc871056143899ed7a90328586ea353 ""
   "/usr/share/texlive/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1773144011.19046 61503 aa12461c478ee514b99c6f22becce46d "pdflatex"
+  "main.aux" 1773329825.91176 62382 eda9ccc91cdc2c55a5b17956c56f2ad8 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1773144010.10992 "/home/nguyenhoanganh/Workspace/AIProjects/NCKH/FakeNewsDetector/paper/main.tex" "main.pdf" "main" 1773144011.33852 0
+["pdflatex"] 1773329824.79905 "/home/nguyenhoanganh/Workspace/AIProjects/NCKH/FakeNewsDetector/paper/main.tex" "main.pdf" "main" 1773329826.05793 0
   "/home/nguyenhoanganh/.texlive2023/texmf-var/web2c/pdftex/pdflatex.fmt" 1772068113 7759950 e53420dab2198b756f2a6c7fc89a4591 ""
-  "/home/nguyenhoanganh/Workspace/AIProjects/NCKH/FakeNewsDetector/paper/main.tex" 1773144009.95471 141000 f931672f55c681983294b18e62096172 ""
+  "/home/nguyenhoanganh/Workspace/AIProjects/NCKH/FakeNewsDetector/paper/main.tex" 1773329824.65239 143048 30a9dc8784f6179dd226baa2844f083e ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/tcrm1200.tfm" 1136768653 1536 74b7293ec3713bb7fdca8dd1bd1f469c ""
@@ -105,6 +105,9 @@
   "/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty" 1678653221 12462 ecf33913ce1e8012075d24e1f47f0d9b ""
   "/usr/share/texlive/texmf-dist/tex/latex/cite/cite.sty" 1425427964 26218 19edeff8cdc2bcb704e8051dc55eb5a7 ""
   "/usr/share/texlive/texmf-dist/tex/latex/cleveref/cleveref.sty" 1525128982 329481 7fc6b003158402a4c694bc0a1b729308 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/csquotes/csquotes.cfg" 1429144587 7068 06f8d141725d114847527a66439066b6 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/csquotes/csquotes.def" 1663185836 21994 2bc2a882df92d97dbce35c06bb1d3541 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/csquotes/csquotes.sty" 1663185836 62761 3c92d495a9e03d7254b9a3266aa17164 ""
   "/usr/share/texlive/texmf-dist/tex/latex/enumitem/enumitem.sty" 1561238569 51697 f8f08183cd2080d9d18a41432d651dfb ""
   "/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty" 1579991033 13886 d1306dcf79a944f6988e688c1785f9ce ""
   "/usr/share/texlive/texmf-dist/tex/latex/etoolbox/etoolbox.sty" 1601931149 46845 3b58f70c6e861a13d927bff09d35ecbc ""
@@ -181,17 +184,17 @@
   "figures//svm.jpg" 1773064209.25614 59190 d99b14b06dfa8ea6bc712bc6dfc0fe08 ""
   "figures//textpreprocessing.jpg" 1773068241.46729 132692 4aae0e019edfd44c2f6f47a0737d352f ""
   "figures/lstm.jpeg" 1773133803.99739 102071 6fb265ae9212cd8e0cb428247f54f261 ""
-  "main.aux" 1773144011.19046 61503 aa12461c478ee514b99c6f22becce46d "pdflatex"
-  "main.bbl" 1773142544.0169 6079 88786d890af3e125163d3c7741af1a99 "bibtex main"
-  "main.lof" 1773144011.19893 3042 dbd3be9850fc327a5ee1262dc1fc0cab "pdflatex"
-  "main.lot" 1773144011.19893 1674 bb47eb1c279ff108f147b954233e1ac1 "pdflatex"
-  "main.tex" 1773144009.95471 141000 f931672f55c681983294b18e62096172 ""
-  "main.toc" 1773144011.19893 8385 64aabea528bb95367e8fe233ce6db4d5 "pdflatex"
+  "main.aux" 1773329825.91176 62382 eda9ccc91cdc2c55a5b17956c56f2ad8 "pdflatex"
+  "main.bbl" 1773328740.40964 8241 2f113225a0ad791f8d544790bb80954e "bibtex main"
+  "main.lof" 1773329825.92047 3042 dbd3be9850fc327a5ee1262dc1fc0cab "pdflatex"
+  "main.lot" 1773329825.92047 1674 bb47eb1c279ff108f147b954233e1ac1 "pdflatex"
+  "main.tex" 1773329824.65239 143048 30a9dc8784f6179dd226baa2844f083e ""
+  "main.toc" 1773329825.92047 8385 b3bfc38ae7f1c9d635c163b168b45260 "pdflatex"
   "tables/table1_dataset.tex" 1772531025.68899 542 42001c3c0814241a370c1856b3aff879 ""
   "tables/table2_results.tex" 1772531025.68899 723 d9db3b8fd006388cbf354319639cd6a9 ""
   "tables/table3_perclass.tex" 1772531025.68899 898 362623654e7b331edbd70854f6db7f2b ""
   "tables/table4_hyperparams.tex" 1772531025.68899 789 fb84f41a04eaf9af3445027bd83c1fdc ""
-  "tables/table5_complexity.tex" 1772531025.68899 501 ed5a719f5c65e4fca17f9e0b4e345a9d ""
+  "tables/table5_complexity.tex" 1773326167.11012 509 fbd92bd415b4ea70c9a17a701a2cc16b ""
   (generated)
   "main.aux"
   "main.lof"
