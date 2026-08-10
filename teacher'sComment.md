@@ -1,2 +1,0 @@
-em làm rõ thêm các câu hỏi này trong báo cáo:
-Giải thích rõ tại sao lựa chọn các nhóm thuật toán (Logistic Regression và SVM => hai thuật toán này tại sao lại chọn tfidf làm đặc trưng, mà không phải một số đặc trưng hiện đại), tương tự BiLSTM. => Nói chung là phần trình bày tiếp cận chưa thuyết phục, chưa nói rõ lý do lý thuyết hay kết quả thực nghiệm nào lại chọn 2 cách tiếp cận mà khác xa nhau (1 nhóm của máy học, 1 nhóm của deep => mục đích làm gì?)

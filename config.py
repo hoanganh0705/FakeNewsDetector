@@ -68,7 +68,7 @@ class DataConfig:
 @dataclass
 class TFIDFConfig:
     max_features: int   = 40000          # increased from 50K to fit trigrams
-    ngram_range:  tuple = (1, 2)          # added trigrams (was (1,2))
+    ngram_range:  tuple = (1, 2)          # unigrams + bigrams
     min_df:       int   = 5               # lowered from 3 — 15K docs is enough
     max_df:       float = 0.95
     sublinear_tf: bool  = True
@@ -77,8 +77,7 @@ class TFIDFConfig:
 # ─────────────────────────────────────────────────────────────
 # Logistic Regression settings
 # ─────────────────────────────────────────────────────────────
-# Analysis: best was C=10 liblinear (val_f1=0.8598, test_f1=0.8506).
-# Adding saga+elasticnet and finer C range around optimum.
+# Analysis: best was C=10 saga (val_f1=0.8454, test_f1=0.8329) via 5-fold GridSearchCV.
 @dataclass
 class LRConfig:
     C:            float = 1.0
@@ -98,8 +97,7 @@ class LRConfig:
 # ─────────────────────────────────────────────────────────────
 # SVM settings
 # ─────────────────────────────────────────────────────────────
-# Analysis: best was LinearSVC C=1 (val_f1=0.8554, test_f1=0.8514).
-# Keeping linear; narrowing grid around C=1 for finer tuning.
+# Analysis: best was LinearSVC C=0.5 (test_acc=0.8434, test_f1=0.8410) via GridSearchCV.
 @dataclass
 class SVMConfig:
     kernel:       str   = "rbf"
@@ -124,9 +122,7 @@ class SVMConfig:
 # ─────────────────────────────────────────────────────────────
 # BiLSTM settings
 # ─────────────────────────────────────────────────────────────
-# Round 1: hidden_dim=384, no freeze → test_f1=0.8368, severe overfitting (99.5% train acc)
-# Round 2: hidden_dim=128, freeze=True → test_f1=0.7907, underfitting (84% train acc)
-# Round 3: middle ground — hidden_dim=256, unfreeze, keep strong regularisation
+# Final config: hidden_dim=128, 1 layer, dropout=0.3 — balanced between overfitting (384) and underfitting (frozen 128).
 @dataclass
 class BiLSTMConfig:
     embedding_dim:   int   = 300           # matches FastText cc.vi.300

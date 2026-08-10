@@ -6,12 +6,12 @@ A research project comparing machine learning approaches for Vietnamese fake new
 
 | Model               | Accuracy   | F1-Score  |
 | ------------------- | ---------- | --------- |
-| **PhoBERT**         | **92.25%** | **0.920** |
-| SVM                 | 87.31%     | 0.867     |
-| BiLSTM              | 86.05%     | 0.855     |
-| Logistic Regression | 85.61%     | 0.852     |
+| **PhoBERT**         | **90.07%** | **0.899** |
+| SVM                 | 84.34%     | 0.841     |
+| BiLSTM              | 82.52%     | 0.823     |
+| Logistic Regression | 83.48%     | 0.833     |
 
-PhoBERT significantly outperforms all baselines (McNemar's test with Holm-Bonferroni correction, p ≈ 0.0000).
+PhoBERT outperforms all baselines on the test set (verified via McNemar's test, p < 0.001).
 
 ## Project Structure
 
@@ -50,16 +50,17 @@ See [MANUAL.md](MANUAL.md) for the full step-by-step guide.
 
 | Model               | Type           | Features                        | Parameters |
 | ------------------- | -------------- | ------------------------------- | ---------- |
-| Logistic Regression | Traditional ML | TF-IDF (10K vocab, uni+bigrams) | ~10K       |
-| SVM (RBF kernel)    | Traditional ML | TF-IDF (10K vocab, uni+bigrams) | ~10K       |
-| BiLSTM              | Deep Learning  | Word embeddings (dim=256)       | ~6.2M      |
-| PhoBERT             | Transformer    | Subword tokens (phobert-base)   | ~135M      |
+| Logistic Regression | Traditional ML | TF-IDF (27.6K vocab, uni+bigrams) | ~27.6K     |
+| SVM (LinearSVC)    | Traditional ML | TF-IDF (27.6K vocab, uni+bigrams) | ~27.6K     |
+| BiLSTM              | Deep Learning  | Word embeddings (dim=300, hidden=128) | ~7.5M     |
+| PhoBERT             | Transformer    | Subword tokens (phobert-base, 256 len) | ~134M    |
 
 ## Dataset
 
-- **Total**: 10,097 Vietnamese news articles (9,031 after cleaning)
-- **Classes**: Real (58.6%) / Fake (41.4%)
-- **Split**: 70% train / 15% validation / 15% test (stratified)
+- **Raw**: 15,789 Vietnamese news articles
+- **After cleaning**: 13,958 articles (7,764 Real / 6,194 Fake)
+- **Classes**: Real (55.6%) / Fake (44.4%)
+- **Split**: 70% train (9,770) / 15% validation (2,094) / 15% test (2,094), stratified
 - **Preprocessing**: VnCoreNLP word segmentation (RDRSegmenter), URL removal, text normalization
 
 ## Statistical Validation

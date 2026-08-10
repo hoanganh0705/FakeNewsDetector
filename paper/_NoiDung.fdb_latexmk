@@ -1,6 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1773500414.32306 "_NoiDung.tex" "_NoiDung.pdf" "_NoiDung" 1773500415.41558 0
+["pdflatex"] 1773592350.82573 "/home/nguyenhoanganh/Workspace/AIProjects/NCKH/FakeNewsDetector/paper/_NoiDung.tex" "_NoiDung.pdf" "_NoiDung" 1773592351.92462 0
   "/home/nguyenhoanganh/.texlive2023/texmf-var/web2c/pdftex/pdflatex.fmt" 1772068113 7759950 e53420dab2198b756f2a6c7fc89a4591 ""
+  "/home/nguyenhoanganh/Workspace/AIProjects/NCKH/FakeNewsDetector/paper/_NoiDung.tex" 1773592349.51585 123196 8b807d0e6af48e9bf03482d67e67ee63 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/tcrm1200.tfm" 1136768653 1536 74b7293ec3713bb7fdca8dd1bd1f469c ""
@@ -158,8 +159,8 @@
   "/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty" 1655066402 56148 51a9a8571c07b9921892ae11063ae853 ""
   "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1770681600 40900 887e0dc8cac988a9e9c574af364cf837 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1772068347.94324 4547210 0b4d8bce3d83ee4f50b88a57a6a0d7ef ""
-  "_NoiDung.aux" 1773500415.33557 56944 5bab71b088e96ff25539b81ff7199c56 "pdflatex"
-  "_NoiDung.tex" 1773500408.72199 124485 db793bcc979295724c8e9af0cc014683 ""
+  "_NoiDung.aux" 1773592351.86101 55121 33013fe0e7e9e3133d2dd775a3c07272 "pdflatex"
+  "_NoiDung.tex" 1773592349.51585 123196 8b807d0e6af48e9bf03482d67e67ee63 ""
   "figures//bilstm.png" 1773136373.17611 129559 b4360e0b3fd86a0f59d2b8a6a1fba58b ""
   "figures//encoder.jpg" 1773062611.9928 60153 843dc09940f2df1baf6078205119307d ""
   "figures//error_taxonomy.pdf" 1772431378.76942 30820 9c8e02b677471fde87c987ed34a3fa6c ""
