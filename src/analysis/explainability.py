@@ -8,6 +8,36 @@ Provides interpretability insights for model predictions:
 4. Error categorization taxonomy
 """
 
+from __future__ import annotations
+
+# Phase 1: token-level attribution helpers live in sibling modules and are
+# re-exported here so callers can keep using ``from src.analysis import explainability``.
+from src.analysis.lr_svm_shap import (  # noqa: F401
+    lr_kernel_shap,
+    svm_linear_shap,
+    visualize_token_importance as visualize_lr_svm_token_importance,
+)
+from src.analysis.bilstm_attribution import (  # noqa: F401
+    bilstm_simple_gradients,
+    bilstm_ig,
+    visualize_bilstm_attribution,
+)
+from src.analysis.phobert_attribution import (  # noqa: F401
+    compare_attribution_methods,
+    phobert_attention_rollout,
+    phobert_integrated_gradients,
+    phobert_shap,
+)
+from src.analysis.method_agreement import (  # noqa: F401
+    agreement_matrix,
+    cross_model_agreement,
+    faithfulness,
+    rank_agreement,
+)
+from src.analysis.explainability_runner import (  # noqa: F401
+    run_explainability,
+)
+
 import os
 import json
 import joblib
@@ -23,6 +53,31 @@ from config import cfg
 
 from src.utils.logger import get_logger
 log = get_logger(__name__)
+
+__all__ = [
+    # ── existing paper §4.6.3 / §4.6.4 analyses (unchanged) ──
+    "analyze_lr_feature_importance",
+    "analyze_error_categories",
+    "create_feature_importance_plot",
+    "create_error_taxonomy_plot",
+    "main",
+    # ── Phase 1 token-level attribution API ──
+    "lr_kernel_shap",
+    "svm_linear_shap",
+    "visualize_lr_svm_token_importance",
+    "bilstm_simple_gradients",
+    "bilstm_ig",
+    "visualize_bilstm_attribution",
+    "phobert_shap",
+    "phobert_integrated_gradients",
+    "phobert_attention_rollout",
+    "compare_attribution_methods",
+    "rank_agreement",
+    "faithfulness",
+    "agreement_matrix",
+    "cross_model_agreement",
+    "run_explainability",
+]
 
 
 def analyze_lr_feature_importance(top_n: int = 30) -> Dict:

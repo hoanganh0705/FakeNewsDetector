@@ -21,6 +21,7 @@ from src.features.embedding_features import TextDataset, collate_fn
 from src.evaluation.metrics import compute_metrics, print_metrics
 from src.models.bilstm_model import BiLSTMClassifier
 from src.training.runner import save_training_results
+from src.utils.gpu_monitor import GPUMonitor
 from config import cfg
 
 from src.utils.logger import get_logger
@@ -141,11 +142,16 @@ class BiLSTMTrainer:
         
         log.info(f"\nTraining BiLSTM for {epochs} epochs...")
         log.info(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
-        
+
+        # Lightweight per-epoch GPU telemetry (no-ops if no GPU / NVML).
+        gpu_monitor = GPUMonitor(device_index=0)
+        if gpu_monitor.available:
+            gpu_monitor.log_once()
+
         best_val_f1 = 0
         patience_counter = 0
         start_time = time.time()
-        
+
         for epoch in range(epochs):
             epoch_start = time.time()
             
@@ -202,11 +208,14 @@ class BiLSTMTrainer:
             self.training_history['val_f1'].append(val_f1)
             
             epoch_time = time.time() - epoch_start
-            
+
             log.info(f"Epoch {epoch+1}/{epochs} ({epoch_time:.1f}s) | "
                   f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f} | "
                   f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}")
-            
+
+            # Per-epoch GPU telemetry (no-op when monitor unavailable).
+            gpu_monitor.log_epoch(epoch + 1, epochs)
+
             # Early stopping check
             if val_f1 > best_val_f1:
                 best_val_f1 = val_f1

@@ -70,15 +70,19 @@ class TestExplainabilitySmoke:
 # ---------------------------------------------------------------------------
 
 class TestGeneratePaperFiguresSmoke:
+    # NOTE: the original §7.3 test patched `figure0_label_distribution`,
+    # which has since been split into figure0a_overall_distribution +
+    # figure0b_split_distribution. We patch both new names so the
+    # mocked-out figure functions don't try to read non-existent data.
     @patch('src.analysis.generate_paper_figures.os.listdir', return_value=[])
-    @patch('src.analysis.generate_paper_figures.os.makedirs')
     @patch('src.analysis.generate_paper_figures.figure6_model_paradigm_comparison')
     @patch('src.analysis.generate_paper_figures.figure5_per_class_performance')
     @patch('src.analysis.generate_paper_figures.figure4_precision_recall_curves')
     @patch('src.analysis.generate_paper_figures.figure3_roc_curves')
     @patch('src.analysis.generate_paper_figures.figure2_confusion_matrices')
     @patch('src.analysis.generate_paper_figures.figure1_model_comparison_bar')
-    @patch('src.analysis.generate_paper_figures.figure0_label_distribution')
+    @patch('src.analysis.generate_paper_figures.figure0b_split_distribution')
+    @patch('src.analysis.generate_paper_figures.figure0a_overall_distribution')
     @patch('src.analysis.generate_paper_figures.load_all_data',
            return_value=(_FAKE_METRICS, {}))
     def test_main_runs(self, *mocks):
@@ -130,6 +134,12 @@ class TestErrorAnalysisSmoke:
 # ---------------------------------------------------------------------------
 
 class TestEvaluateAllSmoke:
+    # NOTE: we intentionally do NOT patch `os.makedirs` here. The real
+    # `makedirs(exist_ok=True)` call creates `results/tables/` and
+    # `results/figures/` (the parent dirs that `pandas.to_csv` and
+    # `plt.savefig` need). Patching it out breaks the writes with
+    # `OSError: Cannot save file into a non-existent directory` without
+    # providing any benefit — the paths in cfg.PATHS are sandbox-safe.
     @patch('src.evaluation.evaluate_all.json.dump')
     @patch('builtins.open', mock_open())
     @patch('src.evaluation.evaluate_all.plot_training_history')
@@ -138,7 +148,6 @@ class TestEvaluateAllSmoke:
     @patch('src.evaluation.evaluate_all.plot_model_comparison')
     @patch('src.evaluation.evaluate_all.generate_latex_table')
     @patch('src.evaluation.evaluate_all.save_predictions_for_analysis')
-    @patch('src.evaluation.evaluate_all.os.makedirs')
     @patch('src.evaluation.evaluate_all.load_all_metrics',
            return_value=_FAKE_METRICS)
     def test_main_returns_tuple(self, *mocks):
@@ -149,9 +158,8 @@ class TestEvaluateAllSmoke:
         assert isinstance(comparison_df, pd.DataFrame)
         assert isinstance(metrics, dict)
 
-    @patch('src.evaluation.evaluate_all.os.makedirs')
     @patch('src.evaluation.evaluate_all.load_all_metrics', return_value={})
-    def test_main_returns_none_when_no_metrics(self, *mocks):
+    def test_main_returns_none_when_no_metrics(self, mock_load_metrics):
         from src.evaluation.evaluate_all import main
         result = main()
         assert result is None
@@ -173,7 +181,6 @@ class TestCrossValidationSmoke:
 
     @patch('src.evaluation.cross_validation.json.dump')
     @patch('builtins.open', mock_open())
-    @patch('src.evaluation.cross_validation.os.makedirs')
     @patch('src.evaluation.cross_validation.run_cross_validation')
     @patch('src.evaluation.cross_validation.joblib.load')
     @patch('src.evaluation.cross_validation.os.path.exists', return_value=True)
@@ -218,7 +225,6 @@ class TestAblationStudySmoke:
 
     @patch('src.evaluation.ablation_study.json.dump')
     @patch('builtins.open', mock_open())
-    @patch('src.evaluation.ablation_study.os.makedirs')
     @patch('src.evaluation.ablation_study.ablation_sublinear_tf')
     @patch('src.evaluation.ablation_study.ablation_lr_regularization')
     @patch('src.evaluation.ablation_study.ablation_word_segmentation')

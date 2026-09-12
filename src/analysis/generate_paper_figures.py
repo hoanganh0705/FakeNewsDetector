@@ -185,15 +185,11 @@ def figure1_model_comparison_bar(metrics: dict, save_path: str):
     ax.set_xlabel('Mô hình')
     ax.set_xticks(x)
     ax.set_xticklabels(models)
-    ax.set_ylim(0.8, 1.0)
+    ax.set_ylim(0, 1)
     ax.legend(loc='upper left', ncol=2, framealpha=0.9)
     ax.grid(True, alpha=0.3, axis='y')
     ax.set_axisbelow(True)
-    
-    # Add horizontal line at best score
-    best_f1 = max([data[j][3] for j in range(len(models))])
-    ax.axhline(y=best_f1, color='green', linestyle='--', alpha=0.5, linewidth=1)
-    
+
     plt.tight_layout()
     plt.savefig(save_path, format='png')
     plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')
@@ -351,7 +347,7 @@ def figure5_per_class_performance(metrics: dict, save_path: str):
     axes[0].set_title('Tin thật (Lớp 0)', fontweight='bold')
     axes[0].set_xticks(x)
     axes[0].set_xticklabels(models, rotation=15, ha='right')
-    axes[0].set_ylim(0.75, 1.0)
+    axes[0].set_ylim(0, 1)
     axes[0].legend()
     axes[0].grid(True, alpha=0.3, axis='y')
     
@@ -365,7 +361,7 @@ def figure5_per_class_performance(metrics: dict, save_path: str):
     axes[1].set_title('Tin giả (Lớp 1)', fontweight='bold')
     axes[1].set_xticks(x)
     axes[1].set_xticklabels(models, rotation=15, ha='right')
-    axes[1].set_ylim(0.75, 1.0)
+    axes[1].set_ylim(0, 1)
     axes[1].legend()
     axes[1].grid(True, alpha=0.3, axis='y')
     
@@ -423,15 +419,10 @@ def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
     ax.set_xlabel('Phương pháp mô hình')
     ax.set_xticks(x)
     ax.set_xticklabels(paradigm_names)
-    ax.set_ylim(0.85, 1.0)
+    ax.set_ylim(0, 1)
     ax.legend(loc='upper left')
     ax.grid(True, alpha=0.3, axis='y')
-    
-    # Add arrow showing improvement
-    ax.annotate('', xy=(2.2, 0.96), xytext=(0.2, 0.88),
-               arrowprops=dict(arrowstyle='->', color='green', lw=2))
-    ax.text(1.2, 0.90, 'Cải thiện\nhiệu suất', ha='center', fontsize=10, color='green')
-    
+
     plt.tight_layout()
     plt.savefig(save_path, format='png')
     plt.savefig(save_path.replace('.png', '.pdf'), format='pdf')

@@ -1,22 +1,22 @@
 
 \begin{table}[h]
 \centering
-\caption{Chỉ số hiệu suất theo từng lớp}
+\caption[Chỉ số hiệu suất theo lớp]{Chỉ số hiệu suất theo từng lớp}
 \label{tab:perclass}
 \begin{tabular}{llccc}
 \toprule
-\textbf{Mô hình} & \textbf{Lớp} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+mô hình & lớp & precision & recall & F1-Score \\
 \midrule
-\multirow{2}{*}{Logistic Regression} & Thật & \lrRealPrec & \lrRealRec & \lrRealFone \\
+\multirow{2}{*}{Logistic Regression} & thật & \lrRealPrec & \lrRealRec & \lrRealFone \\
  & Giả & \lrFakePrec & \lrFakeRec & \lrFakeFone \\
 \midrule
-\multirow{2}{*}{SVM} & Thật & \svmRealPrec & \svmRealRec & \svmRealFone \\
+\multirow{2}{*}{SVM} & thật & \svmRealPrec & \svmRealRec & \svmRealFone \\
  & Giả & \svmFakePrec & \svmFakeRec & \svmFakeFone \\
 \midrule
-\multirow{2}{*}{BiLSTM} & Thật & \bilstmRealPrec & \bilstmRealRec & \bilstmRealFone \\
+\multirow{2}{*}{BILSTM} & thật & \bilstmRealPrec & \bilstmRealRec & \bilstmRealFone \\
  & Giả & \bilstmFakePrec & \bilstmFakeRec & \bilstmFakeFone \\
 \midrule
-\multirow{2}{*}{PhoBERT} & Thật & \phobertRealPrec & \phobertRealRec & \phobertRealFone \\
+\multirow{2}{*}{PhoBERT} & thật & \phobertRealPrec & \phobertRealRec & \phobertRealFone \\
  & Giả & \phobertFakePrec & \phobertFakeRec & \phobertFakeFone \\
 \bottomrule
 \end{tabular}

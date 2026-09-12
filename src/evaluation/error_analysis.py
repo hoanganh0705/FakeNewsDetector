@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from typing import Optional
 
 from src.utils.common import MODEL_DIR_MAP, load_csv
 from config import cfg
@@ -258,6 +259,37 @@ def track_per_id_confidence(test_df: pd.DataFrame, save_path: str) -> pd.DataFra
     log.info(f"    Saved to {save_path}")
 
     return result_df
+
+
+def analyze_hard_examples(
+    per_id_confidence_path: Optional[str] = None,
+    test_csv_path: Optional[str] = None,
+    raw_csv_path: Optional[str] = None,
+    attributions_dir: Optional[str] = None,
+    tables_dir: Optional[str] = None,
+    figures_dir: Optional[str] = None,
+) -> pd.DataFrame:
+    """Thin wrapper around :func:`src.evaluation.hard_cases.analyze_hard_examples`.
+
+    This function exists so that callers importing
+    ``src.evaluation.error_analysis`` continue to find ``analyze_hard_examples``
+    as documented in the project plan (§4.6.7 / Step 4.2).  Internally it
+    delegates to the dedicated ``hard_cases`` module — see that module for
+    full documentation.
+    """
+    from src.evaluation.hard_cases import analyze_hard_examples as _impl
+
+    log.info("=" * 60)
+    log.info("  HARD CASES (delegating to src.evaluation.hard_cases)")
+    log.info("=" * 60)
+    return _impl(
+        per_id_confidence_path=per_id_confidence_path,
+        test_csv_path=test_csv_path,
+        raw_csv_path=raw_csv_path,
+        attributions_dir=attributions_dir,
+        tables_dir=tables_dir,
+        figures_dir=figures_dir,
+    )
 
 
 def main():

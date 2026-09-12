@@ -1,0 +1,171 @@
+% =====================================================================
+%  Chuong03_DuLieu.tex — Chương 3: Bộ dữ liệu và tiền xử lý
+%
+%  Tách từ main.tex (dòng 1200-1404 trong bản cũ).
+% =====================================================================
+
+\chapter{Bộ dữ liệu và tiền xử lý}
+
+\section{Thu thập và mô tả bộ dữ liệu}
+
+\subsection{Nguồn dữ liệu}
+
+Bộ dữ liệu được sử dụng được tổng hợp từ hai nguồn chính. Nguồn thứ nhất là các bài đăng trên mạng xã hội Facebook --- nơi phản ánh tương đối sát thực tế nội dung tin giả được lan truyền trong cộng đồng. Nguồn thứ hai là tập các bài báo cũ được thu thập trong giai đoạn dịch COVID-19 --- thời điểm lượng thông tin sai sự thật trên mạng tăng đột biến. Mỗi bản ghi trong tập dữ liệu bao gồm tối thiểu hai trường thông tin:
+
+\begin{itemize}[leftmargin=2em]
+  \item \texttt{text}: toàn bộ nội dung văn bản của bài viết.
+  \item \texttt{label}: nhãn phân loại, với 0 đại diện cho \textit{thật} và 1 đại diện cho \textit{giả}.
+\end{itemize}
+
+Ngay sau khi thu thập, dữ liệu được đưa vào bước phân đoạn từ (word segmentation) để phù hợp với các khâu xử lý về sau. Tổng số bản ghi thô ban đầu là \nraw{} mẫu.
+
+\subsection{Phân phối nhãn}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{fig0a_overall_distribution}
+  \caption{Phân phối nhãn theo từng tập dữ liệu và tổng quan toàn bộ \nraw{} mẫu}
+  \label{fig:label_dist}
+\end{figure}
+
+\clearpage
+
+Hình~\ref{fig:label_dist} phản ánh tỷ lệ giữa hai lớp trong toàn bộ tập dữ liệu. Có thể nhận thấy tỷ lệ giữa hai lớp tương đối cân đối --- đặc điểm này có ý nghĩa quan trọng vì nó giúp hạn chế hiện tượng mô hình bị thiên lệch (bias) về phía lớp đa số trong suốt quá trình huấn luyện lẫn đánh giá. Trong thực tế, các bộ dữ liệu tin giả thường có xu hướng mất cân bằng, nên sự cân đối của tập dữ liệu nghiên cứu là một lợi thế giúp kết quả thực nghiệm phản ánh trung thực hiệu quả của từng phương pháp phân loại.
+
+\section{Tiền xử lý văn bản}
+
+\subsection{Làm sạch và lọc dữ liệu}
+
+Trước khi tiến hành chia tập huấn luyện --- kiểm định --- kiểm tra, dữ liệu cần trải qua khâu làm sạch nhằm loại bỏ những bản ghi không có giá trị hoặc có nguy cơ gây rò rỉ thông tin. Quy trình làm sạch gồm bốn bước chính:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textbf{Loại bỏ văn bản trùng lặp:} các bản ghi có trường \texttt{text} giống hệt nhau được gộp lại, chỉ giữ lại một bản duy nhất. Bước này đặc biệt quan trọng vì trùng lặp giữa các tập dữ liệu có thể làm sai lệch kết quả đánh giá.
+
+  \item \textbf{Loại bỏ văn bản rỗng hoặc giá trị thiếu:} những bản ghi có \texttt{text} là NaN hoặc chuỗi rỗng sau khi loại bỏ khoảng trắng cũng được loại khỏi tập dữ liệu.
+
+  \item \textbf{Loại bỏ văn bản quá ngắn:} những bài viết có dưới 10 từ bị loại vì không cung cấp đủ thông tin ngữ nghĩa cho mô hình phân loại. Ngưỡng này được cấu hình thông qua tham số \texttt{min\_word\_count = 10}.
+
+  \item \textbf{Đặt lại chỉ mục:} sau khi hoàn tất ba bước trên, dữ liệu được đánh lại chỉ mục nhằm đảm bảo tính nhất quán cho các bước xử lý phía sau.
+\end{enumerate}
+
+Tóm tắt kết quả làm sạch:
+
+\begin{itemize}[leftmargin=2em]
+  \item Số mẫu ban đầu: \nraw
+  \item Số mẫu bị loại bỏ: \nremoved
+  \item Số mẫu còn lại: \nclean
+\end{itemize}
+
+Các bước làm sạch nói trên giúp giảm đáng kể lượng nhiễu trong tập dữ liệu và bảo đảm rằng quá trình huấn luyện cũng như đánh giá mô hình không bị ảnh hưởng bởi những bản ghi không hợp lệ.
+
+\subsection{Phân đoạn từ bằng VnCoreNLP}
+
+Khác với nhiều ngôn ngữ mà khoảng trắng phân tách rõ ràng giữa các từ, tiếng Việt có sự chênh lệch giữa đơn vị âm tiết và đơn vị từ. Chẳng hạn, ``Việt Nam'' là một từ nhưng được viết thành hai âm tiết tách biệt; nếu lấy từng âm tiết làm đơn vị xử lý thì cấu trúc và ý nghĩa thực sự của cụm từ sẽ bị bỏ sót. Vì lý do này, khâu phân đoạn từ cần được thực hiện trước các bước biểu diễn số nhằm xác định chính xác đơn vị từ phù hợp với đặc thù tiếng Việt.
+
+Trong nghiên cứu này, phân đoạn từ được thực hiện bằng thư viện \texttt{py\_vncorenlp} với bộ tách từ RDRSegmenter của VnCoreNLP~\cite{vncore_2018, rdrsegmenter2018}. Lựa chọn này đảm bảo dữ liệu đầu vào được xử lý theo đúng cách mà PhoBERT --- mô hình ngôn ngữ tiền huấn luyện --- đã sử dụng trong giai đoạn tiền huấn luyện. Nhờ vậy, khi đưa văn bản vào PhoBERT ở các bước sau, sự khác biệt trong cách xác định đơn vị từ được hạn chế tối đa, qua đó cải thiện tính tương thích và hỗ trợ khả năng tổng quát hóa.
+
+Các bước triển khai cụ thể gồm:
+
+\begin{itemize}[leftmargin=2em]
+  \item Tự động tải và lưu trữ mô hình vncorenlp tại thư mục cục bộ (\texttt{.vncorenlp}) nếu chưa có sẵn.
+  \item Thực hiện phân đoạn trên cả hai trường \texttt{title} và \texttt{text}.
+  \item Chuẩn hóa văn bản trước khi phân đoạn, bao gồm:
+  \begin{itemize}
+    \item Loại bỏ dấu gạch dưới phát sinh từ những lần phân đoạn trước (nếu có).
+    \item Chuẩn hóa khoảng trắng nhằm đảm bảo định dạng đồng nhất.
+  \end{itemize}
+\end{itemize}
+
+Sau khi phân đoạn, những âm tiết cùng tạo thành một từ được ghép với nhau bằng dấu gạch dưới. Ví dụ, với câu ``em bé đang ăn bánh ngọt'', kết quả xử lý minh họa như sau:
+
+\begin{quote}
+\textit{trước:} ``em bé đang ăn bánh ngọt'' \\
+
+\textit{sau:} ``em bé đang ăn bánh\_ngọt''
+\end{quote}
+
+Như vậy, những từ đơn vẫn được giữ nguyên, còn các từ được cấu thành từ nhiều âm tiết được liên kết bằng dấu gạch dưới. Cách biểu diễn này giúp xác định rõ đơn vị từ --- yếu tố quan trọng để các bước xử lý tiếp theo hoạt động chính xác. Đặc biệt, việc thống nhất phương pháp phân đoạn với dữ liệu mà PhoBERT đã được huấn luyện giúp văn bản đầu vào tương thích tốt hơn với cơ chế \textit{subword tokenization} của mô hình, hạn chế sai lệch trong quá trình biểu diễn và nâng cao tính ổn định khi huấn luyện cũng như suy diễn.
+
+\section{Chia tập dữ liệu}
+
+\subsection{Chia phân tầng}
+\label{sec:data_split}
+
+Dữ liệu sau khi được phân đoạn và làm sạch được tổ chức thành ba tập theo chức năng sử dụng trong quá trình thực nghiệm, gồm Train (huấn luyện), Validation (kiểm định) và Test (kiểm tra). Tập Train cung cấp dữ liệu để mô hình học các tham số. Trong giai đoạn phát triển, kết quả trên Validation được sử dụng để theo dõi quá trình học và làm cơ sở lựa chọn, điều chỉnh siêu tham số. Tập Test được tách biệt khỏi các bước huấn luyện và tinh chỉnh, chỉ được sử dụng khi mô hình đã hoàn thiện nhằm đánh giá kết quả trên những mẫu dữ liệu chưa được sử dụng trước đó.
+
+Để hạn chế ảnh hưởng của sự khác biệt về phân bố nhãn, quá trình phân chia được thực hiện theo phương pháp phân tầng. Theo đó, tỷ lệ của hai lớp được duy trì tương đối nhất quán giữa Train, Validation và Test. Các tỷ lệ được sử dụng trong quá trình chia dữ liệu được thiết lập như sau:
+
+\begin{itemize}[leftmargin=2em]
+  \item Train: 70\%
+  \item Validation: 15\%
+  \item Test: 15\%
+  \item \texttt{random\_state = 42}
+\end{itemize}
+
+Về quy trình, tập Test được tách ra trước (15\% tổng dữ liệu); phần còn lại 85\% tiếp tục được tách thêm 15\% tổng dữ liệu ban đầu (tương đương xấp xỉ 17,6\% phần còn lại) để tạo thành tập Validation. Tham số \texttt{stratify = label} đảm bảo phân phối nhãn được bảo toàn giữa các tập:
+
+\[
+P_{\text{train}}(Y) \approx
+P_{\text{val}}(Y) \approx
+P_{\text{test}}(Y)
+\]
+
+Nhờ đó, sai lệch phân phối nhãn giữa các tập được kiểm soát chặt chẽ --- yếu tố quan trọng để quá trình đánh giá phản ánh đúng khả năng tổng quát hóa của mô hình.
+
+Kết quả chia tập cuối cùng:
+
+\begin{itemize}[leftmargin=2em]
+  \item Train: \ntrain{} mẫu
+  \item Validation: \nval{} mẫu
+  \item Test: \ntest{} mẫu
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig0b_split_distribution}
+  \caption{Phân phối nhãn trong các tập dữ liệu huấn luyện, kiểm định và kiểm tra}
+  \label{fig:split_distribution}
+\end{figure}
+
+Bảng~\ref{tab:dataset} mô tả thống kê chi tiết sau khi chia tập:
+\input{tables/table1_dataset}
+
+Bảng~\ref{tab:dataset} tổng hợp số lượng mẫu, phân phối nhãn và độ dài trung bình của văn bản trong từng tập. Có thể nhận thấy lớp \textit{tin thật} chiếm \pctreal\% và lớp \textit{tin giả} chiếm \pctfake\% ở cả ba tập --- cho thấy chiến lược phân tầng đã bảo toàn phân phối nhãn ban đầu giữa huấn luyện, kiểm định và kiểm tra.
+
+Độ dài trung bình văn bản trong tập kiểm định (\avglenval{} từ) và kiểm tra (\avglentest{} từ) cao hơn nhẹ so với tập huấn luyện (\avglentrain{} từ), phản ánh sự đa dạng về cấu trúc văn bản trong toàn bộ dữ liệu. Mặc dù tồn tại sự mất cân bằng lớp ở mức vừa phải, tỷ lệ này không quá nghiêm trọng và sẽ được xử lý bằng cơ chế trọng số lớp (\textit{class weighting}) trong quá trình huấn luyện nhằm giảm thiểu sai lệch dự đoán.
+
+\subsection{Kiểm tra rò rỉ dữ liệu}
+
+Toàn bộ nội dung văn bản trong ba tập Train, Validation, Test được chuyển đổi thành các tập hợp (\textit{set}) dựa trên trường \texttt{text}. Sau đó, đồ án thực hiện phép giao giữa từng cặp tập nhằm phát hiện những bản ghi trùng lặp:
+
+\begin{itemize}
+    \item Train và Validation
+    \item Train và Test
+    \item Validation và Test
+\end{itemize}
+
+Kết quả kiểm tra:
+
+\[
+\text{train} \cap \text{Validation} = \varnothing
+\]
+\[
+\text{train} \cap \text{test} = \varnothing
+\]
+\[
+\text{Validation} \cap \text{test} = \varnothing
+\]
+
+Không phát hiện bất kỳ văn bản trùng lặp nào giữa các cặp tập dữ liệu.
+
+Khâu kiểm tra rò rỉ dữ liệu có ý nghĩa đặc biệt quan trọng đối với các bài toán phân loại văn bản. Nếu tồn tại mẫu trùng lặp giữa tập huấn luyện và tập kiểm tra, đánh giá sẽ trở nên thiên lệch: mô hình có thể đạt hiệu năng cao một cách giả tạo do đã ``ghi nhớ'' nội dung từ tập huấn luyện, thay vì thực sự học được các đặc trưng có khả năng tổng quát hóa. Vì vậy, đảm bảo tính độc lập giữa các tập dữ liệu là điều kiện tiên quyết để đánh giá đúng năng lực thực sự của mô hình.
+
+\section{Kết luận chương}
+
+Chương này đã trình bày toàn bộ quy trình chuẩn bị dữ liệu cho bài toán phát hiện tin giả tiếng Việt, bao gồm phân đoạn từ, làm sạch và chia tập theo chiến lược phân tầng. Dữ liệu được phân đoạn bằng RDRSegmenter nhằm đảm bảo tính tương thích với PhoBERT, sau đó trải qua bước loại bỏ các văn bản trùng lặp, rỗng hoặc quá ngắn để giảm nhiễu và nâng cao chất lượng đầu vào.
+
+Tập dữ liệu sau làm sạch được chia theo tỷ lệ 70\%--15\%--15\% cho các tập huấn luyện, kiểm định và kiểm tra với \texttt{random\_state = 42}. Đồng thời, hệ thống tiến hành kiểm tra nghiêm ngặt rò rỉ dữ liệu giữa các tập nhằm đảm bảo không tồn tại giao nhau về nội dung.
+
+Các quy trình này đảm bảo tính nhất quán, khách quan và khả năng tái lập (\textit{reproducibility}), tạo nền tảng vững chắc cho quá trình huấn luyện và đánh giá mô hình ở chương tiếp theo.
+
+\clearpage

@@ -1,16 +1,18 @@
 
 \begin{table}[h]
 \centering
-\caption{So sánh hiệu suất các mô hình trên tập kiểm tra}
+\setlength{\tabcolsep}{3pt}
+\small
+\caption[So sánh hiệu suất các mô hình]{So sánh hiệu suất các mô hình trên tập kiểm tra}
 \label{tab:results}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Mô hình} & \textbf{Độ chính xác} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{ROC-AUC} \\
+mô hình & độ chính xác & precision & recall & F1-Score & ROC-AUC \\
 \midrule
-Logistic Regression & \lrAccTab & \lrPrecTab & \lrRecTab & \lrFoneTab & \lrAucTab \\
-SVM & \svmAccTab & \svmPrecTab & \svmRecTab & \svmFoneTab & \svmAucTab \\
-BiLSTM & \bilstmAccTab & \bilstmPrecTab & \bilstmRecTab & \bilstmFoneTab & \bilstmAucTab \\
-PhoBERT & \textbf{\phobertAccTab} & \textbf{\phobertPrecTab} & \textbf{\phobertRecTab} & \textbf{\phobertFoneTab} & \textbf{\phobertAucTab} \\
+Logistic Regression & \lrAccTab & \lrPrecTab & \lrRecTab & \lrFoneTab & \lrAUCTab \\
+SVM & \svmAccTab & \svmPrecTab & \svmRecTab & \svmFoneTab & \svmAUCTab \\
+BILSTM & \bilstmAccTab & \bilstmPrecTab & \bilstmRecTab & \bilstmFoneTab & \bilstmAUCTab \\
+PhoBERT & \phobertAccTab & \phobertPrecTab & \phobertRecTab & \phobertFoneTab & \phobertAUCTab \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -46,6 +46,69 @@ export JAVA_HOME=/usr/lib/jvm/java-25-openjdk  # adjust to your Java path
 
 See [MANUAL.md](MANUAL.md) for the full step-by-step guide.
 
+## Paper source and LaTeX lists
+
+The main paper source is `paper/main.tex`. The compiled output is `paper/main.pdf`.
+
+To build the PDF (4-pass pipeline: pdflatex → bibtex → pdflatex → pdflatex):
+
+```bash
+cd paper
+./build.sh          # or: pdflatex main && bibtex main && pdflatex main && pdflatex main
+./build.sh clean    # xóa các file trung gian (.aux, .toc, .bbl, …)
+```
+
+Requires a TeX Live installation (tested with TeX Live 2025). The build script runs the
+standard `pdflatex` + `bibtex` cycle so that citations, cross-references and the table of
+contents settle correctly.
+
+When adding or editing a figure/table, keep two caption versions:
+
+```latex
+\caption[Short caption for the list]{Full caption shown beside the figure/table}
+```
+
+The short version is used automatically by `listoffigures` and `listoftables`; the full version remains visible in the report body. This is especially useful for long analytical captions.
+
+### File layout
+
+The paper is a single `main.tex` (~2,600 lines) organised as follows:
+
+| Lines (approx.) | Section                                                |
+| --------------- | ------------------------------------------------------ |
+| 1 – 100         | Document class, packages, hyperref setup                |
+| 100 – 470       | Centralised `\newcommand`s for every dataset/metric    |
+| 470 – 690       | Title page, ToC, lists of tables/figures, abbreviations |
+| 690 – 1,200     | Chapter 1 — Cơ sở lý thuyết                              |
+| 1,200 – 1,400   | Chapter 2 — Bộ dữ liệu và tiền xử lý                     |
+| 1,400 – 1,660   | Chapter 3 — Xác định tin giả                              |
+| 1,660 – 2,545   | Chapter 4 — Kết quả thực nghiệm                           |
+| 2,545 – 2,590   | Kết luận, Tài liệu tham khảo                              |
+
+Numerical results live in the `\newcommand` block near the top of `main.tex`. Editing a
+value there propagates everywhere — table `\input`s, body text, captions.
+
+
+A research/demo interface that loads the existing trained models and runs
+inference on a user-pasted Vietnamese article. **No model is retrained.**
+If a checkpoint or feature file is missing, the demo shows a clear error
+explaining which artefact is required.
+
+## Streamlit Demo
+
+```bash
+cd FakeNewsDetector
+source .venv/bin/activate
+pip install -r requirements.txt        # adds streamlit
+streamlit run app.py
+```
+
+Then open the local URL Streamlit prints (default: <http://localhost:8501>).
+
+The demo uses the same label convention as the research pipeline
+(0 = Real, 1 = Fake) and surfaces the published benchmark scores
+separately from the model's live prediction.
+
 ## Models
 
 | Model               | Type           | Features                        | Parameters |

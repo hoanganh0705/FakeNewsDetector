@@ -1,0 +1,78 @@
+% =====================================================================
+%  GVHDNhanXet.tex — Trang NHẬN XÉT CỦA GIÁO VIÊN HƯỚNG DẪN
+%
+%  Trang standalone trong phần front matter (đánh số La Mã).
+%  Bố cục (đã tinh chỉnh để GỌN vừa MỘT trang A4 với 12 dòng viết):
+%    - Không đánh số trang (\thispagestyle{empty} + xóa header/footer)
+%    - Tiêu đề nhỏ vừa, info block \footnotesize để gọn
+%    - Nhãn "Nội dung nhận xét" + 12 dòng kẻ cách nhau 0.9em
+%    - Khối ngày/tháng/năm + chữ ký đặt cuối trang
+%
+%  Trang này được \input từ main.tex; được \clearpage ở đầu và cuối
+%  để đảm bảo nằm trên MỘT trang riêng biệt, không tràn.
+% =====================================================================
+
+\clearpage
+\thispagestyle{empty}
+
+% Đảm bảo header/footer TRỐNG trên trang này — robust với mọi pagestyle.
+\makeatletter
+  \let\@oddhead\@empty
+  \let\@evenhead\@empty
+  \let\@oddfoot\@empty
+  \let\@evenfoot\@empty
+\makeatother
+
+\begin{center}
+    {\normalsize \bfseries NHẬN XÉT CỦA GIÁO VIÊN HƯỚNG DẪN \par}
+\end{center}
+
+\vspace{0.4em}
+
+% ---------- Khối thông tin sinh viên + đề tài ----------
+% Dùng \footnotesize để khối info gọn, dùng \parbox thu gọn chiều rộng
+% của cột "Tên đề tài" để bẻ dòng tự động trong 1 ô tabular.
+\noindent\footnotesize
+\begin{tabular}{@{}p{4.0cm}@{\hspace{0.3em}}p{11cm}@{}}
+    Giảng viên hướng dẫn: & TS. Lê Quang Minh \\
+    Sinh viên thực hiện:  & Nguyễn Hoàng Anh \\
+    Ngày sinh:            & 27/06/2005 \\
+    Lớp:                  & DH23AI01C \\
+    Nơi sinh:             & TP Hồ Chí Minh \\
+    Tên đề tài:           & PHÁT HIỆN TIN GIẢ TIẾNG VIỆT SỬ DỤNG HỌC MÁY VÀ HỌC SÂU \\
+\end{tabular}
+
+\vspace{0.5em}
+
+\noindent Nội dung nhận xét của giảng viên hướng dẫn:
+
+\vspace{0.3em}
+
+% ---------- 12 dòng kẻ cho GVHD viết nhận xét ----------
+% Dùng \rule cao 0pt để giữ baseline chính xác + \\ để xuống dòng
+% đúng cách. Mỗi dòng cách nhau 1.0em (~1cm với \onehalfspacing).
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\\[1.0em]
+\noindent\rule{0pt}{0.4pt}\hrulefill\par
+
+% ---------- Khối ngày/tháng + chữ ký đặt cách đáy trang, canh phải ----------
+% Dùng \vfill để đẩy khối date+signature xuống vùng đáy trang.
+\vfill
+
+\begin{flushright}
+\begin{minipage}{0.65\linewidth}
+Thành phố Hồ Chí Minh, ngày \dots\ tháng \dots\ năm 2026 \\[1.2em]
+\hspace*{0.55\linewidth}Người nhận xét
+\end{minipage}
+\end{flushright}
+
+\clearpage

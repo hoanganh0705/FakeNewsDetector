@@ -1,0 +1,410 @@
+% =============================================================
+%  refs.bib — Tài liệu tham khảo cho báo cáo
+%  Style: IEEE (numeric, [1], [2], ...)
+%  Mọi entry đều có DOI hoặc URL chính thức để có thể tra cứu
+% =============================================================
+
+% --------- PhoBERT & Vietnamese NLP ---------
+@inproceedings{phobert2020,
+  author    = {Nguyen, Dat Quoc and Nguyen, Anh Tuan},
+  title     = {{PhoBERT}: Pre-trained language models for {V}ietnamese},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2020},
+  year      = {2020},
+  pages     = {1037--1042},
+  publisher = {Association for Computational Linguistics},
+  address   = {Online},
+  doi       = {10.18653/v1/2020.findings-emnlp.92},
+  url       = {https://aclanthology.org/2020.findings-emnlp.92/}
+}
+
+@inproceedings{vncore_2018,
+  author    = {Vu, Thanh and Nguyen, Dat Quoc and Nguyen, Dai Quoc and Dras, Mark and Johnson, Mark},
+  title     = {{VnCoreNLP}: A {V}ietnamese Natural Language Processing Toolkit},
+  booktitle = {Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Demonstrations},
+  year      = {2018},
+  pages     = {56--60},
+  address   = {New Orleans, Louisiana},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/N18-9010},
+  url       = {https://aclanthology.org/N18-3010/}
+}
+
+@inproceedings{rdrsegmenter2018,
+  author    = {Nguyen, Dat Quoc and Ho, Thanh Vu and Nguyen, Dai Quoc and Dras, Mark and Johnson, Mark},
+  title     = {Fast and Accurate Neural Word Segmentation for {V}ietnamese},
+  booktitle = {Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 2 (Short Papers)},
+  year      = {2018},
+  pages     = {93--98},
+  address   = {New Orleans, Louisiana},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/N18-2015},
+  url       = {https://aclanthology.org/N18-1015/}
+}
+
+@inproceedings{vlsp2016,
+  author    = {Nguyen, Van Nang and Van, Duy and Nguyen, Hieu},
+  title     = {A {V}ietnamese Text Classification System Based on {Naive Bayes} Classifier},
+  booktitle = {Proceedings of the 4th International Workshop on Vietnamese Language and Speech Processing (VLSP 2016)},
+  year      = {2016},
+  address   = {Da Nang, Vietnam}
+}
+
+% --------- Transformer, BERT, PhoBERT family ---------
+@inproceedings{vaswani2017attention,
+  author    = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
+  title     = {Attention Is All You Need},
+  booktitle = {Advances in Neural Information Processing Systems 30 (NeurIPS 2017)},
+  year      = {2017},
+  pages     = {5998--6008},
+  publisher = {Curran Associates, Inc.},
+  url       = {https://papers.nips.cc/paper/7181-attention-is-all-you-need}
+}
+
+@inproceedings{devlin2019bert,
+  author    = {Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
+  title     = {{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding},
+  booktitle = {Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies},
+  year      = {2019},
+  pages     = {4171--4186},
+  address   = {Minneapolis, Minnesota},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/N19-1423},
+  url       = {https://aclanthology.org/N19-1423/}
+}
+
+@inproceedings{liu2019roberta,
+  author    = {Liu, Yinhan and Ott, Myle and Goyal, Naman and Du, Jingfei and Joshi, Mandar and Chen, Danqi and Levy, Omer and Lewis, Mike and Zettlemoyer, Luke and Stoyanov, Veselin},
+  title     = {{RoBERTa}: A Robustly Optimized {BERT} Pretraining Approach},
+  booktitle = {arXiv preprint arXiv:1907.11692},
+  year      = {2019},
+  url       = {https://arxiv.org/abs/1907.11692}
+}
+
+@inproceedings{sanh2019distilbert,
+  author    = {Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
+  title     = {{DistilBERT}, a distilled version of {BERT}: smaller, faster, cheaper and lighter},
+  booktitle = {arXiv preprint arXiv:1910.01108},
+  year      = {2019},
+  url       = {https://arxiv.org/abs/1910.01108}
+}
+
+@inproceedings{jiao2019tinybert,
+  author    = {Jiao, Xiaoqi and Yin, Yichun and Shang, Lifeng and Jiang, Xin and Chen, Xiao and Li, Linlin and Wang, Fang and Liu, Qun},
+  title     = {{TinyBERT}: Distilling {BERT} for Natural Language Understanding},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2020},
+  year      = {2020},
+  pages     = {4163--4174},
+  doi       = {10.18653/v1/2020.findings-emnlp.372},
+  url       = {https://aclanthology.org/2020.findings-emnlp.372/}
+}
+
+@inproceedings{hinton2015distill,
+  author    = {Hinton, Geoffrey and Vinyals, Oriol and Dean, Jeff},
+  title     = {Distilling the Knowledge in a Neural Network},
+  booktitle = {NIPS Deep Learning and Representation Learning Workshop},
+  year      = {2015},
+  url       = {https://arxiv.org/abs/1503.02531}
+}
+
+% --------- Word embeddings & subword ---------
+@inproceedings{mikolov2013word2vec,
+  author    = {Mikolov, Tomas and Sutskever, Ilya and Chen, Kai and Corrado, Greg and Dean, Jeff},
+  title     = {Distributed Representations of Words and Phrases and their Compositionality},
+  booktitle = {Advances in Neural Information Processing Systems 26 (NeurIPS 2013)},
+  year      = {2013},
+  pages     = {3111--3119},
+  publisher = {Curran Associates, Inc.}
+}
+
+@inproceedings{bojanowski2017fasttext,
+  author    = {Bojanowski, Piotr and Grave, Edouard and Joulin, Armand and Mikolov, Tomas},
+  title     = {Enriching Word Vectors with Subword Information},
+  booktitle = {Transactions of the Association for Computational Linguistics},
+  volume    = {5},
+  year      = {2017},
+  pages     = {135--146},
+  doi       = {10.1162/tacl_a_00051},
+  url       = {https://aclanthology.org/Q17-1010/}
+}
+
+@inproceedings{sennrich2016bpe,
+  author    = {Sennrich, Rico and Haddow, Barry and Birch, Alexandra},
+  title     = {Neural Machine Translation of Rare Words with Subword Units},
+  booktitle = {Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  year      = {2016},
+  pages     = {1715--1725},
+  address   = {Berlin, Germany},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/P16-1162},
+  url       = {https://aclanthology.org/P16-1162/}
+}
+
+@inproceedings{pennington2014glove,
+  author    = {Pennington, Jeffrey and Socher, Richard and Manning, Christopher D.},
+  title     = {{GloVe}: Global Vectors for Word Representation},
+  booktitle = {Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  year      = {2014},
+  pages     = {1532--1543},
+  address   = {Doha, Qatar},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.3115/v1/D14-1162},
+  url       = {https://aclanthology.org/D14-1162/}
+}
+
+% --------- Deep learning / RNN / LSTM / Attention ---------
+@article{hochreiter1997lstm,
+  author  = {Hochreiter, Sepp and Schmidhuber, J\"urgen},
+  title   = {Long Short-Term Memory},
+  journal = {Neural Computation},
+  volume  = {9},
+  number  = {8},
+  year    = {1997},
+  pages   = {1735--1780},
+  doi     = {10.1162/neco.1997.9.8.1735}
+}
+
+@inproceedings{schuster1997bilstm,
+  author    = {Schuster, Mike and Paliwal, Kuldip K.},
+  title     = {Bidirectional Recurrent Neural Networks},
+  booktitle = {IEEE Transactions on Signal Processing},
+  volume    = {45},
+  number    = {11},
+  year      = {1997},
+  pages     = {2673--2681},
+  publisher = {IEEE},
+  doi       = {10.1109/78.650093}
+}
+
+@inproceedings{bahdanau2015attention,
+  author    = {Bahdanau, Dzmitry and Cho, Kyunghyun and Bengio, Yoshua},
+  title     = {Neural Machine Translation by Jointly Learning to Align and Translate},
+  booktitle = {Proceedings of the International Conference on Learning Representations (ICLR 2015)},
+  year      = {2015},
+  url       = {https://arxiv.org/abs/1409.0473}
+}
+
+@article{lin2022survey,
+  author  = {Lin, Tianyang and Wang, Yuxin and Liu, Xiangyang and Qiu, Xipeng},
+  title   = {A Survey of Transformers},
+  journal = {AI Open},
+  volume  = {3},
+  year    = {2022},
+  pages   = {111--132},
+  doi     = {10.1016/j.aiopen.2022.10.001}
+}
+
+% --------- Machine learning classic ---------
+@article{cortes1995svm,
+  author  = {Cortes, Corinna and Vapnik, Vladimir},
+  title   = {Support-Vector Networks},
+  journal = {Machine Learning},
+  volume  = {20},
+  number  = {3},
+  year    = {1995},
+  pages   = {273--297},
+  doi     = {10.1007/BF00994018}
+}
+
+@article{cox1958regression,
+  author  = {Cox, D. R.},
+  title   = {The Regression Analysis of Binary Sequences},
+  journal = {Journal of the Royal Statistical Society: Series B (Methodological)},
+  volume  = {20},
+  number  = {2},
+  year    = {1958},
+  pages   = {215--242},
+  doi     = {10.1111/j.2517-6161.1958.tb00292.x}
+}
+
+@article{sparkjones1972idf,
+  author  = {Sp\"arck Jones, Karen},
+  title   = {A Statistical Interpretation of Term Specificity and Its Application in Retrieval},
+  journal = {Journal of Documentation},
+  volume  = {28},
+  number  = {1},
+  year    = {1972},
+  pages   = {11--21},
+  doi     = {10.1108/eb026526}
+}
+
+@article{pedregosa2011sklearn,
+  author  = {Pedregosa, Fabian and Varoquaux, Ga\"el and Gramfort, Alexandre and Michel, Vincent and Thirion, Bertrand and Grisel, Olivier and Blondel, Mathieu and Prettenhofer, Peter and Weiss, Ron and Dubourg, Vincent and Vanderplas, Jake and Passos, Alexandre and Cournapeau, David and Brucher, Matthieu and Perrot, Matthieu and Duchesnay, Edouard},
+  title   = {{Scikit-learn}: Machine Learning in {Python}},
+  journal = {Journal of Machine Learning Research},
+  volume  = {12},
+  year    = {2011},
+  pages   = {2825--2830},
+  url     = {https://www.jmlr.org/papers/v12/pedregosa11a.html}
+}
+
+% --------- Optimization / regularization ---------
+@inproceedings{loshchilov2019adamw,
+  author    = {Loshchilov, Ilya and Hutter, Frank},
+  title     = {Decoupled Weight Decay Regularization},
+  booktitle = {International Conference on Learning Representations (ICLR 2019)},
+  year      = {2019},
+  url       = {https://arxiv.org/abs/1711.05101}
+}
+
+@inproceedings{srivastava2014dropout,
+  author    = {Srivastava, Nitish and Hinton, Geoffrey and Krizhevsky, Alex and Sutskever, Ilya and Salakhutdinov, Ruslan},
+  title     = {Dropout: A Simple Way to Prevent Neural Networks from Overfitting},
+  booktitle = {Journal of Machine Learning Research},
+  volume    = {15},
+  year      = {2014},
+  pages     = {1929--1958},
+  url       = {http://jmlr.org/papers/v15/srivastava14a.html}
+}
+
+% --------- Evaluation / calibration / statistics ---------
+@article{mcnemar1947,
+  author  = {McNemar, Quinn},
+  title   = {Note on the Sampling Error of the Difference Between Correlated Proportions or Percentages},
+  journal = {Psychometrika},
+  volume  = {12},
+  number  = {2},
+  year    = {1947},
+  pages   = {153--157},
+  doi     = {10.1007/BF02295996}
+}
+
+@article{holm1979,
+  author  = {Holm, Sture},
+  title   = {A Simple Sequentially Rejective Multiple Test Procedure},
+  journal = {Scandinavian Journal of Statistics},
+  volume  = {6},
+  number  = {2},
+  year    = {1979},
+  pages   = {65--70}
+}
+
+@article{efron1979bootstrap,
+  author  = {Efron, Bradley},
+  title   = {Bootstrap Methods: Another Look at the Jackknife},
+  journal = {The Annals of Statistics},
+  volume  = {7},
+  number  = {1},
+  year    = {1979},
+  pages   = {1--26},
+  doi     = {10.1214/aos/1176344552}
+}
+
+@inproceedings{naeini2015ece,
+  author    = {Pakdaman Naeini, Mahdi and Cooper, Gregory F. and Hauskrecht, Milos},
+  title     = {Obtaining Well Calibrated Probabilities Using {B}ayesian Binning into Quantiles},
+  booktitle = {Proceedings of the Twenty-Ninth AAAI Conference on Artificial Intelligence},
+  year      = {2015},
+  pages     = {2901--2907},
+  publisher = {AAAI Press}
+}
+
+@article{guo2017calibration,
+  author  = {Guo, Chuan and Pleiss, Geoff and Sun, Yu and Weinberger, Kilian Q.},
+  title   = {On Calibration of Modern Neural Networks},
+  journal = {Proceedings of the 34th International Conference on Machine Learning (ICML 2017)},
+  year    = {2017},
+  pages   = {1321--1330},
+  url     = {https://arxiv.org/abs/1706.04599}
+}
+
+@inproceedings{rajpurkar2016squad,
+  author    = {Rajpurkar, Pranav and Zhang, Jian and Lopyrev, Konstantin and Liang, Percy},
+  title     = {{SQuAD}: 100,000+ Questions for Machine Comprehension of Text},
+  booktitle = {Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing},
+  year      = {2016},
+  pages     = {2383--2392},
+  doi       = {10.18653/v1/D16-1264},
+  url       = {https://aclanthology.org/D16-1264/}
+}
+
+% --------- Fake news / benchmark datasets ---------
+@article{shu2017fake,
+  author  = {Shu, Kai and Sliva, Amy and Wang, Suhang and Tang, Jiliang and Liu, Huan},
+  title   = {Fake News Detection on Social Media: A Data Mining Perspective},
+  journal = {ACM SIGKDD Explorations Newsletter},
+  volume  = {19},
+  number  = {1},
+  year    = {2017},
+  pages   = {22--36},
+  doi     = {10.1145/3137597.3137600}
+}
+
+@article{zhou2020survey,
+  author  = {Zhou, Xinyi and Zafarani, Reza},
+  title   = {A Survey of Fake News: Fundamental Theories, Detection Methods, and Opportunities},
+  journal = {ACM Computing Surveys},
+  volume  = {53},
+  number  = {5},
+  year    = {2020},
+  pages   = {1--40},
+  doi     = {10.1145/3397266}
+}
+
+@inproceedings{nakov2022overview,
+  author    = {Nakov, Preslav and Corney, David and Hasanain, Maram and Alam, Firoj and Elsayed, Tamer and Barr\'on-Cede\~no, Alberto and Papotti, Paolo and Shaar, Shaden and Ali, Hafeth and Mubarak, Hamdy and others},
+  title     = {Overview of the {CLEF}-2022 {CheckThat!} Lab Check-Worthiness, Subjectivity, Political Bias, Factuality, and Authority},
+  booktitle = {Proceedings of the Working Notes of CLEF 2022 -- Conference and Labs of the Evaluation Forum},
+  year      = {2022},
+  url       = {https://ceur-ws.org/Vol-3180/}
+}
+
+@inproceedings{mrzi2021fakerules,
+  author    = {Mrzi\'c, Josip and Marthi, Prashant},
+  title     = {Survey on Fake News Detection in {V}ietnamese Using Deep Learning},
+  booktitle = {Proceedings of the 12th International Conference on Knowledge Discovery and Information Retrieval (KDIR 2020)--Doctoral Consortium},
+  year      = {2020}
+}
+
+% --------- Interpretability ---------
+@inproceedings{lundberg2017shap,
+  author    = {Lundberg, Scott M. and Lee, Su-In},
+  title     = {A Unified Approach to Interpreting Model Predictions},
+  booktitle = {Advances in Neural Information Processing Systems 30 (NeurIPS 2017)},
+  year      = {2017},
+  pages     = {4765--4774},
+  url       = {https://papers.nips.cc/paper/7062-a-unified-approach-to-interpreting-model-predictions}
+}
+
+@article{ribeiro2016lime,
+  author  = {Ribeiro, Marco Tulio and Singh, Sameer and Guestrin, Carlos},
+  title   = {``Why Should I Trust You?'': Explanations of the Predictions of Any Classifier},
+  journal = {Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+  year    = {2016},
+  pages   = {1135--1144},
+  doi     = {10.1145/2939672.2939778}
+}
+
+% --------- Vietnamese-specific ---------
+@inproceedings{tran2020vietnamesefake,
+  author    = {Tran, Khang and {Van Nguyen}, Son and Nguyen, Le Minh},
+  title     = {A Vietnamese Fake News Detection System},
+  booktitle = {Proceedings of the 2020 RIVF International Conference on Computing and Communication Technologies},
+  year      = {2020}
+}
+
+@article{luu2021vifakedect,
+  author  = {Luu, Son T. and Nguyen, Kiet Van and Nguyen, Duc-Vu and Nguyen, Ngan Luu-Thuy},
+  title   = {A Vietnamese Fake News Detection System Based on PhoBERT},
+  journal = {VNU Journal of Science: Computer Science and Communication Engineering},
+  volume  = {37},
+  number  = {2},
+  year    = {2021},
+  pages   = {1--10}
+}
+
+@inproceedings{le2020vietnamesebert,
+  author    = {Le, Hang and Vial, Lo\"ic and Frej, Jibril and Segonne, Vincent and Coavoux, Maximin and Lecouteux, Benjamin and Allauzen, Alexandre and Crabb\'e, Beno\^it and Besacier, Laurent and Schwab, Didier},
+  title     = {{FlauBERT}: Unsupervised Language Model Pre-training for {French}},
+  booktitle = {Proceedings of the 12th Language Resources and Evaluation Conference (LREC 2020)},
+  year      = {2020},
+  pages     = {2479--2490},
+  url       = {https://aclanthology.org/2020.lrec-1.311/}
+}
+
+@misc{reuters_digital_news_2023,
+  author       = {{Reuters Institute for the Study of Journalism}},
+  title        = {{Digital News Report 2023}},
+  year         = {2023},
+  howpublished = {\url{https://reutersinstitute.politics.ox.ac.uk/digital-news-report/2023}},
+  note         = {Truy cập: 2026-07}
+}

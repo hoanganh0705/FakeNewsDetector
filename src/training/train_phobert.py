@@ -23,6 +23,7 @@ from src.features.phobert_features import PhoBertDataset
 from src.evaluation.metrics import compute_metrics, print_metrics
 from src.models.phobert_model import PhoBertClassifier
 from src.training.runner import save_training_results
+from src.utils.gpu_monitor import GPUMonitor
 from config import cfg
 
 from src.utils.logger import get_logger
@@ -186,11 +187,16 @@ class PhoBertTrainer:
         log.info(f"\nTraining PhoBERT for {epochs} epochs...")
         log.info(f"Total steps: {total_steps}, Warmup steps: {warmup_steps}")
         log.info(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
-        
+
+        # Lightweight per-epoch GPU telemetry (no-ops if no GPU / NVML).
+        gpu_monitor = GPUMonitor(device_index=0)
+        if gpu_monitor.available:
+            gpu_monitor.log_once()
+
         best_val_f1 = 0
         patience_counter = 0
         start_time = time.time()
-        
+
         for epoch in range(epochs):
             epoch_start = time.time()
             
@@ -259,7 +265,10 @@ class PhoBertTrainer:
             log.info(f"\nEpoch {epoch+1}/{epochs} ({epoch_time:.1f}s)")
             log.info(f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f}")
             log.info(f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}")
-            
+
+            # Per-epoch GPU telemetry (no-op when monitor unavailable).
+            gpu_monitor.log_epoch(epoch + 1, epochs)
+
             # Early stopping check
             if val_f1 > best_val_f1:
                 best_val_f1 = val_f1

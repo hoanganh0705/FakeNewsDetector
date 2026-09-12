@@ -86,6 +86,75 @@ def _step_calibration() -> None:
     cal_main()
 
 
+def _step_explain(args) -> None:
+    """Phase 1 token-level explainability orchestrator."""
+    _banner("Token-Level Explainability (Phase 1)")
+    from src.analysis.explainability_runner import run_explainability
+
+    run_explainability(
+        n_examples=args.n_examples,
+        output_dir=args.output_dir,
+        figures_dir=args.figures_dir,
+        tables_dir=args.tables_dir,
+    )
+
+
+def _step_recalibrate(args) -> None:
+    """Phase 2 post-hoc calibration (Platt / Temperature / Isotonic)."""
+    _banner("Post-hoc Calibration (Phase 2)")
+    from src.evaluation.post_hoc_calibration import run_post_hoc_calibration
+
+    run_post_hoc_calibration(
+        experiments_dir=args.experiments_dir,
+        figures_dir=args.figures_dir,
+        tables_dir=args.tables_dir,
+        n_bins=args.n_bins,
+    )
+
+
+def _step_hard_cases(args) -> None:
+    """Phase 4 hard cases deep analysis."""
+    _banner("Hard Cases Deep Analysis (Phase 4)")
+    from src.evaluation.hard_cases import analyze_hard_examples
+
+    analyze_hard_examples(
+        per_id_confidence_path=args.per_id_confidence,
+        test_csv_path=args.test_csv,
+        attributions_dir=args.attributions_dir,
+        tables_dir=args.tables_dir,
+        figures_dir=args.figures_dir,
+    )
+
+
+def _step_distill(args) -> None:
+    """Phase 3 knowledge-distillation pipeline.
+
+    Two modes:
+
+    * ``--mode train``   train the student with KD loss (default).
+    * ``--mode eval``    produce the F1-vs-size comparison and
+      LaTeX figure/table from existing checkpoints.
+    * ``--mode all``     train then evaluate.
+    """
+    _banner("Knowledge Distillation (Phase 3)")
+    if args.mode in ("train", "all"):
+        from src.training.train_student import main as train_main
+        train_main(
+            alpha=args.alpha,
+            temperature=args.temperature,
+            epochs=args.epochs,
+            patience=args.patience,
+            teacher_model=args.teacher_model,
+        )
+    if args.mode in ("eval", "all"):
+        from src.training.distillation_evaluation import run_distillation_evaluation
+        run_distillation_evaluation(
+            tables_dir=args.tables_dir,
+            figures_dir=args.figures_dir,
+            n_runs=args.n_runs,
+        )
+
+
 # ── CLI ────────────────────────────────────────────────────────────────────────
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -100,19 +169,153 @@ def _build_parser() -> argparse.ArgumentParser:
     sub.add_parser("features", help="Extract all features (TF-IDF, embeddings, PhoBERT)")
 
     train_p = sub.add_parser("train", help="Train model(s)")
+    # NOTE: we intentionally do NOT pass choices=VALID_MODELS here.
+    # Combining nargs="*" with choices on a positional has a well-known
+    # argparse gotcha: when zero values are supplied, argparse validates
+    # the resulting empty list itself against `choices` (instead of
+    # validating each element), which always fails with something like
+    # "invalid choice: []". We validate manually below instead.
     train_p.add_argument(
         "models",
         nargs="*",
-        default=["all"],
-        choices=VALID_MODELS,
-        help="Models to train (default: all)",
+        default=None,
+        help="Models to train: lr, svm, bilstm, phobert, all (default: all)",
     )
 
     sub.add_parser("evaluate", help="Run full evaluation suite")
     sub.add_parser("calibration", help="Run calibration analysis (ECE, MCE, Brier)")
+
+    explain_p = sub.add_parser(
+        "explain",
+        help="Phase 1 token-level attribution (SHAP / IG / attention rollout) for all 4 models",
+    )
+    explain_p.add_argument(
+        "--n-examples", type=int, default=20,
+        help="Number of informative test samples to attribute (default: 20)",
+    )
+    explain_p.add_argument(
+        "--output-dir", default=None,
+        help="Where to save per-example attribution pickles "
+             "(default: <results_dir>/attributions)",
+    )
+    explain_p.add_argument(
+        "--figures-dir", default=None,
+        help="Where to save aggregate figures (default: paper/figures)",
+    )
+    explain_p.add_argument(
+        "--tables-dir", default=None,
+        help="Where to save aggregate LaTeX tables (default: paper/tables)",
+    )
+
+    recal_p = sub.add_parser(
+        "recalibrate",
+        help="Phase 2 post-hoc calibration (Platt / Temperature / Isotonic) for all 4 models",
+    )
+    recal_p.add_argument(
+        "--experiments-dir", default=None,
+        help="Where to find raw_logits.pkl / predictions.pkl "
+             "(default: <experiments_dir>)",
+    )
+    recal_p.add_argument(
+        "--figures-dir", default=None,
+        help="Where to save the reliability-diagram grid "
+             "(default: paper/figures)",
+    )
+    recal_p.add_argument(
+        "--tables-dir", default=None,
+        help="Where to save the post-hoc LaTeX table "
+             "(default: paper/tables)",
+    )
+    recal_p.add_argument(
+        "--n-bins", type=int, default=10,
+        help="Number of bins for ECE / MCE / reliability diagrams (default: 10)",
+    )
+
+    hard_p = sub.add_parser(
+        "hard-cases",
+        help="Phase 4 deep analysis of hard cases (samples wrong by all 4 models)",
+    )
+    hard_p.add_argument(
+        "--per-id-confidence", default=None,
+        help="Path to per_id_confidence.csv "
+             "(default: <tables_dir>/per_id_confidence.csv)",
+    )
+    hard_p.add_argument(
+        "--test-csv", default=None,
+        help="Path to test.csv (default: <splits_dir>/test.csv)",
+    )
+    hard_p.add_argument(
+        "--attributions-dir", default=None,
+        help="Directory of Phase 1 attribution pickles "
+             "(default: <results_dir>/attributions)",
+    )
+    hard_p.add_argument(
+        "--figures-dir", default=None,
+        help="Where to save the distribution figure (default: paper/figures)",
+    )
+    hard_p.add_argument(
+        "--tables-dir", default=None,
+        help="Where to save the annotated LaTeX table (default: paper/tables)",
+    )
+
+    distill_p = sub.add_parser(
+        "distill",
+        help="Phase 3 Knowledge Distillation: train a small Student BiLSTM "
+             "with KD loss against a teacher (default: PhoBERT) and "
+             "produce the F1-vs-size trade-off figure.",
+    )
+    distill_p.add_argument(
+        "--mode", default="all", choices=["train", "eval", "all"],
+        help="What to run: train student, evaluate only, or both (default: all)",
+    )
+    distill_p.add_argument(
+        "--alpha", type=float, default=0.7,
+        help="Weight on the soft (KD) target (default: 0.7)",
+    )
+    distill_p.add_argument(
+        "--temperature", type=float, default=4.0,
+        help="KD temperature (default: 4.0)",
+    )
+    distill_p.add_argument(
+        "--epochs", type=int, default=30,
+        help="Max epochs (default: 30)",
+    )
+    distill_p.add_argument(
+        "--patience", type=int, default=5,
+        help="Early-stopping patience (default: 5)",
+    )
+    distill_p.add_argument(
+        "--teacher-model", default="bert",
+        help="Directory name of teacher inside experiments/ "
+             "(bert=PhoBERT, bilstm=BiLSTM teacher; default: bert)",
+    )
+    distill_p.add_argument(
+        "--figures-dir", default=None,
+        help="Where to save the trade-off figure (default: paper/figures)",
+    )
+    distill_p.add_argument(
+        "--tables-dir", default=None,
+        help="Where to save the comparison LaTeX table (default: paper/tables)",
+    )
+    distill_p.add_argument(
+        "--n-runs", type=int, default=30,
+        help="Number of inference-timing runs per model (default: 30)",
+    )
+
     sub.add_parser("run", help="Run the entire pipeline end-to-end")
 
     return parser
+
+
+def _validate_models(parser: argparse.ArgumentParser, models: list[str]) -> list[str]:
+    invalid = [m for m in models if m not in VALID_MODELS]
+    if invalid:
+        parser.error(
+            "argument models: invalid choice(s): %s (choose from %s)"
+            % (", ".join(repr(m) for m in invalid),
+               ", ".join(repr(c) for c in VALID_MODELS))
+        )
+    return models
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -122,6 +325,11 @@ def main(argv: list[str] | None = None) -> None:
     if args.command is None:
         parser.print_help()
         sys.exit(0)
+
+    if args.command == "train":
+        models = args.models or ["all"]
+        _validate_models(parser, models)
+        args.models = models
 
     start = time.time()
     log.info(
@@ -142,12 +350,24 @@ def main(argv: list[str] | None = None) -> None:
         _step_evaluate()
     elif args.command == "calibration":
         _step_calibration()
+    elif args.command == "explain":
+        _step_explain(args)
+    elif args.command == "recalibrate":
+        _step_recalibrate(args)
+    elif args.command == "hard-cases":
+        _step_hard_cases(args)
+    elif args.command == "distill":
+        _step_distill(args)
     elif args.command == "run":
         _step_preprocess()
         _step_split()
         _step_features()
         _step_train(["all"])
         _step_evaluate()
+        _step_calibration()
+        # Phase 1 + Phase 4 attribution runs require shap / captum;
+        # skipped here to keep ``run`` light.  Use ``fakenews explain``
+        # and ``fakenews hard-cases`` explicitly.
 
     elapsed = time.time() - start
     log.info("Done in %.1f s.", elapsed)

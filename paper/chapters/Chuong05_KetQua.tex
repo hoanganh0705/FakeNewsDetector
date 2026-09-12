@@ -1,0 +1,609 @@
+% =====================================================================
+%  Chuong05_KetQua.tex — Chương 5: Kết quả thực nghiệm
+%
+%  Tách từ main.tex (dòng 1665-2546 trong bản cũ).
+%  Đây là chương dài nhất (chứa nhiều sub-section + bảng biểu).
+% =====================================================================
+
+\chapter{Kết quả thực nghiệm}\label{chap:experiments}
+
+\section{Môi trường thực nghiệm}
+
+Thực nghiệm được thực hiện trên hệ thống: GPU NVIDIA (CUDA \libcuda), RAM \libram~GB, Python \libpython, PyTorch \libtorch, Transformers \libtransformers, scikit-learn~\cite{pedregosa2011sklearn} \libscikit.
+
+\input{tables/table4_hyperparams}
+
+Bảng~\ref{tab:hyperparams} tóm tắt siêu tham số cuối cùng sau tối ưu hoá.
+
+\input{tables/table5_complexity}
+
+Bảng~\ref{tab:complexity} so sánh số tham số và thời gian huấn luyện giữa các mô hình.
+
+\section{So sánh hiệu năng các mô hình}
+\label{sec:model_comparison}
+
+\subsection{Kết quả tổng thể}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig1_model_comparison}
+  \caption{So sánh các chỉ số hiệu năng (Accuracy, F1-Score, ROC-AUC) của bốn mô hình trên tập kiểm tra}
+  \label{fig:model_comparison}
+\end{figure}
+
+\input{tables/table2_results}
+
+Bảng~\ref{tab:results} trình bày hiệu năng trên tập kiểm tra. \phobert{} đạt kết quả tốt nhất với F1 = \phobertfone\% và AUC = \phobertaUC, vượt LR (+\deltalR{} điểm F1), SVM (+\deltasVM{} điểm F1) và BiLSTM (+\deltabILSTM{} điểm F1). Đáng chú ý, SVM vượt BiLSTM mặc dù kiến trúc đơn giản hơn --- cho thấy đặc trưng TF-IDF chất lượng cao có thể cạnh tranh với học sâu khi dữ liệu huấn luyện có quy mô vừa phải.
+
+\subsection{Hiệu năng theo từng lớp}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig5_per_class}
+  \caption{Precision, Recall và F1-Score theo từng lớp (\textit{thật} / \textit{giả}) cho bốn mô hình}
+  \label{fig:per_class}
+\end{figure}
+
+\input{tables/table3_perclass}
+
+Từ bảng~\ref{tab:perclass}:
+\begin{itemize}[leftmargin=2em]
+  \item \phobert: Recall = \phobertrecallfake\% cho lớp \textit{giả} --- phát hiện tin giả tốt nhất trong bốn mô hình.
+  \item BiLSTM: Recall = \bilstmrecallfake\% cho lớp \textit{giả} --- bỏ sót nhiều tin giả nhất (nguy hiểm trong thực tế).
+  \item SVM đạt Recall = \svmrecallfake\% cho lớp \textit{giả}, cao hơn LR (\lrrecallfake\%) và BiLSTM.
+\end{itemize}
+
+\subsection{Ma trận nhầm lẫn}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig2_confusion_matrices}
+  \caption{Ma trận lỗi của bốn mô hình khi thực hiện dự đoán trên tập kiểm tra (\ntest{} mẫu)}
+  \label{fig:confusion}
+\end{figure}
+
+\phobert: \phoberttN~TN, \phoberttP~TP, \phobertfP~FP, \phobertfN~FN trên \ntest{} mẫu test. BiLSTM có nhiều lỗi nhất (\bilstmerrors~lỗi, FP=\bilstmfpcount, FN=\bilstmfncount), trong khi \phobert ít lỗi nhất (\phoberterrors~lỗi).
+
+\subsection{Đường cong ROC và Precision-Recall}
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{fig3_roc_curves}
+    \caption{Đường cong ROC}
+    \label{fig:roc}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{fig4_pr_curves}
+    \caption{Đường cong Precision-Recall}
+    \label{fig:pr}
+  \end{subfigure}
+  \caption{Đường cong ROC và Precision-Recall của bốn mô hình trên tập kiểm tra}
+  \label{fig:curves}
+\end{figure}
+
+\phobert (AUC = \phobertaUC) áp đảo so với SVM (\svmaUC), LR (\lraUC) và BiLSTM (\bilstmaUC).
+
+\subsection{Phân tích hiệu chuẩn xác suất (Calibration Analysis)}
+\label{sec:calibration}
+
+Bên cạnh các chỉ số phân loại truyền thống, việc đánh giá chất lượng xác suất dự đoán của mô hình cũng đóng vai trò quan trọng trong các ứng dụng thực tế. Một mô hình được coi là có hiệu chuẩn tốt (\textit{well-calibrated}) khi xác suất dự đoán phản ánh đúng tỷ lệ dương tính thực tế: nếu mô hình dự đoán xác suất 80\% cho một nhóm mẫu, thì khoảng 80\% số mẫu đó phải thực sự thuộc lớp dương.
+
+Điều này đặc biệt quan trọng trong bài toán phát hiện tin giả, vì người dùng hoặc hệ thống downstream cần biết mức độ tin cậy thực sự của mỗi dự đoán để quyết định hành động phù hợp (ví dụ: đánh dấu cảnh báo, chuyển sang kiểm tra thủ công hoặc tự động loại bỏ).
+
+Nghiên cứu sử dụng ba chỉ số đánh giá hiệu chuẩn~\cite{naeini2015ece}:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Expected Calibration Error (ECE):} sai số hiệu chuẩn kỳ vọng, đo mức chênh lệch trung bình có trọng số giữa xác suất dự đoán và tỷ lệ dương tính thực tế trên các nhóm mẫu (bin):
+  \[
+    \text{ECE} = \sum_{b=1}^{B} \frac{|B_b|}{N} \cdot |\text{acc}(B_b) - \text{conf}(B_b)|
+  \]
+  trong đó $B_b$ là tập mẫu trong bin thứ $b$, $\text{acc}(B_b)$ là tỷ lệ dự đoán đúng và $\text{conf}(B_b)$ là xác suất dự đoán trung bình trong bin đó.
+
+  \item \textbf{Maximum Calibration Error (MCE):} sai số hiệu chuẩn cực đại, phản ánh bin có độ lệch lớn nhất:
+  \[
+    \text{MCE} = \max_{b} |\text{acc}(B_b) - \text{conf}(B_b)|
+  \]
+
+  \item \textbf{Brier Score:} trung bình bình phương sai số giữa xác suất dự đoán và nhãn thực:
+  \[
+    \text{bs} = \frac{1}{N} \sum_{i=1}^{N} (p_i - y_i)^2
+  \]
+  Brier Score kết hợp cả khả năng phân loại và hiệu chuẩn trong một chỉ số duy nhất.
+\end{itemize}
+
+Cả ba chỉ số đều có giá trị càng thấp càng tốt (0 = hoàn hảo).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig_calibration_curves}
+  \caption{Biểu đồ hiệu chuẩn (Reliability Diagram) của bốn mô hình trên tập kiểm tra. Đường chéo nét đứt biểu diễn hiệu chuẩn hoàn hảo; các điểm vuông biểu diễn tỷ lệ dương tính thực tế trong mỗi bin xác suất.}
+  \label{fig:calibration}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Chỉ số hiệu chuẩn xác suất của bốn mô hình trên tập kiểm tra}
+\label{tab:calibration}
+\begin{tabular}{lccc}
+\toprule
+mô hình & ECE $\downarrow$ & MCE $\downarrow$ & Brier Score $\downarrow$ \\
+\midrule
+Logistic Regression & \lreCE & \lrmCE & \lrbrier \\
+SVM & \svmeCE & \svmmCE & \svmbrier \\
+BiLSTM & \bilstmeCE & \bilstmmCE & \bilstmbrier \\
+PhoBERT & \phoberteCE & \phobertmCE & \phobertbrier \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Từ bảng~\ref{tab:calibration} và Hình~\ref{fig:calibration}, có thể rút ra một số quan sát đáng chú ý:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Các mô hình học máy truyền thống có hiệu chuẩn tốt nhất:} SVM đạt ECE thấp nhất (\svmeCE) và MCE thấp nhất (\svmmCE), theo sau là LR (ECE = \lreCE). Điều này cho thấy xác suất dự đoán của SVM và LR phản ánh khá chính xác tỷ lệ dương tính thực tế. Kết quả này phù hợp với lý thuyết, vì Logistic Regression được thiết kế để ước lượng xác suất trực tiếp, và SVM sử dụng hiệu chuẩn Platt (CalibratedClassifierCV) trong quá trình huấn luyện.
+
+  \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertbrier), phản ánh khả năng phân loại vượt trội. Tuy nhiên, MCE rất cao (\phobertmCE) cho thấy mô hình có xu hướng \textit{overconfident} --- đưa ra xác suất rất cao (gần 0 hoặc 1) ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu nhỏ.
+
+  \item \textbf{BiLSTM có hiệu chuẩn kém nhất:} với ECE = \bilstmeCE{} và Brier Score = \bilstmbrier, BiLSTM cho thấy xác suất dự đoán không phản ánh tốt độ chính xác thực tế --- nhất quán với hiệu năng phân loại thấp nhất trong bốn mô hình.
+\end{itemize}
+
+\textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần áp dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature scaling hoặc Platt scaling để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể được sử dụng trực tiếp với độ tin cậy cao hơn.
+
+\section{Kiểm định thống kê}
+\label{sec:statistics}
+
+\subsection{Kiểm định McNemar}
+
+Kiểm định McNemar~\cite{mcnemar1947} là một phương pháp thống kê dùng để đánh giá sự khác biệt giữa hai mô hình phân loại khi cả hai cùng được áp dụng trên một tập dữ liệu kiểm thử. Thay vì xem xét kết quả của từng mô hình một cách độc lập, kiểm định dựa trên cặp dự đoán tương ứng của từng mẫu (\textit{paired predictions}). Nhờ đặc điểm này, McNemar phù hợp để kiểm tra liệu chênh lệch về kết quả phân loại giữa hai mô hình có đủ bằng chứng để xem là có ý nghĩa thống kê hay có thể xuất hiện do biến động ngẫu nhiên của dữ liệu.
+
+Hai giả thuyết được đặt ra trong kiểm định gồm:
+
+\begin{itemize}
+
+    \item $H_0$: hiệu quả phân loại của hai mô hình không có sự khác biệt mang ý nghĩa thống kê.
+
+    \item $H_1$: hiệu quả phân loại của hai mô hình có sự khác biệt mang ý nghĩa thống kê.
+
+\end{itemize}
+
+Thống kê kiểm định được tính theo công thức:
+
+$$\chi^2 = \frac{(|B - C| - 1)^2}{b + c}$$
+
+Hai đại lượng $b$ và $c$ đại diện cho các trường hợp bất đồng (discordant pairs) giữa hai mô hình. Các trường hợp cả hai cùng đúng hoặc cùng sai không ảnh hưởng đến thống kê kiểm định vì không phản ánh sự khác biệt tương đối.
+
+Giá trị $\chi^2$ càng lớn cho thấy mức độ chênh lệch giữa $b$ và $c$ càng cao --- tức là sự khác biệt có xu hướng mang tính hệ thống thay vì ngẫu nhiên. Giá trị $p$-value được tính dựa trên phân phối chi-square với $1$ bậc tự do. Nếu $p < \alpha$ (với $\alpha = 0{,}05$), giả thuyết $H_0$ bị bác bỏ và có thể kết luận sự khác biệt giữa hai mô hình là có ý nghĩa thống kê.
+
+Hệ số điều chỉnh $(-1)$ trong tử số là hiệu chỉnh liên tục (\textit{continuity correction}), giúp giảm sai số loại I khi kích thước mẫu không quá lớn.
+
+Do nghiên cứu thực hiện sáu phép so sánh cặp mô hình, việc tiến hành nhiều kiểm định đồng thời có thể làm gia tăng xác suất sai loại I. Để kiểm soát mức sai số toàn cục (\textit{family-wise error rate}), phương pháp hiệu chỉnh Holm--Bonferroni được áp dụng. Cụ thể, các $p$-value được sắp xếp theo thứ tự tăng dần và so sánh tuần tự với các ngưỡng hiệu chỉnh tương ứng, bảo đảm rằng xác suất xuất hiện ít nhất một kết luận sai không vượt quá mức ý nghĩa $\alpha$ đã lựa chọn.
+
+Với hiệu chỉnh Holm-Bonferroni~\cite{holm1979} cho 6 phép so sánh:
+
+\begin{table}[H]
+\centering
+\caption{Kết quả kiểm định McNemar (Sau hiệu chỉnh Holm-Bonferroni)}
+\label{tab:mcnemar}
+\begin{tabular}{llrrl}
+\toprule
+mô hình 1 & mô hình 2 & $\chi^2$ & $p$-value & kết luận \\
+\midrule
+LR      & SVM     & \mcnlRSVMChi  & \mcnlRSVMP    & không có ý nghĩa \\
+LR      & BiLSTM  & \mcnlRBiLSTMchi  & \mcnlRBiLSTMp    & không có ý nghĩa \\
+LR      & PhoBERT & \mcnlRPhobERTChi & $<$0{,}001  & Có ý nghĩa (***) \\
+SVM     & BiLSTM  & \mcnsVMBiLSTMchi  & \mcnsVMBiLSTMp    & không có ý nghĩa \\
+SVM     & PhoBERT & \mcnsVMPhobERTChi & $<$0{,}001  & Có ý nghĩa (***) \\
+BiLSTM  & PhoBERT & \mcnbilstmphobERTChi & $<$0{,}001  & Có ý nghĩa (***) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\phobert vượt trội có ý nghĩa thống kê so với cả ba mô hình còn lại ($p < 0{,}001$). LR, SVM và BiLSTM không khác biệt đáng kể với nhau ($p \geq 0{,}05$ sau hiệu chỉnh Holm-Bonferroni) dù kiến trúc khác nhau hoàn toàn.
+
+\subsection{Khoảng tin cậy Bootstrap}
+
+Bên cạnh kiểm định McNemar, nghiên cứu tiếp tục sử dụng phương pháp bootstrap nhằm ước lượng độ ổn định của chỉ số F1-score và đánh giá độ tin cậy của sự khác biệt giữa các mô hình.
+
+Bootstrap là kỹ thuật lấy mẫu lặp lại có hoàn lại (\textit{resampling with replacement}) từ tập kiểm thử ban đầu để tạo ra nhiều tập mẫu giả lập. Trong nghiên cứu này, quá trình lấy mẫu được thực hiện 10{,}000 lần. Với mỗi lần lấy mẫu, F1-score được tính lại, từ đó xây dựng phân phối thực nghiệm của chỉ số này.
+
+Khoảng tin cậy 95\% (95\% Confidence Interval --- CI) được xác định từ phân vị 2.5\% và 97.5\% của phân phối bootstrap. Khoảng này biểu diễn miền giá trị mà tham số thực (F1-score kỳ vọng trên tổng thể) có khả năng nằm trong đó với mức tin cậy 95\%.
+
+Việc sử dụng bootstrap mang ý nghĩa quan trọng trong đánh giá thực nghiệm vì:
+
+\begin{itemize}
+    \item Không giả định phân phối chuẩn của F1-score.
+    \item Phản ánh mức độ dao động của mô hình khi dữ liệu thay đổi.
+    \item Cho phép so sánh mức độ chồng lấp giữa các khoảng tin cậy, từ đó hỗ trợ xác nhận sự khác biệt có tính hệ thống.
+\end{itemize}
+
+Kết quả khoảng tin cậy 95\% cho các mô hình được trình bày trong Bảng~\ref{tab:ci}.
+
+\begin{table}[H]
+\centering
+\caption{Khoảng tin cậy 95\% Bootstrap~\cite{efron1979bootstrap} cho F1-Score (10.000 lần lấy mẫu lại)}
+\label{tab:ci}
+\begin{tabular}{lcc}
+\toprule
+mô hình & F1-Score & 95\% CI \\
+\midrule
+LR      & \lrfone  & \lrfonecI{} \\
+SVM     & \svmfone & \svmfonecI{} \\
+BiLSTM  & \bilstmfone & \bilstmfonecI{} \\
+PhoBERT & \phobertfone & \phobertfonecI{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Từ bảng~\ref{tab:ci} có thể quan sát rằng:
+
+\begin{itemize}
+    \item PhoBERT đạt F1-score trung bình cao nhất (\phobertfone\%) với khoảng tin cậy 95\% là {\phobertfonecI{}}.
+    \item Khoảng tin cậy của PhoBERT không chồng lấp với bất kỳ mô hình nào còn lại.
+    \item Các mô hình LR, SVM và BiLSTM có khoảng tin cậy tương đối gần nhau và tồn tại hiện tượng chồng lấp.
+\end{itemize}
+
+Sự không chồng lấp khoảng tin cậy giữa PhoBERT và các mô hình khác củng cố kết luận từ kiểm định McNemar rằng sự vượt trội của PhoBERT không phải do dao động ngẫu nhiên mà mang tính ổn định thống kê. Ngược lại, sự chồng lấp giữa LR, SVM và BiLSTM làm rõ sự khác biệt về hiệu quả phân loại giữa ba mô hình này chưa đủ mạnh để kết luận tồn tại ưu thế rõ ràng.
+
+Như vậy, bootstrap đóng vai trò bổ sung cho kiểm định McNemar: nếu McNemar kiểm tra sự khác biệt ở mức dự đoán từng mẫu (\textit{instance-level comparison}), thì bootstrap đánh giá độ ổn định của chỉ số tổng hợp (F1-score) dưới biến thiên dữ liệu (\textit{metric-level stability}). Việc kết hợp cả hai phương pháp giúp tăng độ tin cậy và tính thuyết phục cho kết luận thực nghiệm.
+
+\subsection{Kiểm tra chéo (Cross-Validation)}
+
+Bên cạnh kết quả thu được từ tập kiểm tra cố định, độ ổn định của các mô hình học máy truyền thống còn được xem xét thông qua phương pháp kiểm tra chéo phân tầng (\textit{stratified cross-validation}). Cách đánh giá này cho phép quan sát sự thay đổi về hiệu năng khi các mẫu dữ liệu được phân bổ vào các tập con khác nhau.
+
+Thực nghiệm sử dụng 5-fold cross-validation và được lặp lại với 3 giá trị seed. Với mỗi seed, dữ liệu được chia thành 5 phần theo phương pháp phân tầng; lần lượt từng phần được giữ lại để đánh giá trong khi bốn phần còn lại được sử dụng cho quá trình huấn luyện. Do đó, toàn bộ thí nghiệm tạo ra 15 lần chạy độc lập. Kết quả accuracy và F1-score của từng lần chạy được lưu lại để tính giá trị trung bình cùng độ lệch chuẩn.
+
+Độ lệch chuẩn được sử dụng để thể hiện mức biến thiên của kết quả giữa các lần thực nghiệm. Giá trị này càng thấp cho thấy hiệu năng của mô hình ít thay đổi khi dữ liệu được phân chia theo những cách khác nhau, qua đó phản ánh mức độ ổn định cao hơn.
+
+Do yêu cầu đáng kể về thời gian và tài nguyên tính toán khi huấn luyện BiLSTM và PhoBERT, đánh giá 5-fold với 3 seed chỉ được thực hiện trên hai mô hình học máy truyền thống là Logistic Regression và SVM. Việc áp dụng cùng quy trình cho các mô hình học sâu sẽ làm số lần huấn luyện tăng đáng kể, do đó không được triển khai trong phạm vi thực nghiệm của đề tài.
+
+Kết quả thu được từ quá trình kiểm tra chéo được tổng hợp trong Bảng~\ref{tab:cv}.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả kiểm tra chéo 5-fold (3 seeds)}
+\label{tab:cv}
+\begin{tabular}{lcc}
+\toprule
+Mô hình & Accuracy & F1-Score \\
+\midrule
+Logistic Regression & $\cvlRAcc \pm \cvlRAccstd$ & $\cvlRFone \pm \cvlRFonestd$ \\
+SVM                 & $\cvsVMAcc \pm \cvsVMAccstd$ & $\cvsVMFone \pm \cvsVMFonestd$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Từ bảng~\ref{tab:cv} có thể quan sát rằng:
+
+\begin{itemize}
+    \item SVM đạt hiệu năng trung bình cao hơn Logistic Regression ở cả accuracy và F1-score.
+    \item Độ lệch chuẩn của cả hai mô hình đều nhỏ ($\leq 0{,}010$), cho thấy hiệu năng ổn định qua các lần chia dữ liệu.
+    \item Mức dao động thấp xác nhận rằng kết quả không phụ thuộc đáng kể vào một cấu hình phân chia cụ thể.
+\end{itemize}
+
+So với kiểm định McNemar và bootstrap, cross-validation bổ sung một góc nhìn khác trong đánh giá thực nghiệm: nếu McNemar kiểm tra sự khác biệt ở mức dự đoán từng mẫu (\textit{instance-level comparison}) và bootstrap đánh giá độ ổn định của chỉ số trên tập kiểm thử cố định, thì cross-validation kiểm tra khả năng tổng quát hóa của mô hình khi dữ liệu huấn luyện thay đổi.
+
+Việc kết hợp ba phương pháp đánh giá (McNemar, Bootstrap và Cross-Validation) giúp đảm bảo rằng kết luận về hiệu năng mô hình không chỉ dựa trên một lần thử nghiệm duy nhất, mà được xác nhận dưới nhiều góc độ thống kê khác nhau.
+
+\section{Nghiên cứu triệt bỏ (Ablation Study)}
+\label{sec:ablation}
+
+Ablation study là phương pháp thực nghiệm nhằm đánh giá mức độ đóng góp của từng thành phần trong một hệ thống bằng cách thay đổi hoặc loại bỏ từng yếu tố riêng lẻ trong khi giữ nguyên các thành phần còn lại. Mục tiêu của phương pháp này không chỉ là tìm cấu hình tốt nhất, mà còn xác định thành phần nào thực sự tạo ra cải thiện hiệu năng.
+
+Trong nghiên cứu này, ablation study được thực hiện trên pipeline TF-IDF + Logistic Regression bằng cách lần lượt thay đổi các yếu tố sau:
+
+\begin{itemize}
+    \item Kích thước từ điển
+    \item Cấu hình $n$-gram
+    \item Phương pháp phân đoạn từ
+    \item Tham số điều chỉnh $C$
+    \item Phương pháp chuẩn hóa TF
+\end{itemize}
+
+Mỗi yếu tố được thay đổi độc lập trong khi giữ nguyên các thành phần còn lại, nhằm đảm bảo có thể đánh giá riêng tác động của từng thành phần lên các chỉ số accuracy và F1-score. Cách tiếp cận này cho phép xác định mức độ nhạy cảm của mô hình đối với từng cấu hình và làm rõ yếu tố nào đóng vai trò quyết định trong việc cải thiện hiệu năng.
+
+Do cấu trúc pipeline TF-IDF + Logistic Regression cho phép tách biệt rõ ràng từng thành phần (kích thước từ điển, cấu hình $n$-gram, tham số điều chỉnh $C$, phương pháp chuẩn hóa TF), phương pháp Ablation study được áp dụng chủ yếu cho mô hình này nhằm phân tích đóng góp riêng lẻ của từng yếu tố.
+
+Đối với các mô hình học sâu như BiLSTM và PhoBERT, biểu diễn đặc trưng và quá trình học được tích hợp chặt chẽ trong kiến trúc mạng, khiến việc loại bỏ hoặc thay đổi từng thành phần riêng lẻ trở nên phức tạp và khó diễn giải. Việc điều chỉnh một thành phần (ví dụ: Embedding, số tầng, chiều ẩn hoặc cơ chế attention) thường kéo theo thay đổi trong toàn bộ động học huấn luyện, do đó không đảm bảo tính so sánh độc lập như trong pipeline tuyến tính.
+
+Bên cạnh đó, chi phí tính toán và thời gian huấn luyện lớn cũng hạn chế khả năng thực hiện ablation toàn diện cho các mô hình này trong phạm vi nghiên cứu. Vì vậy, ablation study được tập trung vào mô hình truyền thống nhằm đảm bảo tính minh bạch, khả năng diễn giải và hiệu quả thực nghiệm.
+
+Kết quả thực nghiệm được trình bày trong bảng~\ref{tab:ablation}.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả Ablation Study trên tập kiểm tra}
+\label{tab:ablation}
+\begin{tabular}{llcc}
+\toprule
+thành phần & cấu hình & accuracy & F1-Score \\
+\midrule
+\multirow{5}{*}{Kích thước từ điển}
+  & 1.000 từ   & \ablvoconekacc & \ablvoconekF \\
+  & 5.000 từ   & \ablvocfivekacc & \ablvocfivekF \\
+  & 10.000 từ  & \ablvoctenkacc & \ablvoctenkF \\
+  & 20.000 từ  & \ablvoctwentykacc & \ablvoctwentykF \\
+  & 50.000 từ  & \ablvocfiftykacc & \ablvocfiftykF \\
+\midrule
+\multirow{4}{*}{n-gram}
+  & unigram only   & \ablnguniacc & \ablngunif \\
+  & uni + bigram   & \ablngunibIAcc & \ablngunibIF \\
+  & uni+bi+trigram & \ablngunitriacc & \ablngunitrif \\
+  & bigram only    & \ablngbIAcc & \ablngbIF \\
+\midrule
+\multirow{2}{*}{phân đoạn từ}
+  & Có phân đoạn    & \ablwsonacc & \ablwsonf \\
+  & không phân đoạn & \ablwsoffacc & \ablwsofff \\
+\midrule
+\multirow{5}{*}{giá trị $C$ (LR)}
+  & $C = 0{,}01$ & \ablcaacc & \ablcaf \\
+  & $C = 0{,}1$  & \ablcbacc & \ablcbf \\
+  & $C = 1$      & \ablccacc & \ablccf \\
+  & $C = 10$     & \ablcdacc & \ablcdf \\
+  & $C = 100$    & \ablceacc & \ablcef \\
+\midrule
+\multirow{2}{*}{TF scaling}
+  & standard TF  & \abltfstdacc & \abltfstdf \\
+  & sublinear TF & \abltfsubacc & \abltfsubf \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Phân tích và ý nghĩa}
+
+\begin{enumerate}
+    \item \textbf{Kích thước từ điển} \\
+    Khi tăng kích thước từ điển từ 1{,}000 lên 10{,}000 từ, F1-score cải thiện khoảng +\ablvocdelta\%, cho thấy việc mở rộng không gian đặc trưng giúp mô hình khai thác tốt hơn thông tin ngữ nghĩa. Tuy nhiên, sau ngưỡng 10{,}000 từ, mức cải thiện giảm dần, phản ánh hiện tượng lợi ích biên giảm dần (\textit{diminishing returns}). Điều này giúp xác định ngưỡng tối ưu giữa độ biểu diễn và độ phức tạp.
+
+    \item \textbf{Cấu hình $n$-gram} \\
+    Cấu hình uni + bigram đạt hiệu năng tốt nhất. Việc bổ sung bigram giúp mô hình nắm bắt quan hệ ngữ cảnh cục bộ mà unigram đơn lẻ không thể biểu diễn đầy đủ. Tuy nhiên, thêm trigram không mang lại cải thiện đáng kể, có thể do hiện tượng thưa dữ liệu (\textit{sparsity}) tăng cao. Ablation cho thấy bigram là thành phần đóng góp quan trọng.
+
+    \item \textbf{Phân đoạn từ} \\
+    Phân đoạn từ không tạo khác biệt lớn đối với TF-IDF + Logistic Regression ($\Delta \approx \ablwsdelta\%$), cho thấy mô hình tuyến tính ít phụ thuộc vào cấu trúc ngữ cảnh sâu. Điều này khác với các mô hình ngữ cảnh như PhoBERT, nơi phân đoạn từ có vai trò quan trọng hơn. Kết quả giúp làm rõ đặc tính từng nhóm mô hình.
+
+    \item \textbf{Tham số điều chuẩn $C$} \\
+    Giá trị $C = 1$ cho hiệu năng tốt nhất.
+
+    \begin{itemize}
+        \item $C$ nhỏ $\rightarrow$ regularization mạnh $\rightarrow$ nguy cơ underfitting.
+        \item $C$ lớn $\rightarrow$ regularization yếu $\rightarrow$ nguy cơ overfitting.
+    \end{itemize}
+
+    Ablation xác định điểm cân bằng giữa bias và variance.
+
+    \item \textbf{Chuẩn hóa TF} \\
+    Sublinear TF nhỉnh hơn standard TF (+\abltfdelta\% F1), cho thấy log-scaling mang lại lợi ích nhẹ trên tập dữ liệu hiện tại.
+\end{enumerate}
+
+\textbf{Vậy ablation study đã giúp cải tiến gì?}
+
+\begin{enumerate}
+    \item Xác định cấu hình tối ưu cho pipeline TF-IDF + Logistic Regression.
+    \item Loại bỏ các thành phần không đóng góp đáng kể.
+    \item Chứng minh cải thiện hiệu năng đến từ lựa chọn thiết kế cụ thể, không phải dao động ngẫu nhiên.
+    \item Cung cấp cơ sở thực nghiệm cho cấu hình sử dụng trong so sánh mô hình ở Mục~\ref{sec:model_comparison}.
+\end{enumerate}
+
+Nói cách khác, ablation study không chỉ tối ưu tham số, mà còn giải thích vì sao cấu hình cuối cùng được lựa chọn là hợp lý.
+
+\section{Phân tích lỗi}
+
+\subsection{Thống kê lỗi tổng quan}
+
+\subsubsection{So sánh FP và FN}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{fig_fp_fn_comparison}
+\caption{So sánh số lượng False Positive (FP) và False Negative (FN) trong quá trình phân loại}
+\label{fig:fpfn}
+\end{figure}
+
+Trong Hình~\ref{fig:fpfn}, số lượng \textit{false positive} (FP) và \textit{false negative} (FN) của từng mô hình được so sánh nhằm làm rõ các kiểu lỗi phổ biến trong bài toán phát hiện tin giả. Có thể quan sát rằng các mô hình khác nhau thể hiện xu hướng lỗi khác nhau. Logistic Regression tạo ra số lượng FP và FN khá cân bằng, trong khi SVM có xu hướng tạo ra nhiều FN hơn FP. Điều này cho thấy SVM thường bỏ sót một số trường hợp tin giả, đặc biệt khi các mẫu này không chứa các từ khóa đặc trưng rõ ràng.
+
+BiLSTM có tổng số trường hợp dự đoán sai nhiều hơn so với các mô hình còn lại, với cả FP và FN đều ở mức tương đối lớn. Điều này cho thấy mô hình tuần tự này chưa khai thác được đầy đủ thông tin ngữ nghĩa trong văn bản, có thể do kích thước dữ liệu huấn luyện chưa đủ lớn để học các biểu diễn ngữ cảnh phức tạp. Ngược lại, PhoBERT đạt số lượng lỗi thấp nhất trong bốn mô hình, phản ánh khả năng khai thác ngữ cảnh đạt hiệu quả cao hơn nhờ tận dụng tri thức được học từ nguồn dữ liệu tiếng Việt quy mô lớn trong giai đoạn tiền huấn luyện.
+
+Phân tích FP và FN cũng cho thấy một số đặc điểm của bài toán. Các FP thường xuất hiện ở những bài viết có tiêu đề mang tính giật gân hoặc chứa các từ khóa thường xuất hiện trong tin giả, khiến mô hình nhầm lẫn và dự đoán sai. Trong khi đó, các FN chủ yếu xảy ra ở những tin giả được viết theo phong cách trung lập hoặc có cấu trúc tương tự các bài báo chính thống, khiến mô hình khó phân biệt.
+
+\subsubsection{Phân phối lỗi theo độ dài văn bản}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_text_length_analysis}
+\caption{Phân phối lỗi phân loại theo độ dài văn bản}
+\label{fig:textlen}
+\end{figure}
+
+Hình~\ref{fig:textlen} minh họa phân phối các lỗi dự đoán theo độ dài văn bản đối với từng mô hình. Có thể thấy rằng phần lớn các lỗi xảy ra ở các văn bản có độ dài tương đối ngắn. Những văn bản ngắn thường thiếu ngữ cảnh và thông tin bổ sung cần thiết để mô hình có thể xác định chính xác tính xác thực của nội dung. Do đó, cả các mô hình học máy truyền thống và mô hình học sâu đều gặp khó khăn khi xử lý các mẫu này.
+
+Ngược lại, khi độ dài văn bản tăng lên, tỷ lệ lỗi có xu hướng giảm. Các văn bản dài thường chứa nhiều thông tin ngữ nghĩa hơn, giúp mô hình nhận diện các mẫu đặc trưng liên quan đến tin thật hoặc tin giả một cách rõ ràng hơn. Xu hướng này đặc biệt rõ rệt đối với PhoBERT, khi mô hình tận dụng tốt hơn thông tin ngữ cảnh dài nhờ kiến trúc Transformer.
+
+Phân tích này cho thấy độ dài văn bản là một yếu tố ảnh hưởng đáng kể đến hiệu năng của mô hình. Trong các ứng dụng thực tế, các bài viết ngắn hoặc tiêu đề đơn lẻ có thể cần được xử lý bằng các kỹ thuật bổ sung, chẳng hạn như kết hợp thông tin ngữ cảnh từ nguồn dữ liệu khác hoặc sử dụng các đặc trưng bổ sung ngoài nội dung văn bản.
+
+\subsubsection{Hàm ý cải tiến mô hình}
+
+\begin{table}[H]
+\centering
+\caption{Phân tích lỗi trên tập kiểm tra}
+\label{tab:errors}
+\begin{tabular}{lcccc}
+\toprule
+mô hình & tổng lỗi & Tỉ lệ lỗi & FP & FN \\
+\midrule
+Logistic Regression & \lrerrors & \lrerrorrate\% & \lrfpcount & \lrfncount \\
+SVM & \svmerrors & \svmerrorrate\% & \svmfpcount & \svmfncount \\
+BiLSTM & \bilstmerrors & \bilstmerrorrate\% & \bilstmfpcount & \bilstmfncount \\
+PhoBERT & \phoberterrors & \phoberterrorrate\% & \phobertfP & \phobertfN \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bảng~\ref{tab:errors} tổng hợp số lượng lỗi và phân bố FP/FN của từng mô hình trên tập kiểm tra.
+
+Kết quả phân tích các trường hợp dự đoán sai cho thấy hệ thống vẫn còn một số khía cạnh có thể được cải thiện. Một hướng đáng chú ý là kết hợp thông tin ngữ nghĩa từ các mô hình biểu diễn sâu với những dấu hiệu trực tiếp trong văn bản, chẳng hạn từ khóa và các cụm từ có tính đặc trưng. Cách kết hợp này có thể hỗ trợ các mô hình học máy truyền thống nhận diện tốt hơn những trường hợp mà đặc trưng bề mặt chưa đủ để phân biệt, đồng thời hạn chế một số dự đoán \textit{false positive}.
+
+Đối với nhóm mô hình học sâu, việc mở rộng tập dữ liệu và tăng tính đa dạng của các mẫu huấn luyện là những hướng có thể được xem xét trong các nghiên cứu tiếp theo. Đặc biệt, các kỹ thuật tăng cường dữ liệu có thể tạo thêm những biến thể của mẫu tin giả, hỗ trợ mô hình xử lý hiệu quả hơn đối với những văn bản có cách diễn đạt trung lập hoặc ít chứa các dấu hiệu ngôn ngữ rõ ràng. Những trường hợp khó, được xác định là các mẫu mà cả bốn mô hình đều phân loại không chính xác, được phân tích chi tiết tại Mục~\ref{sec:hard-cases}.
+
+\subsection{Phân tích khả năng giải thích}
+\label{sec:explainability-overview}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{feature_importance}
+  \caption{Top 15 đặc trưng TF-IDF có hệ số LR cao nhất (dương = chỉ điểm \textit{giả}, âm = chỉ điểm \textit{thật})}
+  \label{fig:feature_importance}
+\end{figure}
+
+Hình~\ref{fig:feature_importance} minh họa 15 đặc trưng TF-IDF có hệ số lớn nhất trong mô hình Logistic Regression. Các đặc trưng được chia thành hai nhóm: các đặc trưng có hệ số dương liên quan đến lớp ``tin giả'', trong khi các đặc trưng có hệ số âm liên quan đến lớp ``tin thật''.
+
+Có thể quan sát rằng nhiều từ khóa liên quan đến tin giả thường mang tính giật gân hoặc gây chú ý, ví dụ các cụm từ mang sắc thái khẳng định mạnh hoặc gây tò mò. Ngược lại, các từ khóa liên quan đến tin thật thường xuất hiện trong văn phong báo chí chính thống, chẳng hạn như các từ liên quan đến cơ quan nhà nước, tổ chức hoặc thuật ngữ chính sách.
+
+Kết quả này cho thấy mô hình Logistic Regression không chỉ học các đặc trưng tần suất đơn thuần mà còn khai thác được những mẫu ngôn ngữ đặc trưng của từng loại tin. Điều này giúp tăng tính minh bạch của mô hình, vì các quyết định phân loại có thể được giải thích trực tiếp thông qua các trọng số đặc trưng.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{error_taxonomy}
+  \caption{Phân loại lỗi theo độ dài văn bản và mức độ tin cậy dự đoán}
+  \label{fig:error_taxonomy}
+\end{figure}
+
+Hình~\ref{fig:error_taxonomy} trình bày phân tích lỗi theo độ dài văn bản và mức độ tin cậy của dự đoán.
+
+Ở biểu đồ bên trái, có thể quan sát rằng số lượng lỗi cao hơn đối với các văn bản ngắn. Điều này có thể được giải thích bởi việc các văn bản ngắn thường thiếu ngữ cảnh và chứa ít đặc trưng TF-IDF hơn, khiến mô hình khó phân biệt giữa tin thật và tin giả.
+
+Biểu đồ bên phải cho thấy phần lớn các lỗi xảy ra ở các dự đoán có mức độ tin cậy thấp hoặc trung bình, trong khi các dự đoán có độ tin cậy cao hiếm khi bị sai. Kết quả này cho thấy xác suất dự đoán của mô hình có tương quan tốt với độ chính xác thực tế.
+
+Phân tích này gợi ý rằng trong các ứng dụng thực tế, những dự đoán có độ tin cậy thấp có thể được chuyển sang bước kiểm tra thủ công hoặc kết hợp với các hệ thống fact-checking để tăng độ tin cậy của hệ thống.
+
+\subsubsection{Phân tích khả năng giải thích cấp token (Token-Level Explainability)}
+\label{sec:token-explainability}
+
+Các phân tích ở~\ref{sec:explainability-overview} cho thấy \emph{từ nào} trong văn bản có ảnh hưởng lớn nhất đến dự đoán của mỗi mô hình, nhưng chưa trả lời câu hỏi cụ thể: với một văn bản nhất định, mô hình thực sự dựa vào những token nào để đưa ra quyết định phân loại? Để trả lời câu hỏi này, mục này áp dụng các phương pháp attribution đã được mô tả ở Mục~\ref{sec:extended_analyses} cho cả bốn mô hình và báo cáo kết quả định lượng trên tập mẫu được chọn.
+
+\subparagraph*{Dữ liệu.} \;Đề tài này chọn \nattrexamples{} mẫu kiểm tra ``thông tin nhất'' từ tập test (được trích từ bảng đầy đủ các mẫu kiểm tra kèm nhãn dự đoán và độ tự tin của bốn mô hình) bao gồm: các mẫu mà cả bốn mô hình đều dự đoán sai (\textit{hard examples}), các mẫu chỉ một hoặc hai mô hình sai (ranh giới), và một số mẫu mà tất cả các mô hình đều đúng (đối chứng dương). Mỗi mẫu được xử lý độc lập bởi từng mô hình và attribution tương ứng.
+
+\subparagraph*{Kết quả trên mô hình tuyến tính.}
+Hình~\ref{fig:token-attribution-lr-svm} minh họa 15 token có |SHAP value| lớn nhất cho Logistic Regression và SVM trên cùng một mẫu tin. Có thể quan sát rằng hai mô hình tuyến tính thường tập trung vào các từ khóa mang tín hiệu mạnh (số liệu, thực thể, cụm danh từ chính trị -- y học). Điều này phù hợp với kết quả phân tích hệ số ở Mục~\ref{sec:explainability-overview}, nhưng ở đây việc đánh giá được thực hiện trên một văn bản cụ thể thay vì trên toàn bộ tập huấn luyện.
+
+\subparagraph*{Đo lường sự đồng thuận giữa các phương pháp.} \;Để đánh giá mức độ đồng thuận giữa các phương pháp attribution, chỉ số \textit{Jaccard overlap} được tính trên top-10 token quan trọng nhất giữa mọi cặp phương pháp, trên toàn bộ các mẫu được chọn. Kết quả được hiển thị trong Hình~\ref{fig:method-agreement} (heatmap N$\times$N).
+
+Các cặp có đồng thuận cao nhất là SHAP và Integrated Gradients áp dụng trên cùng một không gian embedding (Jaccard $\approx 0{,}5$), trong khi Attention Rollout có đồng thuận thấp với cả hai phương pháp gradient (Jaccard $< 0{,}15$). Kết quả này củng cố nhận định rằng attention \textit{không phải} là một giải thích đáng tin cậy cho mô hình Transformer --- một cảnh báo đã được nhiều nghiên cứu gần đây đưa ra (Jain \& Wallace, 2019; Wiegreffe \& Pinter, 2019).
+
+\subparagraph*{Tính trung thực của attribution (Faithfulness).}
+Bảng~\ref{tab:attribution-faithfulness} tổng hợp \textit{faithfulness score} --- mức giảm xác suất của lớp dự đoán sau khi che (mask) 5 token được attribution đánh giá quan trọng nhất. Một phương pháp attribution tốt sẽ tạo ra mức giảm (drop) lớn --- tức là các token được đánh dấu quan trọng thực sự ảnh hưởng đến dự đoán của mô hình. Kết quả cho thấy các phương pháp gradient trên PhoBERT (SHAP và IG) đạt độ trung thực cao nhất ($\approx \attrfaithfulnessphobERTSHAP$ và $\attrfaithfulnessphobERTIG$), tiếp theo là SHAP trên LR/SVM ($\approx \attrfaithfulnesslR$). Attention Rollout trên PhoBERT có faithfulness thấp nhất ($\attrfaithfulnessphobERTRollout$), phù hợp với nhận định trên.
+
+\subparagraph*{Kết luận phần.} \;
+Phân tích cấp token bổ sung ba kết luận quan trọng:
+\begin{enumerate}[leftmargin=2em]
+  \item Các mô hình deep learning (BiLSTM, PhoBERT) dựa vào đặc trưng khác với mô hình tuyến tính. Jaccard giữa các họ mô hình thấp ($\approx 0{,}2$), cho thấy việc kết hợp nhiều kiến trúc là cần thiết thay vì dựa vào một mô hình duy nhất.
+  \item Attention không phải là giải thích đáng tin cậy. Attention Rollout có faithfulness thấp và đồng thuận kém với các phương pháp gradient --- nên sử dụng SHAP/IG làm phương pháp chính khi cần một attribution đáng tin cậy cho PhoBERT.
+  \item Các mẫu khó thường có attribution bất ổn. Trên \nhardexamples{} mẫu mà cả bốn mô hình đều dự đoán sai, các token được đánh dấu quan trọng thường không trùng khớp giữa các phương pháp --- một dấu hiệu cho thấy các văn bản này không chứa tín hiệu ngôn ngữ rõ ràng mà các mô hình có thể dựa vào.
+\end{enumerate}
+
+% Attribution cho LR và SVM
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig_token_attribution_lr_svm}
+  \caption{Token attribution bằng SHAP cho Logistic Regression và SVM trên cùng một mẫu kiểm tra.}
+  \label{fig:token-attribution-lr-svm}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig_method_agreement}
+  \caption{Jaccard overlap của top-10 token quan trọng giữa các phương pháp attribution, trung bình trên \nattrexamples{} mẫu kiểm tra.}
+  \label{fig:method-agreement}
+\end{figure}
+
+% Bảng độ trung thực của attribution
+\input{tables/table_attribution_faithfulness}
+
+\subsubsection{Hiệu chỉnh xác suất sau huấn luyện (Post-Hoc Calibration)}
+\label{sec:post-hoc-calibration}
+
+Phân tích ở~\ref{sec:explainability-overview} cho thấy PhoBERT đạt độ chính xác cao nhưng xác suất dự đoán của mô hình đôi khi chưa phản ánh đúng tần suất thực nghiệm --- nghĩa là mô hình bị \textit{miscalibrated}. Để khắc phục mà không cần huấn luyện lại, ba phương pháp hiệu chỉnh xác suất sau huấn luyện (đã được mô tả ở Mục~\ref{sec:extended_analyses}) được áp dụng cho cả bốn mô hình. Mục này trình bày kết quả trên tập kiểm tra.
+
+\paragraph*{Kết quả.} \;
+Bảng~\ref{tab:post-hoc-calibration} và Hình~\ref{fig:reliability-diagrams} tổng hợp ECE trên tập kiểm tra sau khi áp dụng từng phương pháp.
+
+BiLSTM được hưởng lợi nhiều nhất từ việc hiệu chỉnh: ECE giảm từ \bilstmeCEOrig{} (mức rất cao -- $\approx 13{,}6\%$) xuống còn \bilstmeCEPlatt{} với phương pháp Platt (mức giảm tuyệt đối $\bilstmeCEDelta$). Điều này cho thấy BiLSTM quá tự tin trong dự đoán --- entropy của xác suất đầu ra thấp hơn nhiều so với tần suất lỗi thực tế.
+
+PhoBERT cũng được cải thiện đáng kể: ECE giảm từ \phoberteCEOrig{} xuống \phoberteCETemp{} với Temperature scaling ($T = \phoberttfit$), mức giảm $\phoberteCEDelta$. Temperature scaling đặc biệt hiệu quả vì chỉ thay đổi một tham số vô hướng, không ảnh hưởng đến thứ hạng giữa các dự đoán (Accuracy và AUC được giữ nguyên).
+
+LR và SVM vốn đã có ECE thấp ($< 3\%$) nên cải thiện không đáng kể. Trong cả hai trường hợp, Temperature fitting trả về $T = \lrtfit$ cho LR và $T = \svmtfit$ cho SVM. Giá trị $T$ gần 1 ở LR xác nhận mô hình này đã gần như well-calibrated ngay từ đầu, trong khi $T < 1$ ở SVM cho thấy mô hình hơi thiếu tự tin và có thể hưởng lợi thêm từ hiệu chỉnh.
+
+\subparagraph*{Brier Score.} \;Brier score cũng giảm ở ba trên bốn mô hình. BiLSTM cải thiện mạnh nhất (từ $\bilstmbrierorig$ xuống $\bilstmbrierbest$), PhoBERT cải thiện từ $\phobertbrierorig$ xuống $\phobertbrierbest$. Accuracy và AUC không thay đổi sau khi hiệu chuẩn, nên mọi cải thiện về ECE/Brier đều đến từ việc ``nới lỏng'' các dự đoán quá tự tin.
+
+\subparagraph*{Hàm ý thực tiễn.} \;Kết quả cho thấy việc luôn áp dụng Temperature scaling là một best practice rẻ và hiệu quả cho các hệ thống phát hiện tin giả: chỉ tốn vài giây để fit, không cần huấn luyện lại, và có thể cải thiện ECE từ $13{,}6\%$ xuống dưới $2{,}5\%$ trong trường hợp xấu nhất (BiLSTM). Đối với các hệ thống downstream sử dụng ngưỡng xác suất để ra quyết định (ví dụ: chuyển sang kiểm duyệt thủ công khi $p > 0{,}9$), việc hiệu chỉnh này là cần thiết để tránh sự ``tự tin ảo'' từ mô hình.
+
+% Biểu đồ hiệu chuẩn trước và sau
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig_reliability_diagrams_before_after}
+  \caption{Biểu đồ hiệu chuẩn của bốn mô hình trước và sau khi áp dụng post-hoc calibration.}
+  \label{fig:reliability-diagrams}
+\end{figure}
+
+% Bảng kết quả hiệu chỉnh xác suất
+\input{tables/table_post_hoc_calibration}
+
+\subsubsection{Phân tích chuyên sâu các trường hợp khó (Hard Cases Deep Analysis)}
+\label{sec:hard-cases}
+
+Tập dữ liệu kiểm tra chứa \nhardexamples{} mẫu mà cả bốn mô hình đều phân loại sai (\textit{hard examples}). Theo phương pháp luận đã mô tả ở Mục~\ref{sec:extended_analyses}, các mẫu này được phân loại theo bốn chiều (chủ đề, lý do thất bại, độ dài, mật độ từ vựng) nhằm xác định các dạng thất bại hệ thống. Phần này trình bày kết quả phân tích chi tiết.
+
+\paragraph*{Các mẫu khó là gì?} Trong số \ntest{} mẫu kiểm tra, \nhardexamples{} mẫu (khoảng $\nhardpercent\%$) bị cả bốn mô hình -- kể cả PhoBERT -- dự đoán sai cùng một nhãn. Đây là nhóm mẫu mà không kiến trúc nào trong bốn mô hình hiện có xử lý đúng được.
+
+\paragraph*{Kết quả gán nhãn.} Kết quả phân loại theo bốn chiều được tổng hợp trong bảng annotation ở Phụ lục. Điểm attribution thu được ở Mục~\ref{sec:extended_analyses} cũng được ghép nối vào bảng annotation phục vụ phân tích định tính.
+
+\paragraph{Phát hiện về chủ đề.} Phân bố chủ đề cho thấy \textit{politics} chiếm $\nhardpolitics{}/\nhardexamples{} \approx 22\%$ và \textit{finance\_business} chiếm $\nhardfinbiz{}/\nhardexamples{}$ các trường hợp khó. Điều này cho thấy các bài báo về chính trị và tài chính thường chứa những chi tiết cụ thể khó xác minh tự động, phù hợp với nhận định rằng tin giả về chính trị và kinh tế là những dạng khó phát hiện nhất.
+
+\paragraph{Phát hiện về độ dài.} $\nhardshort{}/\nhardexamples{} \approx 69\%$ các mẫu khó có độ dài dưới 30 từ. Đây là các tiêu đề, câu dẫn ngắn hoặc trích đoạn tin tức chỉ cung cấp quá ít ngữ cảnh để phân biệt thật -- giả. Điểm đáng chú ý là: tin giả ngắn thường có vẻ đáng tin vì thiếu dấu hiệu rõ ràng, trong khi tin thật dài đôi khi bị phân loại nhầm thành giả do thiếu từ khóa kích hoạt mạnh.
+
+\paragraph*{Phát hiện về lý do thất bại.} Lý do thất bại phân bố thành bốn nhóm: $\nhardambiguity{}/85$ mẫu (dataset ambiguity, $55{,}3\%$) -- mẫu ngắn, không có từ khóa hay URL; $\nhardknowledge{}/85$ mẫu (knowledge verification, $16{,}5\%$) -- mẫu chứa số liệu hoặc URL cần kiến thức nền để xác minh; $\nhardsemantic{}/85$ mẫu (semantic reasoning, $7{,}1\%$); và phần còn lại thuộc nhóm stylistic.
+
+\paragraph*{Độ tự tin của mô hình trên các mẫu khó.} Trên \nhardexamples{} mẫu khó, cả bốn mô hình đều thể hiện độ tự tin cao bất thường: Logistic Regression trung bình $\lrhardconf$, SVM $\svmhardconf$, BiLSTM $\bilstmhardconf$, PhoBERT $\phoberthardconf$. Đây là dấu hiệu điển hình của calibration failure ở vùng khó --- mô hình đưa ra dự đoán với độ tin cậy cao dù kết quả sai. Kết quả này nhấn mạnh tầm quan trọng của bước hiệu chỉnh xác suất ở Mục~\ref{sec:post-hoc-calibration} đối với việc ra quyết định ở tầng downstream.
+
+\paragraph*{Hàm ý nghiên cứu.} Các mẫu khó tập trung ở hai nhóm: (i) tin ngắn không đủ ngữ cảnh, gặp nhiều trong các bài báo chính trị và tài chính; (ii) tin chứa số liệu cụ thể mà mô hình không có cơ sở kiến thức để xác minh. Việc bổ sung external knowledge base (ví dụ: dữ liệu thống kê chính thức) hoặc multi-modal signals (hình ảnh, nguồn đăng tải) là hướng nghiên cứu tiếp theo tiềm năng.
+
+% Phân bố các mẫu khó
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig_hard_case_distribution}
+  \caption{Phân bố của \nhardexamples{} mẫu khó theo chủ đề, độ dài, lý do thất bại và độ tự tin của từng mô hình.}
+  \label{fig:hard-case-distribution}
+\end{figure}
+
+% Bảng chú thích các mẫu khó
+\input{tables/table_hard_cases_annotated}
+
+\subsubsection{Knowledge Distillation -- Mô hình sinh viên nhỏ, chất lượng tiệm cận giáo viên}
+\label{sec:knowledge-distillation}
+
+Đặt vấn đề: PhoBERT đạt F1-macro cao nhất (\phobertfone\%) nhưng có kích thước lớn ($\sim$\phobertparams{} triệu tham số, $\sim$\phobertsizemB{} MB), không phù hợp để triển khai trên thiết bị biên (edge devices) hay trong pipeline thời gian thực. Mục này trình bày kết quả của thí nghiệm knowledge distillation (được mô tả ở Mục~\ref{sec:extended_analyses}), trong đó một mô hình BiLSTM nhỏ (sinh viên) được huấn luyện với sự hướng dẫn từ BiLSTM-gốc (giáo viên). Hai mô hình PhoBERT và BiLSTM-gốc được sử dụng làm baseline để đánh giá mức độ giảm chất lượng của sinh viên so với các mô hình đầy đủ. Phương pháp đã được mô tả đầy đủ ở Mục~\ref{sec:extended_analyses}; mục này trình bày kết quả thực nghiệm.
+
+\paragraph*{Kết quả chính.}
+Sau \studentepochs{} epoch huấn luyện với early-stopping (patience = \studentpatience), mô hình sinh viên đạt F1-macro trên tập kiểm tra là \studentfone\%, chỉ thấp hơn BiLSTM-giáo-viên (\bilstmfone\%) khoảng $\Delta = |\studentfone{} - \bilstmfone{}| = \studentgapbI{}$ điểm phần trăm, và thấp hơn PhoBERT-giáo-viên (\phobertfone\%) khoảng \studentgapphi{} điểm phần trăm. Đổi lại, kích thước mô hình giảm $\sim$\studentcompressionphi{$\times$}, và độ trễ suy luận trung vị trên cùng batch 16 câu giảm từ $\sim$\teacherbILat{} ms (BiLSTM) xuống còn $\sim$\studentlat{} ms (nhanh hơn \studentspeedup{$\times$}).
+
+\paragraph*{Nhận xét.}
+Sự đánh đổi giữa F1, kích thước và tốc độ trong thí nghiệm knowledge distillation này được tóm tắt trong Bảng~\ref{tab:distillation}. Kết quả cho thấy mô hình sinh viên KD giữ được $\sim$\studentretainbI{}\% chất lượng của BiLSTM trong khi tiêu tốn ít hơn 1/4 tài nguyên, đủ nhanh để chạy thời gian thực trên CPU thường. Đây là kết quả đáng chú ý nhất của thí nghiệm knowledge distillation.
+
+\paragraph*{Hạn chế và hướng cải thiện.}
+Khoảng cách F1 giữa sinh viên và giáo viên BiLSTM chủ yếu đến từ capacity gap: embedding \studentembdim{} chiều của sinh viên có thể không diễn giải đủ các quan hệ ngữ nghĩa tinh tế mà BiLSTM-giáo-viên nắm bắt được nhờ embedding \bilstmembdim{} chiều và hidden state \bilstmhiddendim{} chiều. Các hướng cải thiện tiềm năng: (i) tăng $\alpha$ (hiện tại $\studentalpha$) để sinh viên bám sát giáo viên hơn nữa; (ii) bổ sung multi-teacher distillation (sinh viên học đồng thời từ PhoBERT và BiLSTM); (iii) thay embedding ngẫu nhiên bằng FastText tiếng Việt để tận dụng tri thức tiền huấn luyện.
+
+% Bảng so sánh Knowledge Distillation
+\input{tables/table_distillation}
+
+\section{Kết luận chương}
+
+Thực nghiệm toàn diện trên bốn mô hình so sánh cho phép rút ra bốn kết luận chính:
+
+\begin{itemize}[leftmargin=2em]
+  \item PhoBERT là mô hình tốt nhất với F1 = \phobertfone\%; sự vượt trội này có ý nghĩa thống kê theo kiểm định McNemar với hiệu chỉnh Holm--Bonferroni ($p < 0{,}001$).
+  \item Kết quả thực nghiệm cho thấy lợi thế của việc tiền huấn luyện trên ngữ liệu tiếng Việt có ảnh hưởng đáng kể đến hiệu năng của mô hình, thay vì chỉ phụ thuộc vào mức độ phức tạp của kiến trúc. Đồng thời, việc SVM đạt kết quả cao hơn BiLSTM cho thấy chất lượng biểu diễn đặc trưng vẫn đóng vai trò quan trọng đối với các phương pháp học máy truyền thống.
+  \item Phân tích hiệu chỉnh xác suất cho thấy PhoBERT và BiLSTM bị miscalibrated (ECE ban đầu $\geq 6{,}9\%)$; temperature scaling giảm ECE trên \textbf{cả bốn} mô hình mà không ảnh hưởng đến Accuracy/AUC.
+  \item Thí nghiệm knowledge distillation cho thấy một BiLSTM nhỏ có thể thừa hưởng $\sim$\studentretainbI{}\% chất lượng của BiLSTM-gốc với kích thước $< 1/4$ và tốc độ nhanh hơn \studentspeedup{$\times$}, phù hợp triển khai trên thiết bị biên.
+\end{itemize}
+
+Cuối cùng, phân tích chuyên sâu \nhardexamples{} mẫu khó cho thấy các lỗi còn lại của cả bốn mô hình tập trung vào ba nhóm: \textit{dataset ambiguity}, \textit{knowledge verification} và \textit{semantic reasoning} --- những thách thức vượt khả năng của các phương pháp hiện nay chỉ dựa trên văn bản. Hướng cải tiến tiềm năng bao gồm tích hợp tri thức bên ngoài, cơ chế suy luận ngữ nghĩa sâu hơn, hoặc multi-teacher knowledge distillation.
+
+\clearpage

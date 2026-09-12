@@ -1,0 +1,50 @@
+\thispagestyle{empty}
+
+\begin{tikzpicture}[overlay, remember picture]
+    \draw [line width=3pt]
+        ($ (current page.north west) + (2.4cm,-2.0cm) $)
+        rectangle
+        ($ (current page.south east) + (-1.5cm,1.8cm) $);
+        
+    \draw [line width=1pt]
+        ($ (current page.north west) + (2.55cm,-2.15cm) $)
+        rectangle
+        ($ (current page.south east) + (-1.65cm,1.95cm) $);
+\end{tikzpicture}
+
+\vspace*{-1.75cm}
+
+\begin{center}
+    {\normalsize \bfseries BỘ GIÁO DỤC VÀ ĐÀO TẠO \par}
+    {\normalsize \bfseries TRƯỜNG ĐẠI HỌC MỞ THÀNH PHỐ HỒ CHÍ MINH \par}
+    {\normalsize \bfseries ------------------------------------------ \par}
+    
+    \vspace*{1cm}
+    
+    \includegraphics[scale=0.35]{src/hcmcou.png}
+    
+    \vspace*{1cm}
+    
+    {\normalsize \bfseries \studentname \par}
+    
+    \vspace*{3.5cm}
+    
+    {\large \bfseries \thesistitle \par}
+    
+    \vspace*{1cm}
+    
+    {\normalsize \bfseries Mã số sinh viên: \studentid \par}
+    
+    \vspace*{2cm}
+    
+    {\normalsize \bfseries ĐỒ ÁN NGÀNH \par}
+    {\normalsize \bfseries NGÀNH \major \par}
+    
+    \vspace*{1.5cm}
+    
+    {\normalsize \bfseries Giảng viên hướng dẫn: \supervisor \par}
+    
+    \vspace*{1.5cm}
+    
+    {\bfseries TP. HỒ CHÍ MINH, NĂM \currentyear \par}
+\end{center}
