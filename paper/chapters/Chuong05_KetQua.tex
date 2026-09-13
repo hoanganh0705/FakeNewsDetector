@@ -9,15 +9,11 @@
 
 \section{Môi trường thực nghiệm}
 
-Thực nghiệm được thực hiện trên hệ thống: GPU NVIDIA (CUDA \libcuda), RAM \libram~GB, Python \libpython, PyTorch \libtorch, Transformers \libtransformers, scikit-learn~\cite{pedregosa2011sklearn} \libscikit.
+Đề tài được thực hiện trên hệ thống: GPU NVIDIA (CUDA \libcuda), RAM \libram~GB, Python \libpython, PyTorch \libtorch, Transformers \libtransformers, scikit-learn~\cite{pedregosa2011sklearn} \libscikit.
 
 \input{tables/table4_hyperparams}
 
-Bảng~\ref{tab:hyperparams} tóm tắt siêu tham số cuối cùng sau tối ưu hoá.
-
 \input{tables/table5_complexity}
-
-Bảng~\ref{tab:complexity} so sánh số tham số và thời gian huấn luyện giữa các mô hình.
 
 \section{So sánh hiệu năng các mô hình}
 \label{sec:model_comparison}
@@ -140,11 +136,11 @@ PhoBERT & \phoberteCE & \phobertmCE & \phobertbrier \\
 Từ bảng~\ref{tab:calibration} và Hình~\ref{fig:calibration}, có thể rút ra một số quan sát đáng chú ý:
 
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{Các mô hình học máy truyền thống có hiệu chuẩn tốt nhất:} SVM đạt ECE thấp nhất (\svmeCE) và MCE thấp nhất (\svmmCE), theo sau là LR (ECE = \lreCE). Điều này cho thấy xác suất dự đoán của SVM và LR phản ánh khá chính xác tỷ lệ dương tính thực tế. Kết quả này phù hợp với lý thuyết, vì Logistic Regression được thiết kế để ước lượng xác suất trực tiếp, và SVM sử dụng hiệu chuẩn Platt (CalibratedClassifierCV) trong quá trình huấn luyện.
+  \item \textbf{Các mô hình học máy truyền thống có hiệu chuẩn tốt nhất:} SVM đạt ECE thấp nhất (\svmeCE) và MCE thấp nhất (\svmmCE), theo sau là LR (ECE = \lreCE). Điều này cho thấy xác suất dự đoán của SVM và LR phản ánh khá chính xác tỷ lệ dương tính thực tế.
 
-  \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertbrier), phản ánh khả năng phân loại vượt trội. Tuy nhiên, MCE rất cao (\phobertmCE) cho thấy mô hình có xu hướng \textit{overconfident} --- đưa ra xác suất rất cao (gần 0 hoặc 1) ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu nhỏ.
+  \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertbrier), phản ánh khả năng phân loại vượt trội. Tuy nhiên, MCE cao (\phobertmCE) cho thấy mô hình có khuynh hướng \textit{overconfident} --- đưa ra xác suất rất cao (gần 0 hoặc 1) ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu nhỏ.
 
-  \item \textbf{BiLSTM có hiệu chuẩn kém nhất:} với ECE = \bilstmeCE{} và Brier Score = \bilstmbrier, BiLSTM cho thấy xác suất dự đoán không phản ánh tốt độ chính xác thực tế --- nhất quán với hiệu năng phân loại thấp nhất trong bốn mô hình.
+  \item \textbf{BiLSTM có hiệu chuẩn kém nhất:} với ECE = \bilstmeCE{} và Brier Score = \bilstmbrier, BiLSTM cho thấy mức độ tin cậy của các xác suất dự đoán chưa tương ứng tốt với hiệu năng thực tế của mô hình.
 \end{itemize}
 
 \textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần áp dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature scaling hoặc Platt scaling để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể được sử dụng trực tiếp với độ tin cậy cao hơn.
@@ -154,15 +150,15 @@ Từ bảng~\ref{tab:calibration} và Hình~\ref{fig:calibration}, có thể rú
 
 \subsection{Kiểm định McNemar}
 
-Kiểm định McNemar~\cite{mcnemar1947} là một phương pháp thống kê dùng để đánh giá sự khác biệt giữa hai mô hình phân loại khi cả hai cùng được áp dụng trên một tập dữ liệu kiểm thử. Thay vì xem xét kết quả của từng mô hình một cách độc lập, kiểm định dựa trên cặp dự đoán tương ứng của từng mẫu (\textit{paired predictions}). Nhờ đặc điểm này, McNemar phù hợp để kiểm tra liệu chênh lệch về kết quả phân loại giữa hai mô hình có đủ bằng chứng để xem là có ý nghĩa thống kê hay có thể xuất hiện do biến động ngẫu nhiên của dữ liệu.
+Kiểm định McNemar~\cite{mcnemar1947} là một phương pháp thống kê dùng để đánh giá sự khác biệt giữa hai mô hình phân loại khi cả hai cùng được áp trên cùng một tập dữ liệu kiểm thử. Thay vì xem xét kết quả của từng mô hình một cách độc lập, kiểm định dựa trên cặp dự đoán tương ứng của từng mẫu (\textit{paired predictions}). Nhờ đặc điểm này, McNemar phù hợp để kiểm tra liệu chênh lệch về kết quả phân loại giữa hai mô hình có đủ bằng chứng để xem là có ý nghĩa thống kê hay có thể xuất hiện do biến động ngẫu nhiên của dữ liệu.
 
 Hai giả thuyết được đặt ra trong kiểm định gồm:
 
 \begin{itemize}
 
-    \item $H_0$: hiệu quả phân loại của hai mô hình không có sự khác biệt mang ý nghĩa thống kê.
+    \item $H_0$: sự khác biệt về hiệu năng phân loại giữa hai mô hình không đạt mức ý nghĩa thống kê.
 
-    \item $H_1$: hiệu quả phân loại của hai mô hình có sự khác biệt mang ý nghĩa thống kê.
+    \item $H_1$: sự khác biệt về hiệu năng phân loại giữa hai mô hình đạt mức ý nghĩa thống kê.
 
 \end{itemize}
 
@@ -198,7 +194,7 @@ BiLSTM  & PhoBERT & \mcnbilstmphobERTChi & $<$0{,}001  & Có ý nghĩa (***) \\
 \end{tabular}
 \end{table}
 
-\phobert vượt trội có ý nghĩa thống kê so với cả ba mô hình còn lại ($p < 0{,}001$). LR, SVM và BiLSTM không khác biệt đáng kể với nhau ($p \geq 0{,}05$ sau hiệu chỉnh Holm-Bonferroni) dù kiến trúc khác nhau hoàn toàn.
+\phobert vượt trội so với cả ba mô hình còn lại ($p < 0{,}001$). LR, SVM và BiLSTM không khác nhau lắm ($p \geq 0{,}05$ sau hiệu chỉnh Holm-Bonferroni) dù kiến trúc khác nhau hoàn toàn.
 
 \subsection{Khoảng tin cậy Bootstrap}
 
@@ -208,7 +204,7 @@ Bootstrap là kỹ thuật lấy mẫu lặp lại có hoàn lại (\textit{resa
 
 Khoảng tin cậy 95\% (95\% Confidence Interval --- CI) được xác định từ phân vị 2.5\% và 97.5\% của phân phối bootstrap. Khoảng này biểu diễn miền giá trị mà tham số thực (F1-score kỳ vọng trên tổng thể) có khả năng nằm trong đó với mức tin cậy 95\%.
 
-Việc sử dụng bootstrap mang ý nghĩa quan trọng trong đánh giá thực nghiệm vì:
+Việc sử dụng bootstrap mang có vai trò đáng kể trong quá trình đánh giá mô hình vì:
 
 \begin{itemize}
     \item Không giả định phân phối chuẩn của F1-score.
@@ -255,9 +251,6 @@ Thực nghiệm sử dụng 5-fold cross-validation và được lặp lại v�
 Độ lệch chuẩn được sử dụng để thể hiện mức biến thiên của kết quả giữa các lần thực nghiệm. Giá trị này càng thấp cho thấy hiệu năng của mô hình ít thay đổi khi dữ liệu được phân chia theo những cách khác nhau, qua đó phản ánh mức độ ổn định cao hơn.
 
 Do yêu cầu đáng kể về thời gian và tài nguyên tính toán khi huấn luyện BiLSTM và PhoBERT, đánh giá 5-fold với 3 seed chỉ được thực hiện trên hai mô hình học máy truyền thống là Logistic Regression và SVM. Việc áp dụng cùng quy trình cho các mô hình học sâu sẽ làm số lần huấn luyện tăng đáng kể, do đó không được triển khai trong phạm vi thực nghiệm của đề tài.
-
-Kết quả thu được từ quá trình kiểm tra chéo được tổng hợp trong Bảng~\ref{tab:cv}.
-
 \begin{table}[H]
 \centering
 \caption{Kết quả kiểm tra chéo 5-fold (3 seeds)}
@@ -277,17 +270,17 @@ Từ bảng~\ref{tab:cv} có thể quan sát rằng:
 \begin{itemize}
     \item SVM đạt hiệu năng trung bình cao hơn Logistic Regression ở cả accuracy và F1-score.
     \item Độ lệch chuẩn của cả hai mô hình đều nhỏ ($\leq 0{,}010$), cho thấy hiệu năng ổn định qua các lần chia dữ liệu.
-    \item Mức dao động thấp xác nhận rằng kết quả không phụ thuộc đáng kể vào một cấu hình phân chia cụ thể.
+    \item Kết quả giữa các lần phân chia dữ liệu có sự chênh lệch không đáng kể, cho thấy mô hình vẫn duy trì hiệu năng tương đối ổn định khi thay đổi cách chia tập dữ liệu.
 \end{itemize}
 
-So với kiểm định McNemar và bootstrap, cross-validation bổ sung một góc nhìn khác trong đánh giá thực nghiệm: nếu McNemar kiểm tra sự khác biệt ở mức dự đoán từng mẫu (\textit{instance-level comparison}) và bootstrap đánh giá độ ổn định của chỉ số trên tập kiểm thử cố định, thì cross-validation kiểm tra khả năng tổng quát hóa của mô hình khi dữ liệu huấn luyện thay đổi.
+So với kiểm định McNemar và bootstrap, cross-validation bổ sung một góc nhìn khác trong đánh giá thực nghiệm: nếu McNemar kiểm tra sự khác biệt ở việc dự đoán từng mẫu (\textit{instance-level comparison}) và bootstrap đánh giá độ ổn định của chỉ số trên tập kiểm thử cố định, thì cross-validation đánh giá mức độ ổn định của mô hình khi thay đổi dữ liệu được sử dụng trong quá trình huấn luyện.
 
-Việc kết hợp ba phương pháp đánh giá (McNemar, Bootstrap và Cross-Validation) giúp đảm bảo rằng kết luận về hiệu năng mô hình không chỉ dựa trên một lần thử nghiệm duy nhất, mà được xác nhận dưới nhiều góc độ thống kê khác nhau.
+Sự kết hợp của ba phương pháp McNemar, Bootstrap và Cross-Validation giúp đảm bảo rằng kết luận về hiệu năng mô hình không chỉ dựa trên một lần thử nghiệm duy nhất, mà được xác nhận dưới nhiều góc độ thống kê khác nhau.
 
 \section{Nghiên cứu triệt bỏ (Ablation Study)}
 \label{sec:ablation}
 
-Ablation study là phương pháp thực nghiệm nhằm đánh giá mức độ đóng góp của từng thành phần trong một hệ thống bằng cách thay đổi hoặc loại bỏ từng yếu tố riêng lẻ trong khi giữ nguyên các thành phần còn lại. Mục tiêu của phương pháp này không chỉ là tìm cấu hình tốt nhất, mà còn xác định thành phần nào thực sự tạo ra cải thiện hiệu năng.
+Ablation study là phương pháp thực nghiệm nhằm đánh giá sự đóng góp của từng phần của một hệ thống bằng cách thay đổi hoặc loại bỏ từng yếu tố riêng lẻ trong khi giữ nguyên các thành phần còn lại. Mục tiêu của phương pháp này không chỉ là tìm cấu hình tốt nhất, mà còn xác định thành phần nào thực sự tạo ra cải thiện hiệu năng.
 
 Trong nghiên cứu này, ablation study được thực hiện trên pipeline TF-IDF + Logistic Regression bằng cách lần lượt thay đổi các yếu tố sau:
 
@@ -307,7 +300,6 @@ Do cấu trúc pipeline TF-IDF + Logistic Regression cho phép tách biệt rõ 
 
 Bên cạnh đó, chi phí tính toán và thời gian huấn luyện lớn cũng hạn chế khả năng thực hiện ablation toàn diện cho các mô hình này trong phạm vi nghiên cứu. Vì vậy, ablation study được tập trung vào mô hình truyền thống nhằm đảm bảo tính minh bạch, khả năng diễn giải và hiệu quả thực nghiệm.
 
-Kết quả thực nghiệm được trình bày trong bảng~\ref{tab:ablation}.
 
 \begin{table}[H]
 \centering
@@ -380,7 +372,6 @@ thành phần & cấu hình & accuracy & F1-Score \\
     \item Xác định cấu hình tối ưu cho pipeline TF-IDF + Logistic Regression.
     \item Loại bỏ các thành phần không đóng góp đáng kể.
     \item Chứng minh cải thiện hiệu năng đến từ lựa chọn thiết kế cụ thể, không phải dao động ngẫu nhiên.
-    \item Cung cấp cơ sở thực nghiệm cho cấu hình sử dụng trong so sánh mô hình ở Mục~\ref{sec:model_comparison}.
 \end{enumerate}
 
 Nói cách khác, ablation study không chỉ tối ưu tham số, mà còn giải thích vì sao cấu hình cuối cùng được lựa chọn là hợp lý.
@@ -457,7 +448,7 @@ Hình~\ref{fig:feature_importance} minh họa 15 đặc trưng TF-IDF có hệ s
 
 Có thể quan sát rằng nhiều từ khóa liên quan đến tin giả thường mang tính giật gân hoặc gây chú ý, ví dụ các cụm từ mang sắc thái khẳng định mạnh hoặc gây tò mò. Ngược lại, các từ khóa liên quan đến tin thật thường xuất hiện trong văn phong báo chí chính thống, chẳng hạn như các từ liên quan đến cơ quan nhà nước, tổ chức hoặc thuật ngữ chính sách.
 
-Kết quả này cho thấy mô hình Logistic Regression không chỉ học các đặc trưng tần suất đơn thuần mà còn khai thác được những mẫu ngôn ngữ đặc trưng của từng loại tin. Điều này giúp tăng tính minh bạch của mô hình, vì các quyết định phân loại có thể được giải thích trực tiếp thông qua các trọng số đặc trưng.
+Qua kết quả thu được, Logistic Regression cho thấy khả năng nhận diện không chỉ dựa trên mức độ xuất hiện của từ mà còn phản ánh những cách sử dụng ngôn ngữ khác nhau giữa các nhóm tin. Bên cạnh đó, ưu điểm của mô hình nằm ở khả năng diễn giải kết quả, bởi mức độ ảnh hưởng của từng đặc trưng đến quyết định cuối cùng có thể được quan sát thông qua hệ số tương ứng.
 
 \begin{figure}[H]
   \centering
@@ -482,7 +473,7 @@ Các phân tích ở~\ref{sec:explainability-overview} cho thấy \emph{từ nà
 \subparagraph*{Dữ liệu.} \;Đề tài này chọn \nattrexamples{} mẫu kiểm tra ``thông tin nhất'' từ tập test (được trích từ bảng đầy đủ các mẫu kiểm tra kèm nhãn dự đoán và độ tự tin của bốn mô hình) bao gồm: các mẫu mà cả bốn mô hình đều dự đoán sai (\textit{hard examples}), các mẫu chỉ một hoặc hai mô hình sai (ranh giới), và một số mẫu mà tất cả các mô hình đều đúng (đối chứng dương). Mỗi mẫu được xử lý độc lập bởi từng mô hình và attribution tương ứng.
 
 \subparagraph*{Kết quả trên mô hình tuyến tính.}
-Hình~\ref{fig:token-attribution-lr-svm} minh họa 15 token có |SHAP value| lớn nhất cho Logistic Regression và SVM trên cùng một mẫu tin. Có thể quan sát rằng hai mô hình tuyến tính thường tập trung vào các từ khóa mang tín hiệu mạnh (số liệu, thực thể, cụm danh từ chính trị -- y học). Điều này phù hợp với kết quả phân tích hệ số ở Mục~\ref{sec:explainability-overview}, nhưng ở đây việc đánh giá được thực hiện trên một văn bản cụ thể thay vì trên toàn bộ tập huấn luyện.
+Hình~\ref{fig:token-attribution-lr-svm} minh họa 15 token có |SHAP value| lớn nhất cho Logistic Regression và SVM trên cùng một mẫu tin. Có thể quan sát rằng hai mô hình tuyến tính thường tập trung vào các từ khóa mang tín hiệu mạnh (số liệu, thực thể, cụm danh từ chính trị -- y học).
 
 \subparagraph*{Đo lường sự đồng thuận giữa các phương pháp.} \;Để đánh giá mức độ đồng thuận giữa các phương pháp attribution, chỉ số \textit{Jaccard overlap} được tính trên top-10 token quan trọng nhất giữa mọi cặp phương pháp, trên toàn bộ các mẫu được chọn. Kết quả được hiển thị trong Hình~\ref{fig:method-agreement} (heatmap N$\times$N).
 
@@ -520,14 +511,14 @@ Phân tích cấp token bổ sung ba kết luận quan trọng:
 \subsubsection{Hiệu chỉnh xác suất sau huấn luyện (Post-Hoc Calibration)}
 \label{sec:post-hoc-calibration}
 
-Phân tích ở~\ref{sec:explainability-overview} cho thấy PhoBERT đạt độ chính xác cao nhưng xác suất dự đoán của mô hình đôi khi chưa phản ánh đúng tần suất thực nghiệm --- nghĩa là mô hình bị \textit{miscalibrated}. Để khắc phục mà không cần huấn luyện lại, ba phương pháp hiệu chỉnh xác suất sau huấn luyện (đã được mô tả ở Mục~\ref{sec:extended_analyses}) được áp dụng cho cả bốn mô hình. Mục này trình bày kết quả trên tập kiểm tra.
+Phân tích ở~\ref{sec:explainability-overview} cho thấy PhoBERT đạt độ chính xác cao nhưng khả năng dự đoán đôi khi chưa phản ánh đúng tần suất thực nghiệm --- nghĩa là mô hình bị \textit{miscalibrated}. Để khắc phục mà không cần huấn luyện lại, ba phương pháp hiệu chỉnh xác suất sau huấn luyện (đã được mô tả ở Mục~\ref{sec:extended_analyses}) được áp dụng cho cả bốn mô hình. Mục này trình bày kết quả trên tập kiểm tra.
 
 \paragraph*{Kết quả.} \;
 Bảng~\ref{tab:post-hoc-calibration} và Hình~\ref{fig:reliability-diagrams} tổng hợp ECE trên tập kiểm tra sau khi áp dụng từng phương pháp.
 
-BiLSTM được hưởng lợi nhiều nhất từ việc hiệu chỉnh: ECE giảm từ \bilstmeCEOrig{} (mức rất cao -- $\approx 13{,}6\%$) xuống còn \bilstmeCEPlatt{} với phương pháp Platt (mức giảm tuyệt đối $\bilstmeCEDelta$). Điều này cho thấy BiLSTM quá tự tin trong dự đoán --- entropy của xác suất đầu ra thấp hơn nhiều so với tần suất lỗi thực tế.
+BiLSTM được hưởng lợi nhiều nhất từ việc tinh chỉnh: ECE giảm từ \bilstmeCEOrig{} (mức rất cao -- $\approx 13{,}6\%$) xuống còn \bilstmeCEPlatt{} với phương pháp Platt (mức giảm tuyệt đối $\bilstmeCEDelta$). Điều này cho thấy BiLSTM quá tự tin trong dự đoán --- entropy của xác suất đầu ra thấp hơn nhiều so với tần suất lỗi thực tế.
 
-PhoBERT cũng được cải thiện đáng kể: ECE giảm từ \phoberteCEOrig{} xuống \phoberteCETemp{} với Temperature scaling ($T = \phoberttfit$), mức giảm $\phoberteCEDelta$. Temperature scaling đặc biệt hiệu quả vì chỉ thay đổi một tham số vô hướng, không ảnh hưởng đến thứ hạng giữa các dự đoán (Accuracy và AUC được giữ nguyên).
+PhoBERT cũng được cải thiện: ECE giảm từ \phoberteCEOrig{} xuống \phoberteCETemp{} với Temperature scaling ($T = \phoberttfit$), mức giảm $\phoberteCEDelta$. Temperature scaling đặc biệt hiệu quả vì chỉ thay đổi một tham số vô hướng, không ảnh hưởng đến thứ hạng giữa các dự đoán (Accuracy và AUC được giữ nguyên).
 
 LR và SVM vốn đã có ECE thấp ($< 3\%$) nên cải thiện không đáng kể. Trong cả hai trường hợp, Temperature fitting trả về $T = \lrtfit$ cho LR và $T = \svmtfit$ cho SVM. Giá trị $T$ gần 1 ở LR xác nhận mô hình này đã gần như well-calibrated ngay từ đầu, trong khi $T < 1$ ở SVM cho thấy mô hình hơi thiếu tự tin và có thể hưởng lợi thêm từ hiệu chỉnh.
 
@@ -549,19 +540,19 @@ LR và SVM vốn đã có ECE thấp ($< 3\%$) nên cải thiện không đáng 
 \subsubsection{Phân tích chuyên sâu các trường hợp khó (Hard Cases Deep Analysis)}
 \label{sec:hard-cases}
 
-Tập dữ liệu kiểm tra chứa \nhardexamples{} mẫu mà cả bốn mô hình đều phân loại sai (\textit{hard examples}). Theo phương pháp luận đã mô tả ở Mục~\ref{sec:extended_analyses}, các mẫu này được phân loại theo bốn chiều (chủ đề, lý do thất bại, độ dài, mật độ từ vựng) nhằm xác định các dạng thất bại hệ thống. Phần này trình bày kết quả phân tích chi tiết.
+Tập dữ liệu kiểm tra chứa \nhardexamples{} mẫu mà cả bốn mô hình đều phân loại sai (\textit{hard examples}). Theo phương pháp luận đã mô tả ở Mục~\ref{sec:extended_analyses}, các mẫu này được phân loại theo bốn chiều (chủ đề, lý do thất bại, độ dài, mật độ từ vựng) nhằm xác định các dạng thất bại hệ thống.
 
 \paragraph*{Các mẫu khó là gì?} Trong số \ntest{} mẫu kiểm tra, \nhardexamples{} mẫu (khoảng $\nhardpercent\%$) bị cả bốn mô hình -- kể cả PhoBERT -- dự đoán sai cùng một nhãn. Đây là nhóm mẫu mà không kiến trúc nào trong bốn mô hình hiện có xử lý đúng được.
 
 \paragraph*{Kết quả gán nhãn.} Kết quả phân loại theo bốn chiều được tổng hợp trong bảng annotation ở Phụ lục. Điểm attribution thu được ở Mục~\ref{sec:extended_analyses} cũng được ghép nối vào bảng annotation phục vụ phân tích định tính.
 
-\paragraph{Phát hiện về chủ đề.} Phân bố chủ đề cho thấy \textit{politics} chiếm $\nhardpolitics{}/\nhardexamples{} \approx 22\%$ và \textit{finance\_business} chiếm $\nhardfinbiz{}/\nhardexamples{}$ các trường hợp khó. Điều này cho thấy các bài báo về chính trị và tài chính thường chứa những chi tiết cụ thể khó xác minh tự động, phù hợp với nhận định rằng tin giả về chính trị và kinh tế là những dạng khó phát hiện nhất.
+\paragraph{Phát hiện về chủ đề.} Phân bố chủ đề cho thấy \textit{politics} chiếm $\nhardpolitics{}/\nhardexamples{} \approx 22\%$ và \textit{finance\_business} chiếm $\nhardfinbiz{}/\nhardexamples{}$ các trường hợp khó. Điều này cho thấy các bài báo về chính trị và tài chính thường chứa những chi tiết cụ thể khó xác minh tự động, phù hợp với nhận định rằng tin giả về kinh tế hoặc chính trị là những dạng khó phát hiện nhất.
 
 \paragraph{Phát hiện về độ dài.} $\nhardshort{}/\nhardexamples{} \approx 69\%$ các mẫu khó có độ dài dưới 30 từ. Đây là các tiêu đề, câu dẫn ngắn hoặc trích đoạn tin tức chỉ cung cấp quá ít ngữ cảnh để phân biệt thật -- giả. Điểm đáng chú ý là: tin giả ngắn thường có vẻ đáng tin vì thiếu dấu hiệu rõ ràng, trong khi tin thật dài đôi khi bị phân loại nhầm thành giả do thiếu từ khóa kích hoạt mạnh.
 
 \paragraph*{Phát hiện về lý do thất bại.} Lý do thất bại phân bố thành bốn nhóm: $\nhardambiguity{}/85$ mẫu (dataset ambiguity, $55{,}3\%$) -- mẫu ngắn, không có từ khóa hay URL; $\nhardknowledge{}/85$ mẫu (knowledge verification, $16{,}5\%$) -- mẫu chứa số liệu hoặc URL cần kiến thức nền để xác minh; $\nhardsemantic{}/85$ mẫu (semantic reasoning, $7{,}1\%$); và phần còn lại thuộc nhóm stylistic.
 
-\paragraph*{Độ tự tin của mô hình trên các mẫu khó.} Trên \nhardexamples{} mẫu khó, cả bốn mô hình đều thể hiện độ tự tin cao bất thường: Logistic Regression trung bình $\lrhardconf$, SVM $\svmhardconf$, BiLSTM $\bilstmhardconf$, PhoBERT $\phoberthardconf$. Đây là dấu hiệu điển hình của calibration failure ở vùng khó --- mô hình đưa ra dự đoán với độ tin cậy cao dù kết quả sai. Kết quả này nhấn mạnh tầm quan trọng của bước hiệu chỉnh xác suất ở Mục~\ref{sec:post-hoc-calibration} đối với việc ra quyết định ở tầng downstream.
+\paragraph*{Độ tự tin của mô hình trên các mẫu khó.} Trên \nhardexamples{} mẫu khó, cả bốn mô hình đều thể hiện độ tự tin cao bất thường: Logistic Regression trung bình $\lrhardconf$, SVM $\svmhardconf$, BiLSTM $\bilstmhardconf$, PhoBERT $\phoberthardconf$. Đây là dấu hiệu điển hình của calibration failure ở vùng khó.
 
 \paragraph*{Hàm ý nghiên cứu.} Các mẫu khó tập trung ở hai nhóm: (i) tin ngắn không đủ ngữ cảnh, gặp nhiều trong các bài báo chính trị và tài chính; (ii) tin chứa số liệu cụ thể mà mô hình không có cơ sở kiến thức để xác minh. Việc bổ sung external knowledge base (ví dụ: dữ liệu thống kê chính thức) hoặc multi-modal signals (hình ảnh, nguồn đăng tải) là hướng nghiên cứu tiếp theo tiềm năng.
 
@@ -599,7 +590,7 @@ Thực nghiệm toàn diện trên bốn mô hình so sánh cho phép rút ra b�
 
 \begin{itemize}[leftmargin=2em]
   \item PhoBERT là mô hình tốt nhất với F1 = \phobertfone\%; sự vượt trội này có ý nghĩa thống kê theo kiểm định McNemar với hiệu chỉnh Holm--Bonferroni ($p < 0{,}001$).
-  \item Kết quả thực nghiệm cho thấy lợi thế của việc tiền huấn luyện trên ngữ liệu tiếng Việt có ảnh hưởng đáng kể đến hiệu năng của mô hình, thay vì chỉ phụ thuộc vào mức độ phức tạp của kiến trúc. Đồng thời, việc SVM đạt kết quả cao hơn BiLSTM cho thấy chất lượng biểu diễn đặc trưng vẫn đóng vai trò quan trọng đối với các phương pháp học máy truyền thống.
+  \item Từ kết quả thực nghiệm, có thể thấy việc mô hình được huấn luyện trước trên dữ liệu tiếng Việt mang lại ảnh hưởng rõ ràng đến kết quả phân loại. Điều này cho thấy hiệu quả của mô hình không chỉ nằm ở kiến trúc mà còn phụ thuộc nhiều vào cách dữ liệu được biểu diễn. Trong các thử nghiệm, SVM cho kết quả tốt hơn BiLSTM, cho thấy một mô hình truyền thống vẫn có thể đạt hiệu quả cao khi được cung cấp đặc trưng phù hợp.
   \item Phân tích hiệu chỉnh xác suất cho thấy PhoBERT và BiLSTM bị miscalibrated (ECE ban đầu $\geq 6{,}9\%)$; temperature scaling giảm ECE trên \textbf{cả bốn} mô hình mà không ảnh hưởng đến Accuracy/AUC.
   \item Thí nghiệm knowledge distillation cho thấy một BiLSTM nhỏ có thể thừa hưởng $\sim$\studentretainbI{}\% chất lượng của BiLSTM-gốc với kích thước $< 1/4$ và tốc độ nhanh hơn \studentspeedup{$\times$}, phù hợp triển khai trên thiết bị biên.
 \end{itemize}

@@ -26,17 +26,21 @@ Sau khi chia tập, nguy cơ rò rỉ dữ liệu được kiểm tra theo cả 
 
 \subsection*{A.2. Ví dụ mẫu trong tập kiểm tra}
 
-\noindent\textbf{Mẫu tin thật (label = 0, ngắn):}
+\noindent\textbf{Mẫu tin giả (label = 1, ngắn):}
 \begin{quote}\small\itshape
-Giáo\_dục hoà\_nhập giúp học\_sinh khuyết\_tật có cơ\_hội học\_tập
-cùng các bạn bình\_thường.\hfill(id=5857)
+Học\_sinh có\_thể nhớ bài tốt hơn nếu đặt sách\_giáo\_khoa dưới
+gối trong lúc ngủ.\hfill(id=9274)
 \end{quote}
 
-\noindent\textbf{Mẫu tin thật (label = 0, dài):}
+\noindent\textbf{Mẫu tin giả (label = 1, dài):}
 \begin{quote}\small\itshape
-``Việc học là suốt đời, chúng\_ta có\_thể tạm hoãn; sức\_khoẻ là
-quan\_trọng nhất\ldots''\hfill(id=4519, ĐH Nông lâm, về COVID-19)
+``Một thử\_nghiệm tại trường\_học cho thấy việc nghe nhạc bằng
+tai\_nghe trong 15 phút trước khi kiểm\_tra có\_thể làm tăng khả\_năng
+ghi\_nhớ của học\_sinh lên gần 40\%. Các giáo\_viên vì vậy được
+khuyến\_nghị cho học\_sinh nghe nhạc trước mỗi bài\_thi\ldots''
+\hfill(id=6385, Viện Nghiên cứu Giáo dục, về phương pháp học tập)
 \end{quote}
+
 
 \noindent\textbf{Mẫu tin giả (label = 1):}
 \begin{quote}\small\itshape
@@ -121,7 +125,7 @@ Toàn bộ siêu tham số được tập trung tại file cấu hình chung c�
 
 \subsection*{B.1. Knowledge Distillation}
 
-Mô hình sinh viên là \texttt{StudentBiLSTM} --- một phiên bản BiLSTM rút gọn với \texttt{embedding\_dim = \studentembdim{}}, \texttt{hidden\_dim = \studenthiddim{}}, \texttt{num\_layers = \studentlayers{}}. Trọng số soft target $\alpha = \studentalpha{}$, nhiệt độ phân phối $T = \studenttemp{}$. Optimizer sử dụng AdamW với \texttt{lr}=$10^{-3}$, scheduler CosineAnnealingLR. Huấn luyện tối đa \studentepochs{} epoch với cơ chế dừng sớm (\texttt{patience}=\studentpatience{}). Hàm mất mát KD chuẩn (Hinton et al., 2015) đã được trình bày ở Mục~\ref{sec:extended_analyses}; mô hình sinh viên được huấn luyện trên tập logits giáo viên đã được tính trước và lưu lại nhằm tiết kiệm chi phí tính toán.
+Mô hình sinh viên là \texttt{StudentBiLSTM} --- một phiên bản BiLSTM rút gọn với \texttt{embedding\_dim = \studentembdim{}}, \texttt{hidden\_dim = \studenthiddim{}}, \texttt{num\_layers = \studentlayers{}}. Trọng số soft target $\alpha = \studentalpha{}$, nhiệt độ phân phối $T = \studenttemp{}$. Optimizer sử dụng AdamW với \texttt{lr}=$10^{-3}$, scheduler CosineAnnealingLR. Huấn luyện tối đa \studentepochs{} epoch với early stopping (\texttt{patience}=\studentpatience{}). Hàm mất mát KD chuẩn (Hinton et al., 2015) đã được trình bày ở Mục~\ref{sec:extended_analyses}; mô hình sinh viên được huấn luyện trên tập logits giáo viên đã được tính trước và lưu lại nhằm tiết kiệm chi phí tính toán.
 
 \subsection*{B.2. Post-hoc Calibration}
 
@@ -198,7 +202,7 @@ Giá trị $T$ đã khớp tương ứng: LR $=\lrtfit{}$, SVM $=\svmtfit{}$, Bi
 
 \subsection*{C.4. Khoảng tin cậy Bootstrap 95\%}
 
-Khoảng tin cậy được ước lượng bằng phương pháp bootstrap (\texttt{scipy.stats.bootstrap}) với 10{,}000 lần lặp.
+Khoảng tin cậy được đo bằng phương pháp bootstrap với 10{,}000 lần lặp.
 
 \begin{table}[H]
   \centering

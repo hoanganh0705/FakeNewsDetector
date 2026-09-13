@@ -14,7 +14,7 @@ Bộ dữ liệu được sử dụng được tổng hợp từ hai nguồn ch�
 
 \begin{itemize}[leftmargin=2em]
   \item \texttt{text}: toàn bộ nội dung văn bản của bài viết.
-  \item \texttt{label}: nhãn phân loại, với 0 đại diện cho \textit{thật} và 1 đại diện cho \textit{giả}.
+  \item \texttt{label}: nhãn phân loại, với 0 là \textit{thật} và 1 là cho \textit{giả}.
 \end{itemize}
 
 Ngay sau khi thu thập, dữ liệu được đưa vào bước phân đoạn từ (word segmentation) để phù hợp với các khâu xử lý về sau. Tổng số bản ghi thô ban đầu là \nraw{} mẫu.
@@ -93,7 +93,7 @@ Như vậy, những từ đơn vẫn được giữ nguyên, còn các từ đư
 
 Dữ liệu sau khi được phân đoạn và làm sạch được tổ chức thành ba tập theo chức năng sử dụng trong quá trình thực nghiệm, gồm Train (huấn luyện), Validation (kiểm định) và Test (kiểm tra). Tập Train cung cấp dữ liệu để mô hình học các tham số. Trong giai đoạn phát triển, kết quả trên Validation được sử dụng để theo dõi quá trình học và làm cơ sở lựa chọn, điều chỉnh siêu tham số. Tập Test được tách biệt khỏi các bước huấn luyện và tinh chỉnh, chỉ được sử dụng khi mô hình đã hoàn thiện nhằm đánh giá kết quả trên những mẫu dữ liệu chưa được sử dụng trước đó.
 
-Để hạn chế ảnh hưởng của sự khác biệt về phân bố nhãn, quá trình phân chia được thực hiện theo phương pháp phân tầng. Theo đó, tỷ lệ của hai lớp được duy trì tương đối nhất quán giữa Train, Validation và Test. Các tỷ lệ được sử dụng trong quá trình chia dữ liệu được thiết lập như sau:
+Phương pháp phân tầng được áp dụng khi chia dữ liệu nhằm giữ cho tỷ lệ giữa hai lớp không thay đổi đáng kể trong các tập Train, Validation và Test. Dựa trên nguyên tắc này, dữ liệu được phân chia theo các tỷ lệ được trình bày dưới đây:
 
 \begin{itemize}[leftmargin=2em]
   \item Train: 70\%

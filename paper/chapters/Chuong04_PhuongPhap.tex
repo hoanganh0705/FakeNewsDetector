@@ -10,23 +10,23 @@ Chương này trình bày toàn bộ cơ sở phương pháp luận cho bài to�
 
 \section{Phương pháp đề xuất}
 
-Phát hiện tin giả tiếng Việt là một bài toán đáng chú ý trong lĩnh vực xử lý ngôn ngữ tự nhiên, nhất là khi khối lượng nội dung được đăng tải trên không gian mạng ngày càng tăng nhanh. Những thông tin sai lệch nếu được lan truyền rộng rãi có thể tác động tiêu cực đến cách người dùng tiếp nhận thông tin, đồng thời kéo theo nhiều hệ quả xã hội không mong muốn. Trước thực tế đó, việc xây dựng và đánh giá các phương pháp có khả năng tự động nhận diện nội dung sai lệch trở thành một nhu cầu thực tiễn rõ ràng.
+Bài toán nhận diện tin giả trong văn bản tiếng Việt ngày càng nhận được sự quan tâm trong lĩnh vực xử lý ngôn ngữ tự nhiên, đặc biệt trước sự gia tăng nhanh chóng của lượng thông tin trên môi trường trực tuyến. Khi các nội dung thiếu chính xác được chia sẻ với phạm vi rộng, chúng có thể ảnh hưởng đến quá trình tiếp nhận thông tin của người dùng và tạo ra những tác động không mong muốn đối với xã hội. Vì vậy, phát triển các phương pháp tự động có khả năng phát hiện nội dung sai lệch có ý nghĩa cả về mặt nghiên cứu lẫn ứng dụng thực tế.
 
-Hướng tiếp cận phổ biến hiện nay là chuyển văn bản sang dạng biểu diễn phù hợp trước khi đưa vào mô hình phân loại. Các phương pháp như \textit{bag-of-words}, TF-IDF hay \textit{word embedding} mỗi cách mang lại một góc nhìn khác nhau trong việc mã hóa đặc trưng văn bản. Song song với đó, sự phát triển của học sâu đã mở ra các phương pháp mới có khả năng khai thác thông tin ngữ cảnh trực tiếp từ dữ liệu. Trong nhóm này, mạng nơ-ron hồi tiếp và mô hình ngôn ngữ dựa trên Transformer là hai kiến trúc được ứng dụng rộng rãi nhất, đồng thời cho thấy tiềm năng rõ rệt trong các bài toán phân loại văn bản.
+Một quy trình phân loại văn bản thường bắt đầu bằng việc chuyển nội dung sang dạng biểu diễn số phù hợp với mô hình. Trong số các phương pháp phổ biến, \textit{*bag-of-words*}, TF-IDF và \textit{*word embedding*} cung cấp những cách khác nhau để biểu diễn thông tin từ văn bản. Sự phát triển của các phương pháp học sâu sau đó cho phép mô hình khai thác trực tiếp nhiều thông tin ngữ cảnh hơn trong quá trình học. Đáng chú ý, các mạng nơ-ron hồi tiếp và những mô hình ngôn ngữ xây dựng trên Transformer đã được áp dụng trong nhiều bài toán xử lý và phân loại văn bản, cho thấy khả năng khai thác đặc điểm ngữ cảnh của dữ liệu.
 
 Dựa trên những hướng tiếp cận nói trên, đồ án xây dựng một quy trình thực nghiệm nhằm đánh giá và đối chiếu khả năng nhận diện tin giả giữa các nhóm mô hình khác nhau. Nhóm phương pháp truyền thống được đại diện bởi Logistic Regression và SVM --- sử dụng đặc trưng trích xuất từ văn bản; nhóm học sâu gồm BiLSTM và PhoBERT --- khai thác biểu diễn ngữ cảnh. Việc đặt các phương pháp này trong cùng một quy trình đánh giá tạo cơ sở để phân tích sự khác biệt về hiệu năng giữa cách tiếp cận dựa trên đặc trưng thủ công và cách tiếp cận dựa trên học biểu diễn từ dữ liệu.
 
 \section{Lý do lựa chọn các nhóm mô hình}
 \label{sec:model_selection}
 
-Đối với bài toán phân loại văn bản --- và cụ thể là phát hiện tin giả --- việc lựa chọn mô hình cần dung hòa ba yếu tố:
+Với bài toán phân loại văn bản và cụ thể là phát hiện tin giả, có ba tiêu chí quan trọng để đánh giá các phương pháp:
 \begin{itemize}
     \item \textit{Khả năng diễn giải} --- mức độ con người có thể hiểu được logic ra quyết định của mô hình.
     \item \textit{Chi phí tính toán} --- thời gian và tài nguyên cần thiết cho huấn luyện lẫn suy diễn.
     \item \textit{Năng lực biểu diễn ngữ nghĩa} --- khả năng nắm bắt các quan hệ ngữ nghĩa tinh tế trong văn bản.
 \end{itemize}
 
-Dựa trên các tiêu chí này, nghiên cứu so sánh hai nhóm phương pháp:
+Dựa trên các tiêu chí này, đồ án này so sánh hai nhóm:
 \begin{enumerate}
     \item \textbf{Nhóm học máy truyền thống}, bao gồm:
     \begin{itemize}
@@ -52,20 +52,20 @@ Việc đánh giá hai nhóm phương pháp trong cùng một thiết lập th�
 
     \item Mức độ cải thiện hiệu năng khi chuyển từ đặc trưng TF-IDF sang biểu diễn ngữ cảnh được học bởi các mô hình học sâu.
 
-    \item Hiệu quả mà mô hình PhoBERT mang lại khi tận dụng tri thức ngôn ngữ tiếng Việt đã học trước, áp dụng vào bài toán phát hiện tin giả trên dữ liệu thực tế.
+    \item Đánh giá mức độ hỗ trợ của tri thức ngôn ngữ có sẵn trong PhoBERT đối với nhiệm vụ phân loại tin giả trên dữ liệu thực tế.
 \end{enumerate}
 
 \section{Tổng quan kiến trúc hệ thống}
 
-Quy trình thực nghiệm của hệ thống được triển khai theo ba giai đoạn chính, bao gồm chuẩn bị dữ liệu, xây dựng biểu diễn đầu vào và tiến hành huấn luyện, đánh giá:
+Quy trình thực nghiệm được tổ chức thành ba giai đoạn nối tiếp, lần lượt là xử lý dữ liệu, chuẩn bị biểu diễn đầu vào và thực hiện huấn luyện, đánh giá:
 
 \begin{enumerate}[leftmargin=3.3em]
 
-    \item \textbf{Tiền xử lý dữ liệu:} văn bản trước tiên được chuẩn hóa và loại bỏ các thành phần không cần thiết, sau đó thực hiện phân đoạn từ tiếng Việt. Dữ liệu đã xử lý được phân thành ba tập Train, Validation và Test theo tỷ lệ được quy định trước. Việc tách riêng các tập dữ liệu giúp xác định rõ dữ liệu phục vụ quá trình học và dữ liệu dùng để kiểm tra khả năng của mô hình.
+    \item \textbf{Tiền xử lý dữ liệu:} các văn bản được đưa về dạng thống nhất bằng cách chuẩn hóa nội dung và loại bỏ những thành phần không cần thiết, sau đó tiến hành phân đoạn từ tiếng Việt. Kết quả xử lý được sử dụng để tạo ba tập Train, Validation và Test theo tỷ lệ đã xác định. Cách phân chia này nhằm tách biệt dữ liệu dùng cho quá trình học với dữ liệu phục vụ kiểm tra và đánh giá mô hình.
 
-    \item \textbf{Biểu diễn dữ liệu:} phương pháp tạo đầu vào được lựa chọn dựa trên đặc điểm của từng kiến trúc. Đối với Logistic Regression và SVM, văn bản được chuyển thành vector đặc trưng bằng TF-IDF. BiLSTM sử dụng các vector từ được xây dựng với FastText, còn PhoBERT nhận văn bản sau khi được mã hóa bằng BPE (\textit{byte-pair encoding}). Biểu diễn sau đó được đưa vào mô hình tương ứng để khai thác thông tin phục vụ phân loại.
+    \item \textbf{Biểu diễn dữ liệu:} dữ liệu đầu vào được xây dựng theo yêu cầu của từng mô hình. Logistic Regression và SVM khai thác biểu diễn TF-IDF, trong khi BiLSTM sử dụng các vector từ được tạo bằng FastText. Với PhoBERT, văn bản được mã hóa bằng BPE (\textit{*byte-pair encoding*}) trước khi đưa vào mô hình. Các dạng biểu diễn tương ứng sau đó được sử dụng làm đầu vào cho nhiệm vụ phân loại.
 
-    \item \textbf{Huấn luyện và đánh giá:} từng mô hình được huấn luyện riêng trên cùng nguồn dữ liệu và theo thiết lập tương ứng, qua đó tạo điều kiện so sánh kết quả giữa các phương pháp. Hiệu năng được xem xét dựa trên \textit{accuracy}, \textit{F1-score} và \textit{ROC-AUC}. Các kết quả thu được được sử dụng để đối chiếu khả năng phân loại và phân tích sự khác biệt giữa bốn mô hình.
+    \item \textbf{Huấn luyện và đánh giá:} bốn mô hình được thực nghiệm độc lập với các thiết lập tương ứng trên cùng nguồn dữ liệu, từ đó tạo cơ sở cho việc đối chiếu kết quả. Hiệu năng được đánh giá thông qua \textit{*accuracy*}, \textit{*F1-score*} và \textit{*ROC-AUC*}. Kết quả từ các thí nghiệm được tổng hợp để so sánh khả năng phân loại và xem xét sự khác biệt về hiệu năng giữa các mô hình.
 
 \end{enumerate}
 
@@ -82,13 +82,13 @@ Một hạn chế của TF-IDF là không mô tả được đầy đủ quan h�
 Đối với nhiệm vụ phát hiện tin giả, tín hiệu từ vựng có thể xuất hiện dưới nhiều dạng khác nhau, chẳng hạn cách đặt tiêu đề, những cách diễn đạt nhằm gây chú ý hoặc các từ khóa đặc trưng cho nội dung sai lệch. Việc bổ sung các đặc trưng n-gram giúp mô hình xem xét cả những chuỗi từ thay vì chỉ xử lý từng từ độc lập. Trong nghiên cứu này, TF-IDF được sử dụng cùng Logistic Regression và SVM để hình thành nhóm mô hình đối chứng, từ đó tạo cơ sở đánh giá với hai phương pháp BiLSTM và PhoBERT.
 
 \subsubsection{Cấu hình TF-IDF}
-Đối với nhóm mô hình học máy truyền thống, các thiết lập của TF-IDF được lựa chọn dựa trên kết quả \textit{ablation study} tại Mục~\ref{sec:ablation}. Mục tiêu của quá trình này là xác định cấu hình vừa cung cấp đủ thông tin cho mô hình vừa hạn chế những đặc trưng không cần thiết. Các giá trị được sử dụng trong thực nghiệm gồm:
+Đối với nhóm mô hình học máy truyền thống, các thiết lập của TF-IDF được lựa chọn dựa trên kết quả \textit{ablation study} tại Mục~\ref{sec:ablation}. Mục tiêu của quá trình này là xác định cấu hình vừa cung cấp đủ thông tin cho mô hình vừa hạn chế những đặc trưng không cần thiết. Các giá trị được sử dụng gồm:
 
 \begin{itemize}[leftmargin=2em]
 
   \item \textbf{Kích thước từ điển:} chỉ giữ lại \tfidfmaxfeatures{} từ/ngữ có mức độ xuất hiện cao nhất trong dữ liệu. Giới hạn này giúp không gian đặc trưng có kích thước phù hợp và giảm tác động của những đặc trưng ít hữu ích.
 
-  \item \textbf{N-gram:} biểu diễn được xây dựng từ cả đơn từ (Unigram) và các cặp từ liên tiếp (Bigram), tương ứng với N-Gram = (1,2). Nhờ xét thêm các chuỗi từ, mô hình có thể khai thác những cụm biểu đạt mang thông tin phân biệt mà biểu diễn unigram đơn thuần có thể bỏ qua.
+  \item \textbf{N-gram:} biểu diễn được xây dựng từ cả đơn từ (Unigram) và các cặp từ (Bigram), hay còn gọi là N-Gram = (1,2). Nhờ xét thêm các chuỗi từ, mô hình có thể khai thác những cụm biểu đạt mang thông tin phân biệt mà biểu diễn unigram đơn thuần có thể bỏ qua.
 
   \item \textbf{Tần số tài liệu:} các đặc trưng có tần suất tài liệu thấp hơn ngưỡng \texttt{min\_df=5} hoặc xuất hiện trong tỷ lệ tài liệu vượt quá \texttt{max\_df=0.95} được loại khỏi không gian đặc trưng. Điều này giúp hạn chế những từ quá hiếm hoặc quá phổ biến trong tập dữ liệu.
 
@@ -121,7 +121,7 @@ Chiến lược này giúp PhoBERT tận dụng tối đa thông tin ngữ cản
 
 \subsection{Các mô hình học máy truyền thống}
 
-\subsubsection{Hồi quy Logistic}
+\subsubsection{Logistic Regression}
 
 Mô hình hồi quy Logistic sử dụng điều chuẩn L2 nhằm hạn chế hiện tượng quá khớp và áp dụng cơ chế cân bằng lớp (\texttt{class\_weight='balanced'}) để xử lý mất cân bằng nhãn. GridSearchCV được sử dụng để tìm kiếm bộ siêu tham số phù hợp, với quá trình đánh giá được thực hiện bằng 5-fold cross-validation. Kết quả từ các lần chia dữ liệu được sử dụng làm cơ sở để lựa chọn cấu hình có hiệu năng phù hợp.:
 
@@ -132,20 +132,17 @@ Mô hình hồi quy Logistic sử dụng điều chuẩn L2 nhằm hạn chế h
 
 Việc lựa chọn này giúp mô hình đạt hiệu năng tốt nhất trên tập kiểm định mà không phụ thuộc quá nhiều vào phân phối nhãn thực tế.
 
-\subsubsection{Máy vectơ hỗ trợ}
+\subsubsection{Support Vector Machine}
 
-Mô hình máy vectơ hỗ trợ (SVM) sử dụng LinearSVC với trọng số lớp cân bằng nhằm kiểm soát ảnh hưởng do phân bố nhãn không đồng đều. Quá trình tối ưu siêu tham số được thực hiện qua GridSearchCV với 5-fold cross-validation:
-
+Mô hình máy vectơ hỗ trợ (SVM) sử dụng LinearSVC với trọng số lớp cân bằng nhằm kiểm soát ảnh hưởng do phân bố nhãn không đồng đều.GridSearchCV được sử dụng để tìm kiếm cấu hình siêu tham số phù hợp, với quá trình đánh giá được thực hiện bằng 5-fold cross-validation:
 \begin{itemize}[leftmargin=2em]
   \item Lưới tìm kiếm: $C \in \{0{,}1;\ 0{,}5;\ 1;\ 2;\ 5;\ 10\}$
   \item Cấu hình tối ưu: $C = \svmbestc$, LinearSVC kết hợp hiệu chuẩn xác suất (Calibration)
 \end{itemize}
 
-Chiến lược này đảm bảo SVM vừa tận dụng được đặc trưng TF-IDF, vừa duy trì khả năng phân biệt tốt giữa các lớp.
+Chiến lược này đảm bảo SVM vừa tận dụng được đặc trưng TF-IDF, vừa giữ được khả năng phân biệt tốt giữa các lớp.
 
 \subsection{Các mô hình học sâu}
-
-Như đã phân tích ở Mục~\ref{sec:model_selection}, BiLSTM và PhoBERT được lần lượt lựa chọn làm đại diện cho nhóm mô hình tuần tự và nhóm mô hình ngôn ngữ tiền huấn luyện. Hai mô hình được trình bày về cấu trúc kiến trúc và các thiết lập huấn luyện tương ứng.
 
 \subsubsection{Mạng BiLSTM}
 
@@ -173,7 +170,7 @@ Chiến lược huấn luyện sử dụng AdamW~\cite{loshchilov2019adamw} ($\e
 
 \section{Chiến lược xử lý mất cân bằng nhãn}
 
-Mặc dù tỷ lệ nhãn trong bộ dữ liệu (\pctreal{}\% \textit{thật} / \pctfake{}\% \textit{giả}) không chênh lệch quá lớn, sự mất cân bằng vẫn có thể ảnh hưởng đến khả năng phân loại --- đặc biệt đối với lớp thiểu số (\textit{tin giả}). Để giảm thiểu tác động này, đồ án áp dụng đồng thời hai chiến lược bổ trợ:
+Mặc dù phân bố nhãn giữa hai lớp tương đối gần nhau (\pctreal{}\% \textit{thật} / \pctfake{}\% \textit{giả}), lớp \textit{tin giả} vẫn có số lượng thấp hơn và có thể chịu ảnh hưởng trong quá trình mô hình học và phân loại. Do đó, đồ án kết hợp hai chiến lược nhằm kiểm soát tác động của sự chênh lệch này:
 
 \begin{itemize}[leftmargin=2em]
 \item \textbf{Chia phân tầng} (\textit{stratified split}): Phương pháp phân tầng được áp dụng khi tạo các tập Train, Validation và Test nhằm giữ lại đặc điểm phân bố nhãn của dữ liệu ban đầu. Việc duy trì tỷ lệ các lớp giữa các tập giúp hạn chế sai lệch trong quá trình đánh giá và giảm khả năng kết quả mô hình bị tác động bởi cách phân chia dữ liệu.
@@ -190,7 +187,7 @@ Sự kết hợp hai chiến lược trên giúp đảm bảo quá trình huấn
 \section{Các phân tích mở rộng được thiết kế cho chương thực nghiệm}
 \label{sec:extended_analyses}
 
-Ngoài các độ đo hiệu năng chuẩn (Accuracy, F1, ROC-AUC), chương thực nghiệm sẽ thực hiện bốn nhóm phân tích mở rộng nhằm đánh giá mô hình một cách toàn diện hơn. Mục này mô tả trước các phương pháp được sử dụng; kết quả chi tiết được trình bày trong Chương~\ref{chap:experiments}.
+Ngoài các độ đo hiệu năng chuẩn (Accuracy, F1, ROC-AUC), chương thực nghiệm sẽ thực hiện bốn nhóm phân tích mở rộng nhằm đánh giá mô hình một cách toàn diện hơn. Mục này mô tả trước các phương pháp được sử dụng.
 
 \subsection{Phân tích khả năng giải thích (Explainability)}
 
@@ -251,6 +248,6 @@ Chương này đã trình bày phương pháp luận đầy đủ cho toàn bộ
   \item \textbf{Phân tích mở rộng:} bốn nhóm phân tích (giải thích, hiệu chỉnh xác suất, mẫu khó, knowledge distillation) được thiết kế để đánh giá mô hình toàn diện hơn ngoài Accuracy/F1.
 \end{itemize}
 
-Thiết kế này đảm bảo so sánh công bằng trên cùng bộ dữ liệu và cùng quy trình đánh giá --- mỗi mô hình được huấn luyện với cùng phân chia tập, cùng siêu tham số đã được điều chỉnh hợp lý, và cùng ba chỉ số chính (Accuracy, F1-macro, ROC-AUC). Chương tiếp theo trình bày kết quả thực nghiệm của toàn bộ khung phương pháp này.
+Thiết kế này đảm bảo so sánh công bằng trên cùng bộ dữ liệu và cùng quy trình đánh giá --- mỗi mô hình được huấn luyện với cùng phân chia tập, cùng siêu tham số đã được điều chỉnh hợp lý, và cùng ba chỉ số chính (Accuracy, F1-macro, ROC-AUC).
 
 \clearpage
