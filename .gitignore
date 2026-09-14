@@ -31,11 +31,6 @@ Thumbs.db
 # VnCoreNLP model jar (140 MB, downloaded at setup)
 .vncorenlp/
 
-# Generated data artefacts (reproducible from raw data)
-data/processed/
-data/splits/
-data/features/
-
 # Experiment outputs (reproducible from training)
 /models/        # only the top-level /models dir, NOT src/models/
 experiments/
@@ -45,10 +40,7 @@ results/
 
 # Generated PDFs (reproducible from scripts, PNGs are tracked instead)
 paper/figures/*.pdf
-data/fasttext/
 
-STUDY_GUIDE.md
-MANUAL.md
 
 # Test caches
 .pytest_cache/
@@ -62,3 +54,9 @@ htmlcov/
 # Build outputs
 dist/
 build/
+
+# Generated data
+data/processed/
+data/splits/
+data/features/
+data/fasttext/

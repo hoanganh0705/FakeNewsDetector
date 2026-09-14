@@ -125,19 +125,39 @@ class BiLSTMClassifier(nn.Module):
         logits = self.classifier(dropped)              # (B, num_classes)
         return logits
 
-    def load_pretrained_embeddings(self, matrix: torch.Tensor) -> None:
+    def load_pretrained_embeddings(self, matrix) -> None:
         """
         Replace the learnable embedding matrix with pretrained weights.
 
         Parameters
         ----------
-        matrix : ``torch.Tensor`` — shape ``(vocab_size, embedding_dim)``
+        matrix : ``torch.Tensor`` *or* ``numpy.ndarray`` — shape ``(vocab_size, embedding_dim)``
             Pretrained embedding matrix (e.g. FastText).
+            If a numpy array is supplied (the common case when produced by
+            ``src.features.embedding_features.load_fasttext_matrix``), it is
+            automatically converted to a tensor and moved to the same device
+            as the embedding weight.
             Must match the model's ``vocab_size`` and ``embedding_dim``.
         """
+        # Accept numpy arrays transparently — the embedding-features helper
+        # returns a numpy matrix, and PyTorch's ``copy_`` only takes tensors.
+        if not isinstance(matrix, torch.Tensor):
+            import numpy as np  # local import to keep module-level deps light
+            if not isinstance(matrix, np.ndarray):
+                raise TypeError(
+                    f"matrix must be a torch.Tensor or numpy.ndarray, got {type(matrix).__name__}"
+                )
+            matrix = torch.from_numpy(matrix)
+
+        # Place the new weights on the same device as the embedding buffer
+        # (GPU when available, CPU otherwise).
+        target_device = self.embedding.weight.device
+        if matrix.device != target_device:
+            matrix = matrix.to(target_device)
+
         if matrix.shape != (self.vocab_size, self.embedding_dim):
             raise ValueError(
-                f"Pretrained matrix shape {matrix.shape} does not match "
+                f"Pretrained matrix shape {tuple(matrix.shape)} does not match "
                 f"(vocab_size={self.vocab_size}, embedding_dim={self.embedding_dim})"
             )
         self.embedding.weight.data.copy_(matrix)

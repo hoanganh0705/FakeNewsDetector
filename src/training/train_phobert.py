@@ -93,7 +93,33 @@ class PhoBertTrainer:
         # Saved state dicts for resuming training (populated by load())
         self._saved_optimizer_state = None
         self._saved_scheduler_state = None
-    
+
+    @staticmethod
+    def _get_logits(outputs) -> torch.Tensor:
+        """
+        Extract the logits tensor from a HuggingFace transformer output.
+
+        ``PhoBertClassifier`` (via ``AutoModelForSequenceClassification``) returns
+        a ``SequenceClassifierOutput`` dataclass with ``.logits`` *only when* the
+        forward call is made **without** ``labels``.  PyTorch loss functions
+        (``CrossEntropyLoss``, etc.) require a raw ``Tensor`` — passing the wrapper
+        raises ``TypeError: cross_entropy_loss(): argument 'input' must be Tensor,
+        not SequenceClassifierOutput``.
+
+        This helper centralises that extraction so all three call sites in this
+        trainer behave consistently, regardless of the transformers version.
+        """
+        # Newer transformers (>=4.46): always a dataclass-like output.
+        if hasattr(outputs, "logits"):
+            return outputs.logits
+        # Defensive fallback for an unusually bare return value.
+        if isinstance(outputs, torch.Tensor):
+            return outputs
+        raise TypeError(
+            f"Expected model output with a '.logits' attribute or a Tensor, "
+            f"got {type(outputs).__name__}"
+        )
+
     def train(
         self,
         train_loader: DataLoader,
@@ -215,7 +241,8 @@ class PhoBertTrainer:
                 
                 try:
                     outputs = self.model(input_ids, attention_mask)
-                    loss = self.criterion(outputs, labels)
+                    logits = self._get_logits(outputs)
+                    loss = self.criterion(logits, labels)
                     
                     # Gradient accumulation
                     loss = loss / gradient_accumulation_steps
@@ -238,7 +265,7 @@ class PhoBertTrainer:
                     self.optimizer.zero_grad()
                 
                 train_loss += loss.item() * gradient_accumulation_steps
-                _, predicted = outputs.max(1)
+                _, predicted = logits.max(1)
                 train_total += labels.size(0)
                 train_correct += predicted.eq(labels).sum().item()
                 
@@ -309,10 +336,11 @@ class PhoBertTrainer:
                 labels = batch['labels'].to(self.device)
                 
                 outputs = self.model(input_ids, attention_mask)
-                loss = self.criterion(outputs, labels)
-                
+                logits = self._get_logits(outputs)
+                loss = self.criterion(logits, labels)
+
                 total_loss += loss.item()
-                _, predicted = outputs.max(1)
+                _, predicted = logits.max(1)
                 
                 all_preds.extend(predicted.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
@@ -334,8 +362,9 @@ class PhoBertTrainer:
                 attention_mask = batch['attention_mask'].to(self.device)
                 
                 outputs = self.model(input_ids, attention_mask)
-                probs = torch.softmax(outputs, dim=1)
-                _, predicted = outputs.max(1)
+                logits = self._get_logits(outputs)
+                probs = torch.softmax(logits, dim=1)
+                _, predicted = logits.max(1)
                 
                 all_preds.extend(predicted.cpu().numpy())
                 all_probs.extend(probs[:, 1].cpu().numpy())

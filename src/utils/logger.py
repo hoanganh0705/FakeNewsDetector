@@ -15,7 +15,16 @@ Usage:
 
 import logging
 import sys
+import warnings
 from typing import Optional
+
+
+# Silence noisy third-party deprecation warnings that don't affect behaviour.
+# These come from sklearn / scipy / joblib flagging upcoming API changes;
+# they are safe to ignore at the current versions (sklearn 1.8, numpy 2.x).
+warnings.filterwarnings("ignore", category=FutureWarning, module=r"sklearn(\.|$)")
+warnings.filterwarnings("ignore", category=FutureWarning, module=r"scipy(\.|$)")
+warnings.filterwarnings("ignore", category=FutureWarning, module=r"joblib(\.|$)")
 
 
 # Global format — timestamp | level | module name | message
