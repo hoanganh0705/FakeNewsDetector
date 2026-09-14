@@ -37,7 +37,7 @@ data/splits/
 data/features/
 
 # Experiment outputs (reproducible from training)
-models/
+/models/        # only the top-level /models dir, NOT src/models/
 experiments/
 
 # Results & figures (reproducible from evaluation scripts)
