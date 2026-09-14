@@ -1998,10 +1998,6 @@ INPUT ./figures//fig_token_attribution_lr_svm.png
 INPUT ./figures//fig_token_attribution_lr_svm.png
 INPUT ./figures//fig_token_attribution_lr_svm.png
 INPUT ./figures//fig_token_attribution_lr_svm.png
-INPUT ./figures//fig_method_agreement.png
-INPUT ./figures//fig_method_agreement.png
-INPUT ./figures//fig_method_agreement.png
-INPUT ./figures//fig_method_agreement.png
 INPUT ./tables/table_attribution_faithfulness.tex
 INPUT ./tables/table_attribution_faithfulness.tex
 INPUT ./tables/table_attribution_faithfulness.tex

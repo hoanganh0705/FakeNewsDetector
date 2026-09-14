@@ -20,11 +20,11 @@ Trong các hệ thống xử lý ngôn ngữ tự nhiên, dạng dữ liệu đ�
   \caption[Minh họa phương pháp biểu diễn văn bản bằng TF-IDF]{Minh họa phương pháp biểu diễn văn bản bằng TF-IDF\protect\imagesourcemark}
   \label{fig:tfidf}
 \end{figure}
-\imagesource {https://www.linkedin.com/pulse/creating-tf-idf-model-from-scratch-python-noor-saeed}
+\imagesource {https://www.linkedin.com/pulse/creating-tf-idf-model-from-scratch-python-noor-saeed}l
 
 \subsection{Đặc trưng văn bản và tiền xử lý}
 
-Đặc trưng văn bản là vector số trích xuất từ văn bản gốc, đóng vai trò đầu vào cho mô hình ở cả giai đoạn huấn luyện lẫn suy diễn. Tuy nhiên, trước khi trích xuất, dữ liệu thô cần được đưa về một dạng thống nhất nhằm loại bỏ nhiễu và san phẳng sự chênh lệch giữa các tài liệu. Quy trình chuẩn bị dữ liệu tập trung vào việc đưa văn bản về dạng đồng nhất, loại bỏ những ký tự đặc biệt không cần thiết, tách từ và lọc stopword. Riêng với tiếng Việt, khâu tách từ có vai trò đặc biệt quan trọng do ranh giới từ và âm tiết không trùng nhau, cùng với sự phong phú của từ ghép và từ láy.
+Đặc trưng văn bản là vector số trích xuất từ văn bản gốc, đóng vai trò đầu vào cho mô hình ở cả giai đoạn huấn luyện lẫn suy diễn. Tuy nhiên, trước khi trích xuất, dữ liệu thô cần được đưa về một dạng thống nhất nhằm loại bỏ nhiễu và san phẳng sự chênh lệch giữa các tài liệu. Quá trình chuẩn bị dữ liệu tập trung vào việc đưa văn bản về một kiểu đồng nhất, loại bỏ những ký tự không cần thiết, tách từ và lọc stopword. Riêng với tiếng Việt, khâu tách từ có vai trò đặc biệt quan trọng do ranh giới từ và âm tiết không trùng nhau, cùng với sự phong phú của từ ghép và từ láy.
 
 \begin{figure}[H]
   \centering
@@ -59,7 +59,7 @@ Khi đặt cạnh tiếng Anh và phần lớn các ngôn ngữ châu Âu, tiế
   \item \textbf{Ngôn ngữ cô lập về mặt hình thái:} các quan hệ ngữ pháp chủ yếu được thể hiện thông qua trật tự từ và hư từ, thay vì qua biến đổi hình thái như ở tiếng Anh.
 \end{itemize}
 
-Chính những đặc điểm này đòi hỏi phải có một bước tiền xử lý đặc thù cho tiếng Việt --- nổi bật nhất là \textit{phân đoạn từ} --- trước khi áp dụng phần lớn các mô hình hiện đại.
+Chính những đặc điểm này đòi hỏi phải có một bước tiền xử lý dành riêng cho tiếng Việt trước khi áp dụng phần lớn các mô hình hiện đại.
 
 \subsection{Phân đoạn từ (Word Segmentation)}\label{sec:vncore_2018}
 
@@ -75,7 +75,7 @@ Ví dụ, một câu gốc có thể được phân đoạn thành:
 
 \subsection{Biểu diễn văn bản số}
 
-Để đưa văn bản thô vào mô hình học máy, cần chuyển sang dạng số. Trong đề tài này, ba cách biểu diễn được sử dụng, mỗi cách phù hợp với một nhóm mô hình khác nhau:
+Để đưa văn bản thô vào mô hình học máy, cần chuyển sang dạng số. Trong đề tài này, ba cách biểu diễn được sử dụng, từng nhóm mô hình có một cách phù hợp riêng:
 
 \begin{enumerate}[leftmargin=2.5em]
   \item \textbf{TF-IDF:} Vector đặc trưng thưa dựa trên tần suất từ --- dùng cho LR và SVM.
@@ -98,9 +98,9 @@ Trên cơ sở các hướng tiếp cận trên, nghiên cứu lựa chọn bố
 
 Học máy (Machine Learning) có thể được xem là một hướng tiếp cận trong trí tuệ nhân tạo, trong đó mô hình được xây dựng để rút ra thông tin và quy luật từ dữ liệu thay vì phải xác định trước toàn bộ các bước xử lý. Quá trình học cho phép mô hình tận dụng những mẫu dữ liệu đã có để hình thành cơ sở cho việc dự đoán trên các dữ liệu khác.
 
-Đối với bài toán phát hiện tin giả của đồ án, dữ liệu được gán vào một trong hai lớp \textit{thật} và \textit{giả}, vì vậy bài toán được triển khai theo phương pháp \textit{học có giám sát} (Supervised Learning). Mô hình sử dụng các mẫu được gán nhãn trong tập huấn luyện để tìm ra mối liên hệ giữa đặc trưng đầu vào và nhãn đầu ra. Sau khi học xong, mô hình sẽ xác định nhãn cho những văn bản không nằm trong tập dữ liệu huấn luyện.
+Đối với bài toán phát hiện tin giả của đồ án, dữ liệu được gán vào một trong hai lớp \textit{thật} và \textit{giả}, vì vậy bài toán được triển khai theo phương pháp \textit{học có giám sát} (Supervised Learning). Mô hình sử dụng các mẫu được gán nhãn trong tập huấn luyện để tìm ra mối liên hệ giữa đặc trưng đầu vào và nhãn đầu ra. Sau khi học xong, mô hình sẽ xác định nhãn cho những văn bản không thuộc tập dữ liệu huấn luyện.
 
-Học máy còn bao gồm nhiều cách tiếp cận khác, chẳng hạn học không giám sát (Unsupervised Learning), học bán giám sát (Semi-Supervised Learning) và học tăng cường (Reinforcement Learning). Vì không nằm trong phạm vi thực nghiệm của đề tài, các phương pháp này chỉ được giới thiệu ở mức tổng quan.
+Học máy cũng bao gồm nhiều cách tiếp cận khác, chẳng hạn học không giám sát (Unsupervised Learning), học bán giám sát (Semi-Supervised Learning) và học tăng cường (Reinforcement Learning). Vì không nằm trong phạm vi thực nghiệm của đề tài, các phương pháp này chỉ được giới thiệu ở mức tổng quan.
 
 \subsection{Các mô hình học máy cho bài toán phân loại}
 
@@ -200,7 +200,7 @@ Về nguyên lý, dữ liệu được đưa vào mạng và lần lượt truy�
 Việc xếp chồng nhiều tầng xử lý giúp học sâu có thể xây dựng các biểu diễn thích hợp với những dạng dữ liệu có cấu trúc phức tạp như văn bản, hình ảnh và âm thanh. Trong đề tài này, hai mô hình BiLSTM và PhoBERT được lựa chọn cho nhiệm vụ xử lý văn bản tiếng Việt. BiLSTM tận dụng thông tin từ cả chiều thuận và chiều ngược của chuỗi, còn PhoBERT sử dụng biểu diễn ngữ cảnh học được từ quá trình tiền huấn luyện trên kho ngữ liệu tiếng Việt. Hai mô hình tiếp cận bài toán phát hiện tin giả theo những hướng khác nhau.
 \subsection{Mạng nơ-ron nhân tạo (Artificial Neural Network)}
 
-Mạng nơ-ron nhân tạo (Artificial Neural Network, ANN) là mô hình tính toán mô phỏng cách hệ thần kinh sinh học xử lý tín hiệu. Trong hệ thần kinh, mỗi neuron là một đơn vị cơ bản với thân tế bào chứa nhân, các sợi nhánh (Dendrite) tiếp nhận tín hiệu từ neuron khác và sợi trục (Axon) truyền tín hiệu đi. Tương tự, trong ANN, mỗi neuron nhân tạo nhận tín hiệu đầu vào, kết hợp với các trọng số tương ứng rồi áp dụng một \textit{hàm kích hoạt} (Activation Function) để tạo đầu ra. Nhờ việc mô hình hóa các phép xử lý này dưới dạng toán học, ANN có thể học được những quy luật và mối quan hệ phức tạp từ dữ liệu đầu vào.
+ANN (Artificial Neural Network) là một mô hình tính toán được xây dựng dựa trên ý tưởng mô phỏng quá trình tiếp nhận và xử lý thông tin của hệ thần kinh sinh học. Trong hệ thần kinh, mỗi neuron là một đơn vị cơ bản với thân tế bào chứa nhân, các sợi nhánh (Dendrite) tiếp nhận tín hiệu từ neuron khác và sợi trục (Axon) truyền tín hiệu đi. Tương tự, trong ANN, mỗi neuron nhân tạo nhận tín hiệu đầu vào, kết hợp với các trọng số tương ứng rồi áp dụng một \textit{hàm kích hoạt} (Activation Function) để tạo đầu ra. Nhờ việc mô hình hóa các phép xử lý này dưới dạng toán học, ANN có thể học được những quy luật và mối quan hệ phức tạp từ dữ liệu đầu vào.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.95\textwidth]{1.4.2.png}
@@ -254,7 +254,7 @@ LSTM (Long Short-Term Memory)~\cite{hochreiter1997lstm} được xây dựng v�
 \end{figure}
 \imagesource{https://towardsdatascience.com/an-introduction-to-long-short-term-memory-networks-lstm-27af36dde85d/}
 
-LSTM (Long Short-Term Memory) ra đời nhằm cải thiện khả năng xử lý các chuỗi có phụ thuộc giữa những phần tử ở xa nhau. Trong quá trình đọc dữ liệu, mô hình duy trì một trạng thái bộ nhớ và liên tục cập nhật trạng thái này qua từng bước. Vì thế, LSTM được ứng dụng rộng rãi trong các nhiệm vụ xử lý dữ liệu tuần tự như xử lý ngôn ngữ tự nhiên, dịch máy, nhận dạng giọng nói và dự báo chuỗi thời gian. Khi áp dụng cho phân loại văn bản, LSTM có thể tận dụng thông tin đã được ghi nhận ở các bước trước để xây dựng biểu diễn ngữ cảnh cho toàn bộ chuỗi, từ đó hỗ trợ nhận diện các đặc trưng liên quan đến nội dung tin giả.
+LSTM (Long Short-Term Memory) ra đời nhằm cải thiện khả năng xử lý các chuỗi có phụ thuộc giữa những phần tử ở xa nhau. Trong quá trình đọc dữ liệu, mô hình duy trì một trạng thái bộ nhớ và liên tục cập nhật trạng thái này qua từng bước. Vì thế, LSTM được sử dụng trong nhiều bài toán liên quan đến dữ liệu tuần tự, chẳng hạn như xử lý ngôn ngữ tự nhiên, dịch máy, nhận dạng giọng nói và dự báo chuỗi thời gian. Đối với phân loại văn bản, mô hình có thể sử dụng thông tin từ các bước xử lý trước đó để hình thành biểu diễn ngữ cảnh của văn bản, qua đó hỗ trợ phát hiện những đặc trưng liên quan đến tin giả.
 
 Thông tin được lưu giữ trong LSTM được kiểm soát thông qua ba cổng chính. Cổng quên quyết định thành phần nào của trạng thái bộ nhớ trước đó sẽ tiếp tục được giữ lại. Tiếp theo, cổng vào kiểm soát thông tin mới được phép bổ sung vào bộ nhớ. Cuối cùng, cổng ra xác định phần thông tin trong trạng thái bộ nhớ được dùng để tạo trạng thái ẩn ở bước đang xét. Sự phối hợp giữa các cổng cho phép mô hình kiểm soát quá trình lưu giữ và cập nhật thông tin theo thời gian, đồng thời hạn chế ảnh hưởng của hiện tượng suy giảm gradient khi xử lý chuỗi có độ dài lớn so với RNN truyền thống.
 \subsection{Mạng LSTM hai chiều (Bidirectional LSTM)}
@@ -423,13 +423,13 @@ Trong kiến trúc Transformer nguyên bản, quy trình xử lý được chia 
 
 \begin{itemize}[leftmargin=2em]
 
-    \item \textit{Encoder}: tiếp nhận chuỗi đầu vào và xây dựng biểu diễn có chứa thông tin ngữ cảnh. Cơ chế self-attention cho phép mỗi vị trí tận dụng thông tin từ toàn bộ chuỗi. Cấu trúc này phù hợp với các nhiệm vụ yêu cầu hiểu nội dung như phân loại văn bản, gán nhãn token hoặc trích xuất quan hệ.
+    \item \textit{Encoder}: Tiếp nhận chuỗi đầu vào và xây dựng biểu diễn có chứa thông tin ngữ cảnh. Cơ chế self-attention cho phép mỗi vị trí tận dụng thông tin từ toàn bộ chuỗi. Cấu trúc này phù hợp với các nhiệm vụ yêu cầu hiểu nội dung như phân loại văn bản, gán nhãn token hoặc trích xuất quan hệ.
 
-    \item \textit{Decoder}: sinh ra chuỗi đầu ra dựa trên cơ chế masked self-attention, trong đó thông tin từ các vị trí tương lai bị che. Decoder đồng thời sử dụng cross-attention để kết hợp biểu diễn do encoder tạo ra. Cách tổ chức này thích hợp với các nhiệm vụ sinh chuỗi như dịch máy và tóm tắt văn bản.
+    \item \textit{Decoder}: Sinh ra chuỗi đầu ra dựa trên cơ chế masked self-attention, trong đó thông tin từ các vị trí tương lai bị che. Decoder đồng thời sử dụng cross-attention để kết hợp biểu diễn do encoder tạo ra. Cách tổ chức này thích hợp với các nhiệm vụ sinh chuỗi như dịch máy và tóm tắt văn bản.
 
 \end{itemize}
 
-Các mô hình BERT~\cite{devlin2019bert} và PhoBERT~\cite{phobert2020} thuộc nhóm kiến trúc sử dụng encoder để tạo biểu diễn ngữ cảnh cho văn bản. Do đó, trong phạm vi nghiên cứu này, phần trình bày về kiến trúc Transformer tập trung vào encoder và các thành phần liên quan đến quá trình xây dựng biểu diễn văn bản.
+Các mô hình BERT~\cite{devlin2019bert} và PhoBERT~\cite{phobert2020} thuộc nhóm kiến trúc sử dụng encoder để tạo biểu diễn ngữ cảnh cho văn bản. Do đó, trong phạm vi nghiên cứu này, phần trình bày về kiến trúc Transformer tập trung vào encoder.
 
 \section{PhoBERT và mô hình ngôn ngữ tiền huấn luyện}\label{sec:phobert}
 
@@ -441,7 +441,7 @@ Một trong những đóng góp quan trọng nhất của BERT~\cite{devlin2019b
   \item \textit{Tiền huấn luyện} (Pre-Training): mô hình Transformer encoder được huấn luyện trên kho ngữ liệu lớn với hai nhiệm vụ tự giám sát (self-supervised):
   \begin{itemize}
     \item \textit{Masked Language Modeling} (MLM): một tỷ lệ (thường 15\%) token trong đầu vào bị che ngẫu nhiên; các token bị che được khôi phục dựa trên thông tin ngữ cảnh hai phía (trước và sau trong chuỗi).
-    \item \textit{Next Sentence Prediction} (NSP): mô hình dự đoán xem hai câu có xuất hiện liên tiếp trong văn bản gốc hay không --- giúp mô hình học quan hệ giữa các câu.
+    \item \textit{Next Sentence Prediction} (NSP): nhiệm vụ này yêu cầu mô hình xác định mối quan hệ về thứ tự giữa hai câu, từ đó học được sự liên kết ngữ nghĩa giữa chúng.
   \end{itemize}
   Quá trình này tiêu tốn nhiều tài nguyên --- BERT-base mất khoảng 4 ngày trên 64 GPU TPU~\cite{devlin2019bert} --- nhưng chỉ cần thực hiện một lần cho mỗi ngôn ngữ.
   \item \textit{Tinh chỉnh} (Fine-Tuning): từ checkpoint tiền huấn luyện, mô hình chỉ cần bổ sung một tầng phân loại đơn giản --- thường được triển khai dưới dạng lớp tuyến tính trên đỉnh encoder --- và tiếp tục huấn luyện trên dữ liệu có nhãn của tác vụ cụ thể như phát hiện tin giả, phân tích cảm xúc hay trả lời câu hỏi. Vì phần lớn trọng số đã được khởi tạo tốt, fine-tuning thường chỉ cần 3--10 epoch trên dữ liệu tác vụ~\cite{rajpurkar2016squad}.
@@ -496,7 +496,7 @@ trong đó $F_1^{(0)}$ biểu thị kết quả của lớp \textit{Negative} (l
 
 \subsection{Kiểm định thống kê}
 
-Các chỉ số đánh giá chỉ phản ánh sự chênh lệch về kết quả giữa các mô hình mà chưa cho biết khác biệt đó có ý nghĩa thống kê hay không. Vì thế, nghiên cứu sử dụng các phương pháp kiểm định thống kê nhằm đánh giá độ tin cậy của kết quả và xác định ý nghĩa của những khác biệt quan sát được.
+Các thước đo hiệu năng cho phép so sánh mức độ khác biệt về kết quả giữa các mô hình, nhưng chưa thể xác định liệu sự chênh lệch này có mang ý nghĩa thống kê hay không. Do đó, nghiên cứu áp dụng các phép kiểm định thống kê để đánh giá độ tin cậy của kết quả và xem xét mức độ có ý nghĩa của những khác biệt được ghi nhận.
 
 \begin{itemize}[leftmargin=2em]
 
@@ -539,6 +539,6 @@ Các thước đo trên được kết hợp với những phương pháp hiệu
 
 \section{Kết luận chương}
 
-Chương này đã trình bày những kiến thức nền tảng cần thiết cho việc xây dựng hệ thống phát hiện tin giả, từ các phương pháp học máy truyền thống đến các mô hình học sâu và mô hình ngôn ngữ tiền huấn luyện. Ngoài ra, các phương pháp biểu diễn văn bản, kiến trúc mô hình và tiêu chí đánh giá cũng đã được giới thiệu, tạo cơ sở cho quá trình thực nghiệm và so sánh kết quả. Dựa trên những nội dung đã trình bày, chương tiếp theo sẽ đi vào quy trình thực hiện, bao gồm các bước tiền xử lý và cách thức chuẩn bị dữ liệu phục vụ quá trình huấn luyện mô hình.
+Chương này đã tổng hợp các cơ sở lý thuyết phục vụ cho việc xây dựng hệ thống nhận diện tin giả, bao gồm các phương pháp học máy, mô hình học sâu và mô hình ngôn ngữ tiền huấn luyện. Bên cạnh đó, các kỹ thuật biểu diễn văn bản, cấu trúc mô hình và phương pháp đánh giá cũng được trình bày nhằm làm nền tảng cho phần thực nghiệm. Trên cơ sở những kiến thức này, chương tiếp theo sẽ trình bày quy trình triển khai, từ khâu tiền xử lý đến chuẩn bị dữ liệu cho quá trình huấn luyện mô hình.
 
 \clearpage

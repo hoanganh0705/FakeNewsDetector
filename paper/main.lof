@@ -25,6 +25,5 @@
 \contentsline {figure}{\numberline {5.8}{\ignorespaces Top 15 đặc trưng TF-IDF có hệ số LR cao nhất (dương = chỉ điểm \textit {giả}, âm = chỉ điểm \textit {thật})\relax }}{67}{figure.caption.32}%
 \contentsline {figure}{\numberline {5.9}{\ignorespaces Phân loại lỗi theo độ dài văn bản và mức độ tin cậy dự đoán\relax }}{68}{figure.caption.33}%
 \contentsline {figure}{\numberline {5.10}{\ignorespaces Token attribution bằng SHAP cho Logistic Regression và SVM trên cùng một mẫu kiểm tra.\relax }}{70}{figure.caption.34}%
-\contentsline {figure}{\numberline {5.11}{\ignorespaces Jaccard overlap của top-10 token quan trọng giữa các phương pháp attribution, trung bình trên 20{} mẫu kiểm tra.\relax }}{71}{figure.caption.35}%
-\contentsline {figure}{\numberline {5.12}{\ignorespaces Biểu đồ hiệu chuẩn của bốn mô hình trước và sau khi áp dụng post-hoc calibration.\relax }}{73}{figure.caption.37}%
-\contentsline {figure}{\numberline {5.13}{\ignorespaces Phân bố của 85{} mẫu khó theo chủ đề, độ dài, lý do thất bại và độ tự tin của từng mô hình.\relax }}{75}{figure.caption.41}%
+\contentsline {figure}{\numberline {5.11}{\ignorespaces Biểu đồ hiệu chuẩn của bốn mô hình trước và sau khi áp dụng post-hoc calibration.\relax }}{72}{figure.caption.36}%
+\contentsline {figure}{\numberline {5.12}{\ignorespaces Phân bố của 85{} mẫu khó theo chủ đề, độ dài, lý do thất bại và độ tự tin của từng mô hình.\relax }}{74}{figure.caption.40}%

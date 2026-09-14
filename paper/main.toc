@@ -38,13 +38,13 @@
 \contentsline {subsection}{\numberline {2.6.1}Cơ chế Scaled Dot-Product Attention}{22}{subsection.2.6.1}%
 \contentsline {subsection}{\numberline {2.6.2}Multi-Head Attention và Positional Encoding}{22}{subsection.2.6.2}%
 \contentsline {subsection}{\numberline {2.6.3}Encoder và Decoder}{25}{subsection.2.6.3}%
-\contentsline {section}{\numberline {2.7}PhoBERT và mô hình ngôn ngữ tiền huấn luyện}{26}{section.2.7}%
-\contentsline {subsection}{\numberline {2.7.1}Tiền huấn luyện (Pre-Training) và tinh chỉnh (Fine-Tuning)}{26}{subsection.2.7.1}%
+\contentsline {section}{\numberline {2.7}PhoBERT và mô hình ngôn ngữ tiền huấn luyện}{25}{section.2.7}%
+\contentsline {subsection}{\numberline {2.7.1}Tiền huấn luyện (Pre-Training) và tinh chỉnh (Fine-Tuning)}{25}{subsection.2.7.1}%
 \contentsline {subsection}{\numberline {2.7.2}PhoBERT cho tiếng Việt}{26}{subsection.2.7.2}%
 \contentsline {subsection}{\numberline {2.7.3}Một số công trình liên quan về phát hiện tin giả tiếng Việt}{27}{subsection.2.7.3}%
-\contentsline {section}{\numberline {2.8}Đánh giá mô hình và phân tích hiệu chuẩn}{28}{section.2.8}%
-\contentsline {subsection}{\numberline {2.8.1}Các độ đo hiệu năng phân loại}{28}{subsection.2.8.1}%
-\contentsline {subsection}{\numberline {2.8.2}Kiểm định thống kê}{29}{subsection.2.8.2}%
+\contentsline {section}{\numberline {2.8}Đánh giá mô hình và phân tích hiệu chuẩn}{27}{section.2.8}%
+\contentsline {subsection}{\numberline {2.8.1}Các độ đo hiệu năng phân loại}{27}{subsection.2.8.1}%
+\contentsline {subsection}{\numberline {2.8.2}Kiểm định thống kê}{28}{subsection.2.8.2}%
 \contentsline {subsection}{\numberline {2.8.3}Hiệu chuẩn xác suất (Probability Calibration)}{29}{subsection.2.8.3}%
 \contentsline {section}{\numberline {2.9}Kết luận chương}{30}{section.2.9}%
 \contentsline {chapter}{\numberline {3}Bộ dữ liệu và tiền xử lý}{31}{chapter.3}%
@@ -103,10 +103,10 @@
 \contentsline {subsection}{\numberline {5.5.2}Phân tích khả năng giải thích}{67}{subsection.5.5.2}%
 \contentsline {subsubsection}{\numberline {5.5.2.1}Phân tích khả năng giải thích cấp token (Token-Level Explainability)}{68}{subsubsection.5.5.2.1}%
 \contentsline {subsubsection}{\numberline {5.5.2.2}Hiệu chỉnh xác suất sau huấn luyện (Post-Hoc Calibration)}{71}{subsubsection.5.5.2.2}%
-\contentsline {subsubsection}{\numberline {5.5.2.3}Phân tích chuyên sâu các trường hợp khó (Hard Cases Deep Analysis)}{73}{subsubsection.5.5.2.3}%
-\contentsline {paragraph}{Phát hiện về chủ đề.}{74}{paragraph*.39}%
-\contentsline {paragraph}{Phát hiện về độ dài.}{74}{paragraph*.40}%
-\contentsline {subsubsection}{\numberline {5.5.2.4}Knowledge Distillation -- Mô hình sinh viên nhỏ, chất lượng tiệm cận giáo viên}{76}{subsubsection.5.5.2.4}%
-\contentsline {section}{\numberline {5.6}Kết luận chương}{77}{section.5.6}%
-\contentsline {chapter}{Kết luận}{78}{chapter*.44}%
-\contentsline {chapter}{Phụ lục}{84}{chapter*.46}%
+\contentsline {subsubsection}{\numberline {5.5.2.3}Phân tích chuyên sâu các trường hợp khó (Hard Cases Deep Analysis)}{72}{subsubsection.5.5.2.3}%
+\contentsline {paragraph}{Phát hiện về chủ đề.}{73}{paragraph*.38}%
+\contentsline {paragraph}{Phát hiện về độ dài.}{73}{paragraph*.39}%
+\contentsline {subsubsection}{\numberline {5.5.2.4}Knowledge Distillation -- Mô hình sinh viên nhỏ, chất lượng tiệm cận giáo viên}{75}{subsubsection.5.5.2.4}%
+\contentsline {section}{\numberline {5.6}Kết luận chương}{76}{section.5.6}%
+\contentsline {chapter}{Kết luận}{77}{chapter*.43}%
+\contentsline {chapter}{Phụ lục}{83}{chapter*.45}%

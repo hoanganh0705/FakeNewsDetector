@@ -10,11 +10,11 @@
 
 \subsection{Nguồn dữ liệu}
 
-Bộ dữ liệu được sử dụng được tổng hợp từ hai nguồn chính. Nguồn thứ nhất là các bài đăng trên mạng xã hội Facebook --- nơi phản ánh tương đối sát thực tế nội dung tin giả được lan truyền trong cộng đồng. Nguồn thứ hai là tập các bài báo cũ được thu thập trong giai đoạn dịch COVID-19 --- thời điểm lượng thông tin sai sự thật trên mạng tăng đột biến. Mỗi bản ghi trong tập dữ liệu bao gồm tối thiểu hai trường thông tin:
+Bộ dữ liệu được sử dụng được tổng hợp từ hai nguồn chính. Nguồn thứ nhất là các bài viết trên Facebook --- nơi phản ánh tương đối sát thực tế nội dung tin giả được lan truyền trong cộng đồng. Nguồn thứ hai là tập các bài báo cũ được thu thập trong giai đoạn dịch COVID-19 --- thời điểm lượng thông tin sai sự thật trên mạng tăng đột biến. Mỗi bản ghi trong tập dữ liệu bao gồm tối thiểu hai trường thông tin:
 
 \begin{itemize}[leftmargin=2em]
   \item \texttt{text}: toàn bộ nội dung văn bản của bài viết.
-  \item \texttt{label}: nhãn phân loại, với 0 là \textit{thật} và 1 là cho \textit{giả}.
+  \item \texttt{label}: nhãn phân loại, với 0 là \textit{thật} và 1 là cho \textit{giả}.xã
 \end{itemize}
 
 Ngay sau khi thu thập, dữ liệu được đưa vào bước phân đoạn từ (word segmentation) để phù hợp với các khâu xử lý về sau. Tổng số bản ghi thô ban đầu là \nraw{} mẫu.
@@ -158,14 +158,14 @@ Kết quả kiểm tra:
 
 Không phát hiện bất kỳ văn bản trùng lặp nào giữa các cặp tập dữ liệu.
 
-Khâu kiểm tra rò rỉ dữ liệu có ý nghĩa đặc biệt quan trọng đối với các bài toán phân loại văn bản. Nếu tồn tại mẫu trùng lặp giữa tập huấn luyện và tập kiểm tra, đánh giá sẽ trở nên thiên lệch: mô hình có thể đạt hiệu năng cao một cách giả tạo do đã ``ghi nhớ'' nội dung từ tập huấn luyện, thay vì thực sự học được các đặc trưng có khả năng tổng quát hóa. Vì vậy, đảm bảo tính độc lập giữa các tập dữ liệu là điều kiện tiên quyết để đánh giá đúng năng lực thực sự của mô hình.
+Việc kiểm tra và loại bỏ dữ liệu trùng lặp có vai trò quan trọng trong bài toán phân loại văn bản. Nếu các mẫu xuất hiện đồng thời trong tập huấn luyện và tập kiểm tra, kết quả đánh giá có thể bị sai lệch do mô hình không thực sự học được những đặc trưng có khả năng tổng quát. Vì vậy, cần đảm bảo hai tập dữ liệu độc lập với nhau để kết quả đánh giá phản ánh chính xác năng lực của mô hình.
 
 \section{Kết luận chương}
 
-Chương này đã trình bày toàn bộ quy trình chuẩn bị dữ liệu cho bài toán phát hiện tin giả tiếng Việt, bao gồm phân đoạn từ, làm sạch và chia tập theo chiến lược phân tầng. Dữ liệu được phân đoạn bằng RDRSegmenter nhằm đảm bảo tính tương thích với PhoBERT, sau đó trải qua bước loại bỏ các văn bản trùng lặp, rỗng hoặc quá ngắn để giảm nhiễu và nâng cao chất lượng đầu vào.
+Chương này tập trung mô tả các bước xử lý và tổ chức dữ liệu phục vụ cho bài toán phát hiện tin giả tiếng Việt, từ phân đoạn văn bản, làm sạch cho đến phân chia dữ liệu theo phương pháp phân tầng. RDRSegmenter được sử dụng ở bước phân đoạn nhằm tạo sự phù hợp với cách xử lý của PhoBERT. Sau đó, những mẫu dữ liệu bị trùng, không có nội dung hoặc có độ dài không đáp ứng yêu cầu được loại bỏ nhằm hạn chế nhiễu trong quá trình huấn luyện.
 
-Tập dữ liệu sau làm sạch được chia theo tỷ lệ 70\%--15\%--15\% cho các tập huấn luyện, kiểm định và kiểm tra với \texttt{random\_state = 42}. Đồng thời, hệ thống tiến hành kiểm tra nghiêm ngặt rò rỉ dữ liệu giữa các tập nhằm đảm bảo không tồn tại giao nhau về nội dung.
+Sau khi hoàn tất quá trình tiền xử lý, dữ liệu được phân bổ thành ba tập theo tỷ lệ 70\%--15\%--15\%, lần lượt phục vụ huấn luyện, kiểm định và kiểm tra, với \texttt{random\_state = 42}. Ngoài ra, dữ liệu giữa các tập được đối chiếu để phát hiện và loại bỏ những trường hợp có nội dung trùng nhau, qua đó hạn chế nguy cơ rò rỉ dữ liệu.
 
-Các quy trình này đảm bảo tính nhất quán, khách quan và khả năng tái lập (\textit{reproducibility}), tạo nền tảng vững chắc cho quá trình huấn luyện và đánh giá mô hình ở chương tiếp theo.
+Việc thực hiện các bước trên giúp quá trình xây dựng tập dữ liệu có tính ổn định, khách quan và có thể tái lập (\textit{reproducibility}), đồng thời cung cấp cơ sở phù hợp cho việc huấn luyện và đánh giá các mô hình được trình bày trong chương tiếp theo.
 
 \clearpage

@@ -14,18 +14,18 @@
 \contentsline {table}{\numberline {5.8}{\ignorespaces Kết quả kiểm tra chéo 5-fold (3 seeds)\relax }}{60}{table.caption.27}%
 \contentsline {table}{\numberline {5.9}{\ignorespaces Kết quả Ablation Study trên tập kiểm tra\relax }}{62}{table.caption.28}%
 \contentsline {table}{\numberline {5.10}{\ignorespaces Phân tích lỗi trên tập kiểm tra\relax }}{66}{table.caption.31}%
-\contentsline {table}{\numberline {5.11}{\ignorespaces Faithfulness of token-level explanations}}{71}{table.caption.36}%
-\contentsline {table}{\numberline {5.12}{\ignorespaces So sánh hiệu chuẩn sau post-hoc calibration}}{73}{table.caption.38}%
-\contentsline {table}{\numberline {5.13}{\ignorespaces Các mẫu khó được phân tích chi tiết}}{75}{table.caption.42}%
-\contentsline {table}{\numberline {5.14}{\ignorespaces So sánh teacher và student sau Knowledge Distillation}}{77}{table.caption.43}%
-\contentsline {table}{\numberline {5.15}{\ignorespaces Số mẫu theo lớp của từng tập}}{84}{table.caption.47}%
-\contentsline {table}{\numberline {5.16}{\ignorespaces Cấu hình TF-IDF, LR, SVM}}{86}{table.caption.48}%
-\contentsline {table}{\numberline {5.17}{\ignorespaces Cấu hình BiLSTM và PhoBERT}}{86}{table.caption.49}%
-\contentsline {table}{\numberline {5.18}{\ignorespaces Metric tổng hợp trên tập test}}{87}{table.caption.50}%
-\contentsline {table}{\numberline {5.19}{\ignorespaces Precision/Recall/F1 theo lớp}}{87}{table.caption.51}%
-\contentsline {table}{\numberline {5.20}{\ignorespaces Confusion matrix trên tập test}}{88}{table.caption.52}%
-\contentsline {table}{\numberline {5.21}{\ignorespaces Khoảng tin cậy Bootstrap 95\% cho F1-score}}{88}{table.caption.53}%
-\contentsline {table}{\numberline {5.22}{\ignorespaces So sánh giáo viên -- sinh viên}}{88}{table.caption.54}%
-\contentsline {table}{\numberline {5.23}{\ignorespaces Faithfulness của sáu phương pháp attribution}}{89}{table.caption.55}%
-\contentsline {table}{\numberline {5.24}{\ignorespaces Cross-validation 5-fold}}{89}{table.caption.56}%
-\contentsline {table}{\numberline {5.25}{\ignorespaces Phân bố hard cases theo lý do}}{89}{table.caption.57}%
+\contentsline {table}{\numberline {5.11}{\ignorespaces Faithfulness of token-level explanations}}{70}{table.caption.35}%
+\contentsline {table}{\numberline {5.12}{\ignorespaces So sánh hiệu chuẩn sau post-hoc calibration}}{72}{table.caption.37}%
+\contentsline {table}{\numberline {5.13}{\ignorespaces Các mẫu khó được phân tích chi tiết}}{74}{table.caption.41}%
+\contentsline {table}{\numberline {5.14}{\ignorespaces So sánh teacher và student sau Knowledge Distillation}}{76}{table.caption.42}%
+\contentsline {table}{\numberline {5.15}{\ignorespaces Số mẫu theo lớp của từng tập}}{83}{table.caption.46}%
+\contentsline {table}{\numberline {5.16}{\ignorespaces Cấu hình TF-IDF, LR, SVM}}{85}{table.caption.47}%
+\contentsline {table}{\numberline {5.17}{\ignorespaces Cấu hình BiLSTM và PhoBERT}}{85}{table.caption.48}%
+\contentsline {table}{\numberline {5.18}{\ignorespaces Metric tổng hợp trên tập test}}{86}{table.caption.49}%
+\contentsline {table}{\numberline {5.19}{\ignorespaces Precision/Recall/F1 theo lớp}}{86}{table.caption.50}%
+\contentsline {table}{\numberline {5.20}{\ignorespaces Confusion matrix trên tập test}}{87}{table.caption.51}%
+\contentsline {table}{\numberline {5.21}{\ignorespaces Khoảng tin cậy Bootstrap 95\% cho F1-score}}{87}{table.caption.52}%
+\contentsline {table}{\numberline {5.22}{\ignorespaces So sánh giáo viên -- sinh viên}}{87}{table.caption.53}%
+\contentsline {table}{\numberline {5.23}{\ignorespaces Faithfulness của sáu phương pháp attribution}}{88}{table.caption.54}%
+\contentsline {table}{\numberline {5.24}{\ignorespaces Cross-validation 5-fold}}{88}{table.caption.55}%
+\contentsline {table}{\numberline {5.25}{\ignorespaces Phân bố hard cases theo lý do}}{88}{table.caption.56}%

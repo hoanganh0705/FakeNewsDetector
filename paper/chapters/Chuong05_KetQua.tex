@@ -200,7 +200,7 @@ BiLSTM  & PhoBERT & \mcnbilstmphobERTChi & $<$0{,}001  & Có ý nghĩa (***) \\
 
 Bên cạnh kiểm định McNemar, nghiên cứu tiếp tục sử dụng phương pháp bootstrap nhằm ước lượng độ ổn định của chỉ số F1-score và đánh giá độ tin cậy của sự khác biệt giữa các mô hình.
 
-Bootstrap là kỹ thuật lấy mẫu lặp lại có hoàn lại (\textit{resampling with replacement}) từ tập kiểm thử ban đầu để tạo ra nhiều tập mẫu giả lập. Trong nghiên cứu này, quá trình lấy mẫu được lặp lại 10{,}000 lần. Với mỗi lần, F1-score được tính lại; từ tập giá trị thu được, nghiên cứu xây dựng phân phối thực nghiệm của chỉ số này.
+Bootstrap là phương pháp resampling trong đó các quan sát từ tập dữ liệu ban đầu được chọn ngẫu nhiên và có thể xuất hiện nhiều lần trong cùng một mẫu, qua đó tạo ra nhiều mẫu dữ liệu giả lập.
 
 Khoảng tin cậy 95\% (95\% Confidence Interval --- CI) được xác định từ phân vị 2.5\% và 97.5\% của phân phối bootstrap. Khoảng này mô tả miền giá trị mà tham số thực (F1-score kỳ vọng trên tổng thể) có khả năng nằm trong với mức tin cậy 95\%.
 
@@ -498,13 +498,6 @@ Phân tích cấp token bổ sung ba kết luận quan trọng:
   \label{fig:token-attribution-lr-svm}
 \end{figure}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.85\textwidth]{fig_method_agreement}
-  \caption{Jaccard overlap của top-10 token quan trọng giữa các phương pháp attribution, trung bình trên \nattrexamples{} mẫu kiểm tra.}
-  \label{fig:method-agreement}
-\end{figure}
-
 % Bảng độ trung thực của attribution
 \input{tables/table_attribution_faithfulness}
 
@@ -590,7 +583,7 @@ Thực nghiệm toàn diện trên bốn mô hình so sánh cho phép rút ra b�
 
 \begin{itemize}[leftmargin=2em]
   \item PhoBERT là mô hình tốt nhất với F1 = \phobertfone\%; sự vượt trội này có ý nghĩa thống kê theo kiểm định McNemar với hiệu chỉnh Holm--Bonferroni ($p < 0{,}001$).
-  \item Từ kết quả thực nghiệm, có thể thấy việc mô hình được huấn luyện trước trên dữ liệu tiếng Việt mang lại ảnh hưởng rõ ràng đến kết quả phân loại. Điều này cho thấy hiệu quả của mô hình không chỉ nằm ở kiến trúc mà còn phụ thuộc nhiều vào cách dữ liệu được biểu diễn. Trong các thử nghiệm, SVM cho kết quả tốt hơn BiLSTM, cho thấy một mô hình truyền thống vẫn có thể đạt hiệu quả cao khi được cung cấp đặc trưng phù hợp.
+  \item Kết quả thực nghiệm cho thấy việc sử dụng mô hình đã được huấn luyện trước trên ngữ liệu tiếng Việt có ảnh hưởng đáng kể đến hiệu quả phân loại. Điều này cho thấy các mô hình ngôn ngữ tiền huấn luyện có khả năng tận dụng tốt thông tin ngữ cảnh trong quá trình biểu diễn văn bản. Trong các thí nghiệm, SVM đạt kết quả cao hơn BiLSTM, cho thấy một mô hình truyền thống vẫn có thể mang lại hiệu quả tốt khi được kết hợp với đặc trưng đầu vào phù hợp.
   \item Phân tích hiệu chỉnh xác suất cho thấy PhoBERT và BiLSTM bị miscalibrated (ECE ban đầu $\geq 6{,}9\%)$; temperature scaling giảm ECE trên \textbf{cả bốn} mô hình mà không ảnh hưởng đến Accuracy/AUC.
   \item Thí nghiệm knowledge distillation cho thấy một BiLSTM nhỏ có thể thừa hưởng $\sim$\studentretainbI{}\% chất lượng của BiLSTM-gốc với kích thước $< 1/4$ và tốc độ nhanh hơn \studentspeedup{$\times$}, phù hợp triển khai trên thiết bị biên.
 \end{itemize}
