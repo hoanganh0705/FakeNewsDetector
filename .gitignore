@@ -49,3 +49,16 @@ data/fasttext/
 
 STUDY_GUIDE.md
 MANUAL.md
+
+# Test caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Linter / type-checker caches
+.ruff_cache/
+.mypy_cache/
+
+# Build outputs
+dist/
+build/
