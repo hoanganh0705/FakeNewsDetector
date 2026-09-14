@@ -30,7 +30,7 @@ Ngay sau khi thu thập, dữ liệu được đưa vào bước phân đoạn t
 
 \clearpage
 
-Hình~\ref{fig:label_dist} phản ánh tỷ lệ giữa hai lớp trong toàn bộ tập dữ liệu. Có thể nhận thấy tỷ lệ giữa hai lớp tương đối cân đối --- đặc điểm này có ý nghĩa quan trọng vì nó giúp hạn chế hiện tượng mô hình bị thiên lệch (bias) về phía lớp đa số trong suốt quá trình huấn luyện lẫn đánh giá. Trong thực tế, các bộ dữ liệu tin giả thường có xu hướng mất cân bằng, nên sự cân đối của tập dữ liệu nghiên cứu là một lợi thế giúp kết quả thực nghiệm phản ánh trung thực hiệu quả của từng phương pháp phân loại.
+Hình~\ref{fig:label_dist} phản ánh tỷ lệ giữa hai lớp trong toàn bộ tập dữ liệu. Có thể nhận thấy tỷ lệ giữa hai lớp tương đối cân đối --- đặc điểm này có ý nghĩa quan trọng vì nó giúp giảm bớt hiện tượng mô hình thiên vị và đưa ra các kết quả một chiều. 
 
 \section{Tiền xử lý văn bản}
 
@@ -62,7 +62,7 @@ Các bước làm sạch nói trên giúp giảm đáng kể lượng nhiễu tr
 
 Khác với nhiều ngôn ngữ mà khoảng trắng phân tách rõ ràng giữa các từ, tiếng Việt có sự chênh lệch giữa đơn vị âm tiết và đơn vị từ. Chẳng hạn, ``Việt Nam'' là một từ nhưng được viết thành hai âm tiết tách biệt; nếu lấy từng âm tiết làm đơn vị xử lý thì cấu trúc và ý nghĩa thực sự của cụm từ sẽ bị bỏ sót. Vì lý do này, khâu phân đoạn từ cần được thực hiện trước các bước biểu diễn số nhằm xác định chính xác đơn vị từ phù hợp với đặc thù tiếng Việt.
 
-Trong nghiên cứu này, phân đoạn từ được thực hiện bằng thư viện \texttt{py\_vncorenlp} với bộ tách từ RDRSegmenter của VnCoreNLP~\cite{vncore_2018, rdrsegmenter2018}. Lựa chọn này đảm bảo dữ liệu đầu vào được xử lý theo đúng cách mà PhoBERT --- mô hình ngôn ngữ tiền huấn luyện --- đã sử dụng trong giai đoạn tiền huấn luyện. Nhờ vậy, khi đưa văn bản vào PhoBERT ở các bước sau, sự khác biệt trong cách xác định đơn vị từ được hạn chế tối đa, qua đó cải thiện tính tương thích và hỗ trợ khả năng tổng quát hóa.
+Trong nghiên cứu này, phân đoạn từ được thực hiện bằng thư viện \texttt{py\_vncorenlp} với bộ tách từ RDRSegmenter của VnCoreNLP~\cite{vncore_2018, rdrsegmenter2018}. Lựa chọn này đảm bảo dữ liệu đầu vào được xử lý theo đúng cách mà PhoBERT --- mô hình ngôn ngữ tiền huấn luyện --- đã sử dụng trong giai đoạn tiền huấn luyện. Nhờ vậy, khi đưa văn bản vào PhoBERT ở các bước sau, sự khác biệt trong cách xác định đơn vị từ được hạn chế tối đa, qua đó cải thiện khả năng tương thích.
 
 Các bước triển khai cụ thể gồm:
 
@@ -110,7 +110,7 @@ P_{\text{val}}(Y) \approx
 P_{\text{test}}(Y)
 \]
 
-Nhờ đó, sai lệch phân phối nhãn giữa các tập được kiểm soát chặt chẽ --- yếu tố quan trọng để quá trình đánh giá phản ánh đúng khả năng tổng quát hóa của mô hình.
+Nhờ đó, sai lệch phân phối nhãn giữa các tập được kiểm soát chặt chẽ, điều này đóng vai trò quan trọng trong việc bảo đảm kết quả đánh giá phản ánh chính xác khả năng tổng quát hóa của mô hình.
 
 Kết quả chia tập cuối cùng:
 
@@ -158,14 +158,12 @@ Kết quả kiểm tra:
 
 Không phát hiện bất kỳ văn bản trùng lặp nào giữa các cặp tập dữ liệu.
 
-Việc kiểm tra và loại bỏ dữ liệu trùng lặp có vai trò quan trọng trong bài toán phân loại văn bản. Nếu các mẫu xuất hiện đồng thời trong tập huấn luyện và tập kiểm tra, kết quả đánh giá có thể bị sai lệch do mô hình không thực sự học được những đặc trưng có khả năng tổng quát. Vì vậy, cần đảm bảo hai tập dữ liệu độc lập với nhau để kết quả đánh giá phản ánh chính xác năng lực của mô hình.
+Một kết quả đánh giá chỉ có ý nghĩa khi dữ liệu dùng để kiểm tra không chịu ảnh hưởng từ những mẫu mà mô hình đã gặp trong quá trình học. Nếu cùng một mẫu, hoặc các mẫu trùng lặp, xuất hiện ở cả hai tập, mô hình có thể tận dụng những thông tin đã được học thay vì thực sự tổng quát hóa sang dữ liệu mới. Hiện tượng này làm sai lệch việc đánh giá hiệu năng và có thể khiến năng lực của mô hình bị đánh giá cao hơn thực tế. Vì vậy, bước rà soát và loại bỏ các trường hợp trùng lặp cần được thực hiện trước khi đánh giá mô hình.
 
 \section{Kết luận chương}
 
 Chương này tập trung mô tả các bước xử lý và tổ chức dữ liệu phục vụ cho bài toán phát hiện tin giả tiếng Việt, từ phân đoạn văn bản, làm sạch cho đến phân chia dữ liệu theo phương pháp phân tầng. RDRSegmenter được sử dụng ở bước phân đoạn nhằm tạo sự phù hợp với cách xử lý của PhoBERT. Sau đó, những mẫu dữ liệu bị trùng, không có nội dung hoặc có độ dài không đáp ứng yêu cầu được loại bỏ nhằm hạn chế nhiễu trong quá trình huấn luyện.
 
 Sau khi hoàn tất quá trình tiền xử lý, dữ liệu được phân bổ thành ba tập theo tỷ lệ 70\%--15\%--15\%, lần lượt phục vụ huấn luyện, kiểm định và kiểm tra, với \texttt{random\_state = 42}. Ngoài ra, dữ liệu giữa các tập được đối chiếu để phát hiện và loại bỏ những trường hợp có nội dung trùng nhau, qua đó hạn chế nguy cơ rò rỉ dữ liệu.
-
-Việc thực hiện các bước trên giúp quá trình xây dựng tập dữ liệu có tính ổn định, khách quan và có thể tái lập (\textit{reproducibility}), đồng thời cung cấp cơ sở phù hợp cho việc huấn luyện và đánh giá các mô hình được trình bày trong chương tiếp theo.
 
 \clearpage

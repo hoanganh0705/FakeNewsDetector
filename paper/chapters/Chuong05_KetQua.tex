@@ -140,10 +140,10 @@ Từ bảng~\ref{tab:calibration} và Hình~\ref{fig:calibration}, có thể rú
 
   \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertbrier), phản ánh khả năng phân loại vượt trội. Tuy vậy, MCE cao (\phobertmCE) cho thấy mô hình có xu hướng \textit{overconfident} --- đưa ra xác suất rất gần 0 hoặc 1 ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu có quy mô vừa phải.
 
-  \item \textbf{BiLSTM có hiệu chuẩn kém nhất:} với ECE = \bilstmeCE{} và Brier Score = \bilstmbrier, BiLSTM cho thấy mức độ tin cậy của các xác suất dự đoán chưa tương ứng tốt với hiệu năng thực tế của mô hình.
+  \item \textbf{BiLSTM có hiệu chuẩn kém nhất:} với ECE = \bilstmeCE{} và Brier Score = \bilstmbrier, BiLSTM cho thấy sự đáng tin của các xác suất dự đoán chưa tương ứng tốt với hiệu năng thực tế của mô hình.
 \end{itemize}
 
-\textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần áp dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature scaling hoặc Platt scaling để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể sử dụng trực tiếp với độ tin cậy cao hơn.
+\textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần sử dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature scaling hoặc Platt scaling để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể sử dụng trực tiếp với độ tin cậy cao hơn.
 
 \section{Kiểm định thống kê}
 \label{sec:statistics}
@@ -475,9 +475,7 @@ Các phân tích ở~\ref{sec:explainability-overview} cho thấy \emph{từ nà
 \subparagraph*{Kết quả trên mô hình tuyến tính.}
 Hình~\ref{fig:token-attribution-lr-svm} minh họa 15 token có |SHAP value| lớn nhất cho Logistic Regression và SVM trên cùng một mẫu tin. Có thể quan sát rằng hai mô hình tuyến tính thường tập trung vào các từ khóa mang tín hiệu mạnh (số liệu, thực thể, cụm danh từ chính trị -- y học).
 
-\subparagraph*{Đo lường sự đồng thuận giữa các phương pháp.} \;Để đánh giá mức độ đồng thuận giữa các phương pháp attribution, chỉ số \textit{Jaccard overlap} được tính trên top-10 token quan trọng nhất giữa mọi cặp phương pháp, trên toàn bộ các mẫu được chọn. Kết quả được hiển thị trong Hình~\ref{fig:method-agreement} (heatmap N$\times$N).
-
-Các cặp có đồng thuận cao nhất là SHAP và Integrated Gradients áp dụng trên cùng một không gian embedding (Jaccard $\approx 0{,}5$), trong khi Attention Rollout có đồng thuận thấp với cả hai phương pháp gradient (Jaccard $< 0{,}15$). Kết quả này củng cố nhận định rằng attention \textit{không phải} là một giải thích đáng tin cậy cho mô hình Transformer --- một cảnh báo đã được nhiều nghiên cứu gần đây đưa ra (Jain \& Wallace, 2019; Wiegreffe \& Pinter, 2019).
+\subparagraph*{Đo lường sự đồng thuận giữa các phương pháp.} \;Để đánh giá mức độ đồng thuận giữa các phương pháp attribution, chỉ số \textit{Jaccard overlap} được tính trên top-10 token quan trọng nhất giữa mọi cặp phương pháp, trên toàn bộ các mẫu được chọn.
 
 \subparagraph*{Tính trung thực của attribution (Faithfulness).}
 Bảng~\ref{tab:attribution-faithfulness} tổng hợp \textit{faithfulness score} --- mức giảm xác suất của lớp dự đoán sau khi che (mask) 5 token được attribution đánh giá quan trọng nhất. Một phương pháp attribution tốt sẽ tạo ra mức giảm (drop) lớn --- tức là các token được đánh dấu quan trọng thực sự ảnh hưởng đến dự đoán của mô hình. Kết quả cho thấy các phương pháp gradient trên PhoBERT (SHAP và IG) đạt độ trung thực cao nhất ($\approx \attrfaithfulnessphobERTSHAP$ và $\attrfaithfulnessphobERTIG$), tiếp theo là SHAP trên LR/SVM ($\approx \attrfaithfulnesslR$). Attention Rollout trên PhoBERT có faithfulness thấp nhất ($\attrfaithfulnessphobERTRollout$), phù hợp với nhận định trên.

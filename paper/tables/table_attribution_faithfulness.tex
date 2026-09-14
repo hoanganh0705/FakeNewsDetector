@@ -1,14 +1,20 @@
 \begin{table*}[h]
   \centering
-  \caption[Faithfulness of token-level explanations]{Faithfulness of token-level explanations: mean probability drop after masking the top-5 most-attributed tokens.}
+  \caption[Độ trung thực của giải thích cấp token]{Độ trung thực của giải thích cấp token: mức giảm xác suất trung bình sau khi che 5 token được attribution đánh giá quan trọng nhất.}
   \label{tab:attribution-faithfulness}
-  \begin{tabular}{lrrrrr}
+  \small
+  \setlength{\tabcolsep}{6pt}
+  \begin{tabular}{lc}
     \toprule
-    Method & N & Mean & Std & Min & Max \\
+    \textbf{Mô hình -- Phương pháp} & \textbf{Mức giảm xác suất (Mean)} \\
     \midrule
-    lr\_shap & 20 & 1.100 & 0.378 & 0.435 & 1.691 \\
-    phobert\_rollout & 20 & 0.182 & 0.036 & 0.113 & 0.227 \\
-    svm\_shap & 20 & 0.378 & 0.078 & 0.255 & 0.507 \\
+    Logistic Regression -- SHAP                & \attrfaithfulnesslR{} \\
+    SVM -- SHAP                                & \attrfaithfulnesssVM{} \\
+    BiLSTM -- Integrated Gradients             & \attrfaithfulnessbilstm{} \\
+    BiLSTM -- Simple Gradients                 & \attrfaithfulnessbilstmgrad{} \\
+    PhoBERT -- SHAP                            & \attrfaithfulnessphobERTSHAP{} \\
+    PhoBERT -- Integrated Gradients            & \attrfaithfulnessphobERTIG{} \\
+    PhoBERT -- Attention Rollout               & \attrfaithfulnessphobERTRollout{} \\
     \bottomrule
   \end{tabular}
 \end{table*}

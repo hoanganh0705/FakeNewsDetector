@@ -10,16 +10,16 @@ Chương này trình bày toàn bộ cơ sở phương pháp luận cho bài to�
 
 \section{Phương pháp đề xuất}
 
-Trong thời gian gần đây, bài toán phát hiện tin giả bằng tiếng Việt ngày càng được quan tâm trong lĩnh vực xử lý ngôn ngữ tự nhiên. Sự mở rộng của các nền tảng trực tuyến khiến lượng thông tin được tạo ra và chia sẻ ngày càng lớn, nhưng đồng thời cũng làm gia tăng khả năng lan truyền của những nội dung thiếu chính xác. Điều này có thể dẫn đến nhiều ảnh hưởng tiêu cực đối với cộng đồng và xã hội. Vì vậy, việc nghiên cứu các phương pháp tự động để nhận diện thông tin sai lệch có ý nghĩa thiết thực cả về phương diện nghiên cứu lẫn ứng dụng.
+Sự phát triển nhanh của môi trường trực tuyến đã làm thay đổi đáng kể cách thông tin được tạo ra, phân phối và tiếp nhận. Bên cạnh những lợi ích về khả năng tiếp cận thông tin, môi trường này cũng tạo điều kiện cho các nội dung thiếu chính xác lan truyền với tốc độ cao. Đối với tiếng Việt, việc tự động nhận diện những nội dung sai lệch vì thế trở thành một hướng nghiên cứu đáng chú ý trong lĩnh vực xử lý ngôn ngữ tự nhiên, với tiềm năng hỗ trợ cả các nghiên cứu học thuật và những ứng dụng thực tế.
 
-Trong quy trình xử lý văn bản, nội dung ban đầu thường được chuyển sang dạng biểu diễn số để các mô hình học máy có thể tiếp nhận. Các kỹ thuật như bag-of-words, TF-IDF và word embedding tạo ra những dạng biểu diễn khác nhau cho dữ liệu văn bản. Sự phát triển của các phương pháp học sâu cho phép mô hình khai thác trực tiếp nhiều đặc điểm ngữ cảnh trong nội dung đầu vào. Đặc biệt, các kiến trúc thuộc họ Transformer cùng những mô hình ngôn ngữ dựa trên chúng đã trở thành lựa chọn phổ biến cho nhiều nhiệm vụ xử lý và phân loại văn bản, nhờ khả năng học các đặc trưng ngữ nghĩa từ dữ liệu.
+Để đưa văn bản vào các mô hình học máy, nội dung ngôn ngữ cần được chuyển đổi thành dạng biểu diễn mà thuật toán có thể khai thác. Các phương pháp truyền thống như Bag-of-Words và TF-IDF biểu diễn văn bản dựa trên sự xuất hiện hoặc tần suất của các từ, trong khi word embedding cung cấp cách biểu diễn giàu thông tin hơn thông qua các vector số. Tuy nhiên, những phương pháp này vẫn gặp hạn chế trong việc mô tả đầy đủ quan hệ ngữ cảnh của từ trong câu. Các mô hình dựa trên kiến trúc Transformer đã mở rộng khả năng biểu diễn này bằng cách khai thác thông tin ngữ cảnh trong toàn bộ chuỗi văn bản, từ đó đạt hiệu quả cao trong nhiều nhiệm vụ phân loại và phân tích ngôn ngữ.
 
 Dựa trên những hướng tiếp cận nói trên, đồ án xây dựng một quy trình thực nghiệm nhằm đánh giá và đối chiếu khả năng nhận diện tin giả giữa các nhóm mô hình khác nhau. Nhóm phương pháp truyền thống được đại diện bởi Logistic Regression và SVM --- sử dụng đặc trưng trích xuất từ văn bản; nhóm học sâu gồm BiLSTM và PhoBERT --- khai thác biểu diễn ngữ cảnh. Việc đặt các phương pháp này trong cùng một quy trình đánh giá tạo cơ sở để phân tích sự khác biệt về hiệu năng giữa cách tiếp cận dựa trên đặc trưng thủ công và cách tiếp cận dựa trên học biểu diễn từ dữ liệu.
 
 \section{Lý do lựa chọn các nhóm mô hình}
 \label{sec:model_selection}
 
-Đối với nhiệm vụ phân loại văn bản, đặc biệt trong bài toán phát hiện tin giả, việc đánh giá các phương pháp có thể dựa trên ba tiêu chí chính:
+Đối với nhiệm vụ phân loại văn bản,  việc đánh giá các phương pháp có thể dựa trên ba tiêu chí chính:
 \begin{itemize}
     \item \textit{Khả năng diễn giải} --- mức độ con người có thể hiểu được logic ra quyết định của mô hình.
     \item \textit{Chi phí tính toán} --- chi phí về thời gian và tài nguyên trong quá trình huấn luyện cũng như suy diễn.
@@ -187,7 +187,7 @@ Sự kết hợp hai chiến lược trên giúp đảm bảo quá trình huấn
 \section{Các phân tích mở rộng được thiết kế cho chương thực nghiệm}
 \label{sec:extended_analyses}
 
-Ngoài các độ đo hiệu năng chuẩn (Accuracy, F1, ROC-AUC), chương thực nghiệm sẽ thực hiện bốn nhóm phân tích mở rộng nhằm đánh giá mô hình một cách toàn diện hơn. Mục này mô tả trước các phương pháp được sử dụng.
+Ngoài các độ đo hiệu năng chuẩn (Accuracy, F1, ROC-AUC), chương thực nghiệm sẽ thực hiện bốn nhóm phân tích mở rộng nhằm đánh giá mô hình một cách toàn diện hơn.
 
 \subsection{Phân tích khả năng giải thích (Explainability)}
 

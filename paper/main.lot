@@ -4,28 +4,28 @@
 \contentsline {table}{\numberline {3.1}{\ignorespaces Thống kê tập dữ liệu}}{36}{table.caption.14}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {5.1}{\ignorespaces Siêu tham số các mô hình}}{50}{table.caption.15}%
-\contentsline {table}{\numberline {5.2}{\ignorespaces Độ phức tạp và thời gian huấn luyện}}{51}{table.caption.16}%
-\contentsline {table}{\numberline {5.3}{\ignorespaces So sánh hiệu suất các mô hình}}{51}{table.caption.18}%
-\contentsline {table}{\numberline {5.4}{\ignorespaces Chỉ số hiệu suất theo lớp}}{52}{table.caption.20}%
-\contentsline {table}{\numberline {5.5}{\ignorespaces Chỉ số hiệu chuẩn xác suất của bốn mô hình trên tập kiểm tra\relax }}{56}{table.caption.24}%
-\contentsline {table}{\numberline {5.6}{\ignorespaces Kết quả kiểm định McNemar (Sau hiệu chỉnh Holm-Bonferroni)\relax }}{58}{table.caption.25}%
-\contentsline {table}{\numberline {5.7}{\ignorespaces Khoảng tin cậy 95\% Bootstrap\nobreakspace {}\cite {efron1979bootstrap} cho F1-Score (10.000 lần lấy mẫu lại)\relax }}{59}{table.caption.26}%
-\contentsline {table}{\numberline {5.8}{\ignorespaces Kết quả kiểm tra chéo 5-fold (3 seeds)\relax }}{60}{table.caption.27}%
-\contentsline {table}{\numberline {5.9}{\ignorespaces Kết quả Ablation Study trên tập kiểm tra\relax }}{62}{table.caption.28}%
-\contentsline {table}{\numberline {5.10}{\ignorespaces Phân tích lỗi trên tập kiểm tra\relax }}{66}{table.caption.31}%
-\contentsline {table}{\numberline {5.11}{\ignorespaces Faithfulness of token-level explanations}}{70}{table.caption.35}%
-\contentsline {table}{\numberline {5.12}{\ignorespaces So sánh hiệu chuẩn sau post-hoc calibration}}{72}{table.caption.37}%
-\contentsline {table}{\numberline {5.13}{\ignorespaces Các mẫu khó được phân tích chi tiết}}{74}{table.caption.41}%
-\contentsline {table}{\numberline {5.14}{\ignorespaces So sánh teacher và student sau Knowledge Distillation}}{76}{table.caption.42}%
-\contentsline {table}{\numberline {5.15}{\ignorespaces Số mẫu theo lớp của từng tập}}{83}{table.caption.46}%
-\contentsline {table}{\numberline {5.16}{\ignorespaces Cấu hình TF-IDF, LR, SVM}}{85}{table.caption.47}%
-\contentsline {table}{\numberline {5.17}{\ignorespaces Cấu hình BiLSTM và PhoBERT}}{85}{table.caption.48}%
-\contentsline {table}{\numberline {5.18}{\ignorespaces Metric tổng hợp trên tập test}}{86}{table.caption.49}%
-\contentsline {table}{\numberline {5.19}{\ignorespaces Precision/Recall/F1 theo lớp}}{86}{table.caption.50}%
-\contentsline {table}{\numberline {5.20}{\ignorespaces Confusion matrix trên tập test}}{87}{table.caption.51}%
-\contentsline {table}{\numberline {5.21}{\ignorespaces Khoảng tin cậy Bootstrap 95\% cho F1-score}}{87}{table.caption.52}%
-\contentsline {table}{\numberline {5.22}{\ignorespaces So sánh giáo viên -- sinh viên}}{87}{table.caption.53}%
-\contentsline {table}{\numberline {5.23}{\ignorespaces Faithfulness của sáu phương pháp attribution}}{88}{table.caption.54}%
-\contentsline {table}{\numberline {5.24}{\ignorespaces Cross-validation 5-fold}}{88}{table.caption.55}%
-\contentsline {table}{\numberline {5.25}{\ignorespaces Phân bố hard cases theo lý do}}{88}{table.caption.56}%
+\contentsline {table}{\numberline {5.1}{\ignorespaces Siêu tham số các mô hình}}{49}{table.caption.15}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Độ phức tạp và thời gian huấn luyện}}{50}{table.caption.16}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces So sánh hiệu suất các mô hình}}{50}{table.caption.18}%
+\contentsline {table}{\numberline {5.4}{\ignorespaces Chỉ số hiệu suất theo lớp}}{51}{table.caption.20}%
+\contentsline {table}{\numberline {5.5}{\ignorespaces Chỉ số hiệu chuẩn xác suất của bốn mô hình trên tập kiểm tra\relax }}{55}{table.caption.24}%
+\contentsline {table}{\numberline {5.6}{\ignorespaces Kết quả kiểm định McNemar (Sau hiệu chỉnh Holm-Bonferroni)\relax }}{57}{table.caption.25}%
+\contentsline {table}{\numberline {5.7}{\ignorespaces Khoảng tin cậy 95\% Bootstrap\nobreakspace {}\cite {efron1979bootstrap} cho F1-Score (10.000 lần lấy mẫu lại)\relax }}{58}{table.caption.26}%
+\contentsline {table}{\numberline {5.8}{\ignorespaces Kết quả kiểm tra chéo 5-fold (3 seeds)\relax }}{59}{table.caption.27}%
+\contentsline {table}{\numberline {5.9}{\ignorespaces Kết quả Ablation Study trên tập kiểm tra\relax }}{61}{table.caption.28}%
+\contentsline {table}{\numberline {5.10}{\ignorespaces Phân tích lỗi trên tập kiểm tra\relax }}{65}{table.caption.31}%
+\contentsline {table}{\numberline {5.11}{\ignorespaces Độ trung thực của giải thích cấp token}}{69}{table.caption.35}%
+\contentsline {table}{\numberline {5.12}{\ignorespaces So sánh hiệu chuẩn sau post-hoc calibration}}{71}{table.caption.37}%
+\contentsline {table}{\numberline {5.13}{\ignorespaces Các mẫu khó được phân tích chi tiết}}{73}{table.caption.41}%
+\contentsline {table}{\numberline {5.14}{\ignorespaces So sánh teacher và student sau Knowledge Distillation}}{75}{table.caption.42}%
+\contentsline {table}{\numberline {5.15}{\ignorespaces Số mẫu theo lớp của từng tập}}{82}{table.caption.46}%
+\contentsline {table}{\numberline {5.16}{\ignorespaces Cấu hình TF-IDF, LR, SVM}}{84}{table.caption.47}%
+\contentsline {table}{\numberline {5.17}{\ignorespaces Cấu hình BiLSTM và PhoBERT}}{84}{table.caption.48}%
+\contentsline {table}{\numberline {5.18}{\ignorespaces Metric tổng hợp trên tập test}}{85}{table.caption.49}%
+\contentsline {table}{\numberline {5.19}{\ignorespaces Precision/Recall/F1 theo lớp}}{85}{table.caption.50}%
+\contentsline {table}{\numberline {5.20}{\ignorespaces Confusion matrix trên tập test}}{86}{table.caption.51}%
+\contentsline {table}{\numberline {5.21}{\ignorespaces Khoảng tin cậy Bootstrap 95\% cho F1-score}}{86}{table.caption.52}%
+\contentsline {table}{\numberline {5.22}{\ignorespaces So sánh giáo viên -- sinh viên}}{86}{table.caption.53}%
+\contentsline {table}{\numberline {5.23}{\ignorespaces Faithfulness của sáu phương pháp attribution}}{87}{table.caption.54}%
+\contentsline {table}{\numberline {5.24}{\ignorespaces Cross-validation 5-fold}}{87}{table.caption.55}%
+\contentsline {table}{\numberline {5.25}{\ignorespaces Phân bố hard cases theo lý do}}{87}{table.caption.56}%
