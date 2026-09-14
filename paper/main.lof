@@ -1,30 +1,30 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces Minh họa phương pháp biểu diễn văn bản bằng TF-IDF\imagesourcemark }}{5}{figure.caption.2}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Hình ảnh minh họa bước tiền xử lý văn bản.\imagesourcemark }}{6}{figure.caption.3}%
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Minh họa bài toán phân loại văn bản\imagesourcemark }}{7}{figure.caption.4}%
-\contentsline {figure}{\numberline {2.4}{\ignorespaces Minh họa thuật toán nhị phân SVM\imagesourcemark }}{12}{figure.caption.5}%
-\contentsline {figure}{\numberline {2.5}{\ignorespaces Ví dụ minh họa cách tính TF-IDF trên hai tài liệu\imagesourcemark }}{13}{figure.caption.6}%
-\contentsline {figure}{\numberline {2.6}{\ignorespaces Minh họa mạng nơ-ron nhân tạo\imagesourcemark }}{15}{figure.caption.7}%
-\contentsline {figure}{\numberline {2.7}{\ignorespaces Minh họa kiến trúc nhiều lớp của mạng nơ-ron nhân tạo\imagesourcemark }}{15}{figure.caption.8}%
-\contentsline {figure}{\numberline {2.8}{\ignorespaces Minh họa cấu trúc mạng LSTM\imagesourcemark }}{18}{figure.caption.9}%
-\contentsline {figure}{\numberline {2.9}{\ignorespaces Minh họa cấu trúc mạng LSTM hai chiều\imagesourcemark }}{19}{figure.caption.10}%
-\contentsline {figure}{\numberline {2.10}{\ignorespaces Minh họa kiến trúc Transformer encoder\imagesourcemark }}{25}{figure.caption.11}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Minh họa phương pháp biểu diễn văn bản bằng TF-IDF}}{4}{figure.caption.2}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Hình ảnh minh họa bước tiền xử lý văn bản.}}{5}{figure.caption.3}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Minh họa bài toán phân loại văn bản}}{6}{figure.caption.4}%
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Minh họa thuật toán nhị phân SVM}}{11}{figure.caption.5}%
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Ví dụ minh họa cách tính TF-IDF trên hai tài liệu}}{12}{figure.caption.6}%
+\contentsline {figure}{\numberline {2.6}{\ignorespaces Minh họa mạng nơ-ron nhân tạo}}{14}{figure.caption.7}%
+\contentsline {figure}{\numberline {2.7}{\ignorespaces Minh họa kiến trúc nhiều lớp của mạng nơ-ron nhân tạo}}{14}{figure.caption.8}%
+\contentsline {figure}{\numberline {2.8}{\ignorespaces Minh họa cấu trúc mạng LSTM}}{17}{figure.caption.9}%
+\contentsline {figure}{\numberline {2.9}{\ignorespaces Minh họa cấu trúc mạng LSTM hai chiều}}{18}{figure.caption.10}%
+\contentsline {figure}{\numberline {2.10}{\ignorespaces Minh họa kiến trúc Transformer encoder}}{24}{figure.caption.11}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Phân phối nhãn theo từng tập dữ liệu và tổng quan toàn bộ 15.789{} mẫu}}{33}{figure.caption.12}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Phân phối nhãn trong các tập dữ liệu huấn luyện, kiểm định và kiểm tra}}{37}{figure.caption.13}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Phân phối nhãn theo từng tập dữ liệu và tổng quan toàn bộ 15.789{} mẫu\relax }}{32}{figure.caption.12}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Phân phối nhãn trong các tập dữ liệu huấn luyện, kiểm định và kiểm tra\relax }}{36}{figure.caption.13}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces So sánh các chỉ số hiệu năng (Accuracy, F1-Score, ROC-AUC) của bốn mô hình trên tập kiểm tra}}{52}{figure.caption.17}%
-\contentsline {figure}{\numberline {5.2}{\ignorespaces Precision, Recall và F1-Score theo từng lớp (\textit {thật} / \textit {giả}) cho bốn mô hình}}{53}{figure.caption.19}%
-\contentsline {figure}{\numberline {5.3}{\ignorespaces Ma trận lỗi của bốn mô hình khi thực hiện dự đoán trên tập kiểm tra (2.094{} mẫu)}}{54}{figure.caption.21}%
-\contentsline {figure}{\numberline {5.4}{\ignorespaces Đường cong ROC và Precision-Recall của bốn mô hình trên tập kiểm tra}}{55}{figure.caption.22}%
-\contentsline {figure}{\numberline {5.5}{\ignorespaces Biểu đồ hiệu chuẩn (Reliability Diagram) của bốn mô hình trên tập kiểm tra. Đường chéo nét đứt biểu diễn hiệu chuẩn hoàn hảo; các điểm vuông biểu diễn tỷ lệ dương tính thực tế trong mỗi bin xác suất.}}{57}{figure.caption.23}%
-\contentsline {figure}{\numberline {5.6}{\ignorespaces So sánh số lượng False Positive (FP) và False Negative (FN) trong quá trình phân loại}}{65}{figure.caption.29}%
-\contentsline {figure}{\numberline {5.7}{\ignorespaces Phân phối lỗi phân loại theo độ dài văn bản}}{66}{figure.caption.30}%
-\contentsline {figure}{\numberline {5.8}{\ignorespaces Top 15 đặc trưng TF-IDF có hệ số LR cao nhất (dương = chỉ điểm \textit {giả}, âm = chỉ điểm \textit {thật})}}{68}{figure.caption.32}%
-\contentsline {figure}{\numberline {5.9}{\ignorespaces Phân loại lỗi theo độ dài văn bản và mức độ tin cậy dự đoán}}{69}{figure.caption.33}%
-\contentsline {figure}{\numberline {5.10}{\ignorespaces Token attribution bằng SHAP cho Logistic Regression và SVM trên cùng một mẫu kiểm tra.}}{71}{figure.caption.34}%
-\contentsline {figure}{\numberline {5.11}{\ignorespaces Jaccard overlap của top-10 token quan trọng giữa các phương pháp attribution, trung bình trên 20{} mẫu kiểm tra.}}{72}{figure.caption.35}%
-\contentsline {figure}{\numberline {5.12}{\ignorespaces Biểu đồ hiệu chuẩn của bốn mô hình trước và sau khi áp dụng post-hoc calibration.}}{74}{figure.caption.37}%
-\contentsline {figure}{\numberline {5.13}{\ignorespaces Phân bố của 85{} mẫu khó theo chủ đề, độ dài, lý do thất bại và độ tự tin của từng mô hình.}}{76}{figure.caption.41}%
+\contentsline {figure}{\numberline {5.1}{\ignorespaces So sánh hiệu năng (Accuracy, F1-Score, ROC-AUC) của bốn mô hình\relax }}{51}{figure.caption.17}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Precision, Recall và F1-Score theo từng lớp (\textit {thật} / \textit {giả}) cho bốn mô hình\relax }}{52}{figure.caption.19}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Ma trận lỗi của bốn mô hình khi dự đoán trên tập kiểm tra (2.094{} mẫu)\relax }}{53}{figure.caption.21}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Đường cong ROC và Precision-Recall của bốn mô hình trên tập kiểm tra\relax }}{54}{figure.caption.22}%
+\contentsline {figure}{\numberline {5.5}{\ignorespaces Biểu đồ hiệu chuẩn (Reliability Diagram) của bốn mô hình trên tập kiểm tra. Đường chéo nét đứt biểu diễn hiệu chuẩn hoàn hảo; các điểm vuông biểu diễn tỷ lệ dương tính thực tế trong mỗi bin xác suất.\relax }}{56}{figure.caption.23}%
+\contentsline {figure}{\numberline {5.6}{\ignorespaces So sánh số lượng False Positive (FP) và False Negative (FN) trong quá trình phân loại\relax }}{64}{figure.caption.29}%
+\contentsline {figure}{\numberline {5.7}{\ignorespaces Phân phối lỗi phân loại theo độ dài văn bản\relax }}{65}{figure.caption.30}%
+\contentsline {figure}{\numberline {5.8}{\ignorespaces Top 15 đặc trưng TF-IDF có hệ số LR cao nhất (dương = chỉ điểm \textit {giả}, âm = chỉ điểm \textit {thật})\relax }}{67}{figure.caption.32}%
+\contentsline {figure}{\numberline {5.9}{\ignorespaces Phân loại lỗi theo độ dài văn bản và mức độ tin cậy dự đoán\relax }}{68}{figure.caption.33}%
+\contentsline {figure}{\numberline {5.10}{\ignorespaces Token attribution bằng SHAP cho Logistic Regression và SVM trên cùng một mẫu kiểm tra.\relax }}{70}{figure.caption.34}%
+\contentsline {figure}{\numberline {5.11}{\ignorespaces Jaccard overlap của top-10 token quan trọng giữa các phương pháp attribution, trung bình trên 20{} mẫu kiểm tra.\relax }}{71}{figure.caption.35}%
+\contentsline {figure}{\numberline {5.12}{\ignorespaces Biểu đồ hiệu chuẩn của bốn mô hình trước và sau khi áp dụng post-hoc calibration.\relax }}{73}{figure.caption.37}%
+\contentsline {figure}{\numberline {5.13}{\ignorespaces Phân bố của 85{} mẫu khó theo chủ đề, độ dài, lý do thất bại và độ tự tin của từng mô hình.\relax }}{75}{figure.caption.41}%

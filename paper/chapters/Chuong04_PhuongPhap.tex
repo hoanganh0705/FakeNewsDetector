@@ -10,9 +10,9 @@ Chương này trình bày toàn bộ cơ sở phương pháp luận cho bài to�
 
 \section{Phương pháp đề xuất}
 
-Bài toán nhận diện tin giả trong văn bản tiếng Việt ngày càng nhận được sự quan tâm trong lĩnh vực xử lý ngôn ngữ tự nhiên, đặc biệt trước sự gia tăng nhanh chóng của lượng thông tin trên môi trường trực tuyến. Khi các nội dung thiếu chính xác được chia sẻ với phạm vi rộng, chúng có thể ảnh hưởng đến quá trình tiếp nhận thông tin của người dùng và tạo ra những tác động không mong muốn đối với xã hội. Vì vậy, phát triển các phương pháp tự động có khả năng phát hiện nội dung sai lệch có ý nghĩa cả về mặt nghiên cứu lẫn ứng dụng thực tế.
+Trong những năm gần đây, việc nhận diện tin giả trên các văn bản tiếng Việt trở thành một chủ đề đáng chú ý trong lĩnh vực xử lý ngôn ngữ tự nhiên. Sự phát triển nhanh của các nền tảng trực tuyến làm gia tăng đáng kể lượng thông tin được chia sẻ, đồng thời cũng tạo điều kiện cho nội dung thiếu chính xác lan truyền rộng rãi và gây ra nhiều hệ quả tiêu cực đối với xã hội. Do đó, việc xây dựng các phương pháp tự động nhằm xác định nội dung sai lệch có vai trò quan trọng cả trong nghiên cứu và trong các ứng dụng thực tế.
 
-Một quy trình phân loại văn bản thường bắt đầu bằng việc chuyển nội dung sang dạng biểu diễn số phù hợp với mô hình. Trong số các phương pháp phổ biến, \textit{*bag-of-words*}, TF-IDF và \textit{*word embedding*} cung cấp những cách khác nhau để biểu diễn thông tin từ văn bản. Sự phát triển của các phương pháp học sâu sau đó cho phép mô hình khai thác trực tiếp nhiều thông tin ngữ cảnh hơn trong quá trình học. Đáng chú ý, các mạng nơ-ron hồi tiếp và những mô hình ngôn ngữ xây dựng trên Transformer đã được áp dụng trong nhiều bài toán xử lý và phân loại văn bản, cho thấy khả năng khai thác đặc điểm ngữ cảnh của dữ liệu.
+Để xử lý một văn bản, bước đầu tiên thường là chuyển nội dung dạng chữ thành biểu diễn số để mô hình có thể tiếp nhận và học hỏi. Các phương pháp như bag-of-words, TF-IDF và word embedding thực hiện quá trình này theo những cách khác nhau, qua đó tạo ra các dạng biểu diễn phù hợp cho dữ liệu văn bản. Cùng với sự phát triển của học sâu, các mô hình có khả năng khai thác trực tiếp thông tin ngữ cảnh trong câu ngày càng được quan tâm. Đặc biệt, Transformer và những mô hình ngôn ngữ dựa trên kiến trúc này đã được ứng dụng rộng rãi trong nhiều nhiệm vụ xử lý và phân loại văn bản, nhờ khả năng nắm bắt hiệu quả các đặc điểm ngữ nghĩa của dữ liệu.
 
 Dựa trên những hướng tiếp cận nói trên, đồ án xây dựng một quy trình thực nghiệm nhằm đánh giá và đối chiếu khả năng nhận diện tin giả giữa các nhóm mô hình khác nhau. Nhóm phương pháp truyền thống được đại diện bởi Logistic Regression và SVM --- sử dụng đặc trưng trích xuất từ văn bản; nhóm học sâu gồm BiLSTM và PhoBERT --- khai thác biểu diễn ngữ cảnh. Việc đặt các phương pháp này trong cùng một quy trình đánh giá tạo cơ sở để phân tích sự khác biệt về hiệu năng giữa cách tiếp cận dựa trên đặc trưng thủ công và cách tiếp cận dựa trên học biểu diễn từ dữ liệu.
 
@@ -42,7 +42,7 @@ Dựa trên các tiêu chí này, đồ án này so sánh hai nhóm:
     \end{itemize}
     BiLSTM tận dụng hai hướng xử lý của mạng LSTM để khai thác thông tin từ cả phía trước lẫn phía sau của chuỗi. Khi được bổ sung cơ chế \textit{attention}, mô hình có thể gán mức độ quan trọng khác nhau cho từng thành phần trong văn bản, qua đó hỗ trợ tập trung vào những thông tin hữu ích cho phân loại~\cite{hochreiter1997lstm,bahdanau2015attention}.
 
-    PhoBERT được xây dựng trên nền tảng kiến trúc RoBERTa và được thiết kế nhằm khai thác đặc trưng ngôn ngữ của tiếng Việt thông qua quá trình tiền huấn luyện trên dữ liệu tiếng Việt.~\cite{vaswani2017attention,liu2019roberta,phobert2020} --- việc sử dụng biểu diễn ngữ cảnh được học từ quá trình tiền huấn luyện giúp mô hình nắm bắt thông tin ngữ nghĩa ở nhiều mức độ khác nhau. Đặc điểm này khiến PhoBERT phù hợp với các nhiệm vụ phân loại và xử lý văn bản tiếng Việt.
+    PhoBERT kế thừa kiến trúc RoBERTa và được phát triển riêng cho ngữ liệu tiếng Việt, với quá trình tiền huấn luyện được thực hiện trên dữ liệu tiếng Việt~\cite{vaswani2017attention,liu2019roberta,phobert2020}. Nhờ học biểu diễn theo ngữ cảnh trong giai đoạn tiền huấn luyện, mô hình có khả năng tiếp thu các thông tin ngữ nghĩa ở nhiều cấp độ. Vì vậy, PhoBERT có thể được áp dụng hiệu quả cho những nhiệm vụ xử lý cũng như phân loại văn bản tiếng Việt.
 \end{enumerate}
 
 Việc đánh giá hai nhóm phương pháp trong cùng một thiết lập thực nghiệm tạo cơ sở để phân tích ba vấn đề trọng tâm của nghiên cứu:
@@ -104,7 +104,7 @@ Các thiết lập trên được cố định sau quá trình lựa chọn đ�
 
 Hai token đặc biệt được bổ sung: \texttt{<pad>} (Index 0) dùng để đệm các chuỗi ngắn và \texttt{<unk>} (Index 1) đại diện cho các từ ngoài từ điển. Mỗi văn bản sau tiền xử lý được chuyển đổi thành một chuỗi số nguyên với độ dài tối đa \bilstmmaxseq, đảm bảo tính nhất quán về kích thước đầu vào cho mô hình tuần tự.
 
-Các vector embedding có chiều \bilstmembdim{} được khởi tạo từ bộ embedding tiền huấn luyện FastText~\cite{bojanowski2017fasttext} phiên bản tiếng Việt (\texttt{cc.vi.300.bin}). FastText tận dụng thông tin n-gram ký tự để xây dựng biểu diễn từ, cho phép xử lý hiệu quả các từ ngoài từ điển bằng cách tổng hợp vector của các n-gram thành phần. Ma trận embedding tiền huấn luyện được nạp vào lớp embedding của mô hình và tiếp tục được tinh chỉnh trong quá trình huấn luyện thông qua lan truyền ngược --- cho phép mô hình điều chỉnh biểu diễn ngữ nghĩa phù hợp với đặc thù của bài toán phát hiện tin giả. Việc kết hợp embedding tiền huấn luyện với fine-tuning giúp tận dụng tri thức ngôn ngữ học được từ ngữ liệu lớn (Common Crawl), đồng thời thích ứng tốt với miền dữ liệu tiếng Việt của bài toán.
+Các vector embedding có chiều \bilstmembdim{} được khởi tạo bằng bộ vector FastText đã được huấn luyện trước cho tiếng Việt~\cite{bojanowski2017fasttext} (\texttt{cc.vi.300.bin}). Phương pháp FastText khai thác các n-gram ở cấp độ ký tự để tạo biểu diễn cho từ, nhờ đó vẫn có thể xây dựng vector cho những từ chưa xuất hiện trong từ điển bằng cách kết hợp các vector n-gram tương ứng. Trong quá trình huấn luyện, các vector này được đưa vào lớp embedding và tiếp tục cập nhật thông qua cơ chế lan truyền ngược, giúp biểu diễn từ thích nghi với đặc điểm của nhiệm vụ phát hiện tin giả. Cách tiếp cận này vừa tận dụng được thông tin ngôn ngữ đã học từ tập ngữ liệu lớn (Common Crawl), vừa cho phép embedding thích ứng với đặc trưng của dữ liệu tiếng Việt trong bài toán.
 
 \subsection{Tokenization PhoBERT (BPE)}
 
@@ -123,7 +123,7 @@ Chiến lược này giúp PhoBERT tận dụng tối đa thông tin ngữ cản
 
 \subsubsection{Logistic Regression}
 
-Mô hình hồi quy Logistic sử dụng điều chuẩn L2 nhằm hạn chế hiện tượng quá khớp và áp dụng cơ chế cân bằng lớp (\texttt{class\_weight='balanced'}) để xử lý mất cân bằng nhãn. GridSearchCV được sử dụng để tìm kiếm bộ siêu tham số phù hợp, với quá trình đánh giá được thực hiện bằng 5-fold cross-validation. Kết quả từ các lần chia dữ liệu được sử dụng làm cơ sở để lựa chọn cấu hình có hiệu năng phù hợp.:
+Mô hình hồi quy Logistic dùng điều chuẩn L2 nhằm hạn chế hiện tượng quá khớp và áp dụng cơ chế cân bằng lớp (\texttt{class\_weight='balanced'}) để xử lý mất cân bằng nhãn. GridSearchCV được sử dụng để tìm kiếm bộ siêu tham số phù hợp, với quá trình đánh giá được thực hiện bằng 5-fold cross-validation. Kết quả từ các lần chia dữ liệu được sử dụng làm cơ sở để lựa chọn cấu hình có hiệu năng phù hợp.:
 
 \begin{itemize}[leftmargin=2em]
   \item Lưới tìm kiếm: $C \in \{0{,}5;\ 1;\ 5;\ 10;\ 20;\ 50\}$, solver $\in \{\text{liblinear},\ \text{saga}\}$

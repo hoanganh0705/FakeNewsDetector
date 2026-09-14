@@ -7,6 +7,8 @@
 %  - File này không tạo output PDF (\ProvidesPackage ngăn điều đó).
 %  - Được load bằng \usepackage trong main.tex (sau \documentclass).
 %  - File data_commands.sty chứa số liệu, load ngay sau preamble.sty.
+%
+%  >>>>>> QUY ƯỚC LATEX BẮT BUỘC: xem LATEX_CONVENTIONS.md <<<<<<
 % =====================================================================
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{preamble}[2026/09/08 v1.0 Preamble cho đồ án]
@@ -47,6 +49,29 @@
 \usepackage{longtable}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
+
+% =====================================================================
+%  QUY ƯỚC ĐÁNH SỐ TRANG (PAGE NUMBER CONVENTION)
+% =====================================================================
+%  - Đặt page style mặc định là "plain" — số trang hiển thị CHÍNH GIỮA
+%    phía dưới (footer-center) cho MỌI trang nội dung.
+%  - KHÔNG dùng \pagestyle{empty} ở preamble (sẽ tắt số trang toàn cục).
+%  - KHÔNG dùng \let\@oddfoot\@empty / \let\@evenfoot\@empty — các lệnh
+%    này thay đổi vĩnh viễn page style cho MỌI trang phía sau (gây lỗi
+%    "mất số trang" từ trang tiếp theo trở đi).
+%  - MUỐN ẨN SỐ TRANG trên một trang cụ thể → dùng \thispagestyle{empty}
+%    NGAY TRONG FILE .tex của trang đó (chỉ có tác dụng 1 trang, an toàn).
+%  - MUỐN ĐÁNH LẠI SỐ TRANG (Roman → Arabic) → dùng \pagenumbering{...}
+%    trong main.tex (đã làm ở đó).
+% =====================================================================
+\pagestyle{plain}
+% Nếu sau này muốn đổi sang header có tên chương + footer có số trang,
+% có thể đổi sang \pagestyle{fancy} với:
+%   \fancyhf{}
+%   \fancyfoot[C]{\thepage}
+%   \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+%   \fancyhead[L]{\leftmark}
+% =====================================================================
 \usepackage{changepage}
 \usepackage{scrextend}
 \usepackage[Lenny]{fncychap}
@@ -82,7 +107,7 @@
 \usepackage{xstring}
 
 % ── Colors ──────────────────────────────────────────────────
-\usepackage[dvipsnames]{xcolor}
+\usepackage{xcolor}
 % Lưu ý: dùng model "RGB" (hoa) cho số 0-255; "rgb" thường là số 0-1.
 \definecolor{primaryblue}{RGB}{0, 70, 127}
 \definecolor{primarypurple}{RGB}{128, 0, 128}
@@ -226,6 +251,17 @@
 % \imagesourcemark: chỉ in superscript với giá trị HIỆN TẠI của counter
 % (chưa được tăng bởi \imagesource). Đặt trong \caption.
 % Không tăng counter tại đây — counter chỉ tăng khi \imagesource chạy.
+%
+% LƯU Ý KHI DÙNG TRONG \caption:
+%   Vì \listoffigures ghi lại toàn bộ text của \caption, số "1" ở
+%   superscript sẽ xuất hiện trong "Danh mục hình vẽ". Để ẩn nó ở
+%   danh mục, hãy LUÔN dùng cú pháp \caption[short]{long}:
+%
+%     \caption[Minh họa XYZ]{Minh họa XYZ\protect\imagesourcemark}
+%
+%   Trong đó short là caption không có \imagesourcemark, long là
+%   caption đầy đủ có \imagesourcemark. Nhờ đó LOF dùng short
+%   (không có số "1"), còn hình thật vẫn hiện số "1" như mong muốn.
 \protected\def\imagesourcemark{%
   \textsuperscript{\the\numexpr\value{imagesourcecount}+1\relax}%
 }

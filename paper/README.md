@@ -7,6 +7,8 @@ Bài báo cáo đồ án ngành đã được **tích hợp với khung template
 > ✅ **Bug-fixed (2026-09-08)**: sửa lỗi "Missing \begin{document}" do quên `\begin{document}` trong main.tex, lỗi duplicate `hyperref` colorlinks, lỗi duplicate page labels bằng cách dùng La Mã cho front matter. Hiện build ra PDF sạch 0 errors / 0 warnings.
 > ✅ **Bug-fixed (2026-09-09)**: sửa lỗi `fig_token_attribution_lr_svm.png` bị trống — `lr_kernel_shap` dùng `predict_proba` + `link="logit"` khiến SHAP attributions bị nén về ~1e-4 (do `p·(1-p)` scaling với probability cực trị). Đổi sang `decision_function` (raw log-odds), bỏ `link`. Tăng `n_samples` mặc định 100 → 200 cho ổn định hơn trên TF-IDF sparse.
 > ✅ **Bug-fixed (2026-09-09)**: sửa lỗi `fig_token_attribution_phobert.png`, `fig_method_agreement.png`, `fig_cross_model_agreement.png` bị placeholder — (1) `agreement_matrix` crash khi các phương pháp có độ dài vector khác nhau → thêm NaN mask cho các cặp không so sánh được; (2) `_align_to_words` split n-gram thành từng từ riêng (ví dụ "việt_nam" → "việt", "nam") nhưng word list chứa "việt_nam" → không khớp → scores = 0; đổi thành split trên "_" để giữ nguyên từ ghép; (3) `cross_model_agreement` yêu cầu đủ 4 models → đổi thành chấp nhận subset 2–4 models; (4) `_resolve_vocab` không xử lý `joblib.load`-style dict → thêm trường hợp giải nén dict từ `EmbeddingFeatureExtractor.save()`.
+> ✅ **Bug-fixed (2026-09-13)**: sửa lỗi số "1" xuất hiện cạnh mỗi dòng trong **Danh mục hình vẽ** — `\imagesourcemark` (superscript footnote-marker trong caption) bị LaTeX copy nguyên vào file `.lof`, hiển thị rất xấu trong `\listoffigures`. Đã thêm **optional short caption** `\caption[short]{long}` cho 10 hình ở `Chuong02_CoSoLyThuyet.tex` (TF-IDF, preprocessing, classification, SVM, ANN, LSTM, BiLSTM, Transformer encoder, …), trong đó `short` không chứa `\imagesourcemark`. Đồng thời thêm hướng dẫn vào `README.md` và comment trong `preamble.sty` để nhắc nhở quy tắc này.
+> ✅ **Bug-fixed (2026-09-13)**: sửa lỗi **mất số trang** ở tất cả trang từ Chương 1 trở đi. Nguyên nhân: `front/pages/GVHDNhanXet.tex` dùng `\let\@oddfoot\@empty` để ẩn số trang trên trang nhận xét GVHD — nhưng lệnh này thay đổi VĨNH VIỄN page style cho mọi trang phía sau. Đã thay bằng `\thispagestyle{empty}` (chỉ tác dụng 1 trang, an toàn). Đồng thời thêm `\pagestyle{plain}` TƯỜNG MINH trong `preamble.sty`. Tất cả quy tắc LaTeX bắt buộc đã được tách riêng sang file [`LATEX_CONVENTIONS.md`](./LATEX_CONVENTIONS.md) (tiếng Anh) để dễ tham chiếu.
 
 ## Cấu Trúc Thư Mục (MỚI — sau khi refactor)
 
@@ -54,16 +56,32 @@ Mỗi hình trong bài có một footnote "nguồn ảnh" chứa URL nguồn. C�
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.95\textwidth]{hinh1.png}
-  \caption{Minh họa XYZ \protect\imagesourcemark}
+  \caption[Minh họa XYZ]{Minh họa XYZ \protect\imagesourcemark}
   \label{fig:xyz}
 \end{figure}
 \imagesource{https://example.com/hinh1.png}
 ```
 
 - `\imagesourcemark` được đặt **trong `\caption`** (sau `\protect` để hoạt động trong bookmarks).
-- `\imagesource{URL}` được đặt **sau `\end{figure}`**.
+- `\imagesource{URL}` được đặt **sau `\end{figure}``.
 - Hệ thống tự động tăng số thứ tự: Hình 1.1 → footnote 1, Hình 1.2 → footnote 2, v.v.
 - Số trong caption và số trong footnote luôn khớp nhau.
+
+### ⚠️ QUAN TRỌNG: Luôn dùng `\caption[short]{long}` cho hình có `\imagesourcemark`
+
+Nếu chỉ viết `\caption{... \protect\imagesourcemark}` (không có `[short]`),
+số "1" ở superscript sẽ xuất hiện ngay sau caption trong **Danh mục hình vẽ**
+(`\listoffigures`), trông rất xấu. Để ẩn số đó trong LOF, hãy LUÔN dùng cú pháp
+hai-đối-số: `[short]` là caption KHÔNG có `\imagesourcemark`, `{long}` là caption
+đầy đủ có `\imagesourcemark`. Ví dụ:
+
+```latex
+% ✅ ĐÚNG — Danh mục hình vẽ sạch, không có số "1" thừa
+\caption[Minh họa XYZ]{Minh họa XYZ \protect\imagesourcemark}
+
+% ❌ SAI — Danh mục hình vẽ có "1" đứng cạnh mỗi dòng
+\caption{Minh họa XYZ \protect\imagesourcemark}
+```
 
 ## Cách Build PDF
 
@@ -83,6 +101,14 @@ bibtex main             # Sinh main.bbl từ refs.bib
 pdflatex main.tex       # Lần 2: cập nhật TOC + citation
 pdflatex main.tex       # Lần 3: ổn định cross-references
 ```
+
+## Quy Ước LaTeX (đã chuyển sang file riêng)
+
+> ⚠️ **Tất cả quy tắc LaTeX bắt buộc** (page numbers, captions, counters, file headers, v.v.) đã được chuyển sang file riêng **bằng tiếng Anh** để dễ tham chiếu:
+>
+> 👉 Xem file [`LATEX_CONVENTIONS.md`](./LATEX_CONVENTIONS.md)
+>
+> File này liệt kê các quy tắc "phải theo" khi sửa `main.tex`, các chapter, hoặc thêm file mới. Mỗi quy tắc đều ghi nhận một lỗi đã từng xảy ra trong dự án (kèm ngày sửa).
 
 ## Cấu Trúc Tài Liệu (theo mẫu template)
 

@@ -3,7 +3,7 @@
 %
 %  Trang standalone trong phần front matter (đánh số La Mã).
 %  Bố cục (đã tinh chỉnh để GỌN vừa MỘT trang A4 với 12 dòng viết):
-%    - Không đánh số trang (\thispagestyle{empty} + xóa header/footer)
+%    - Không đánh số trang (\thispagestyle{empty})
 %    - Tiêu đề nhỏ vừa, info block \footnotesize để gọn
 %    - Nhãn "Nội dung nhận xét" + 12 dòng kẻ cách nhau 0.9em
 %    - Khối ngày/tháng/năm + chữ ký đặt cuối trang
@@ -15,13 +15,11 @@
 \clearpage
 \thispagestyle{empty}
 
-% Đảm bảo header/footer TRỐNG trên trang này — robust với mọi pagestyle.
-\makeatletter
-  \let\@oddhead\@empty
-  \let\@evenhead\@empty
-  \let\@oddfoot\@empty
-  \let\@evenfoot\@empty
-\makeatother
+% Lưu ý: \thispagestyle{empty} ở trên đã đủ để ẩn header/footer trên
+% TRANG NÀY (GVHD nhận xét). KHÔNG dùng \let\@oddfoot\@empty vì nó
+% làm thay đổi page style TOÀN CỤC cho mọi trang phía sau — đã từng
+% gây lỗi "mất số trang" từ Chương 1 trở đi. Xem preamble.sty mục
+% "QUY ƯỚC ĐÁNH SỐ TRANG" để biết chi tiết.
 
 \begin{center}
     {\normalsize \bfseries NHẬN XÉT CỦA GIÁO VIÊN HƯỚNG DẪN \par}

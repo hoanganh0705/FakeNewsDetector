@@ -23,13 +23,13 @@
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.92\textwidth]{fig1_model_comparison}
-  \caption{So sánh các chỉ số hiệu năng (Accuracy, F1-Score, ROC-AUC) của bốn mô hình trên tập kiểm tra}
+  \caption{So sánh hiệu năng (Accuracy, F1-Score, ROC-AUC) của bốn mô hình}
   \label{fig:model_comparison}
 \end{figure}
 
 \input{tables/table2_results}
 
-Bảng~\ref{tab:results} trình bày hiệu năng trên tập kiểm tra. \phobert{} đạt kết quả tốt nhất với F1 = \phobertfone\% và AUC = \phobertaUC, vượt LR (+\deltalR{} điểm F1), SVM (+\deltasVM{} điểm F1) và BiLSTM (+\deltabILSTM{} điểm F1). Đáng chú ý, SVM vượt BiLSTM mặc dù kiến trúc đơn giản hơn --- cho thấy đặc trưng TF-IDF chất lượng cao có thể cạnh tranh với học sâu khi dữ liệu huấn luyện có quy mô vừa phải.
+Bảng~\ref{tab:results} trình bày hiệu năng trên tập kiểm tra. \phobert{} đạt kết quả tốt nhất với F1 = \phobertfone\% và AUC = \phobertaUC, vượt LR (+\deltalR{} điểm F1), SVM (+\deltasVM{} điểm F1) và BiLSTM (+\deltabILSTM{} điểm F1). Đáng chú ý, SVM vượt BiLSTM dù kiến trúc đơn giản hơn --- cho thấy đặc trưng TF-IDF chất lượng cao có thể cạnh tranh với học sâu khi dữ liệu huấn luyện có quy mô vừa phải.
 
 \subsection{Hiệu năng theo từng lớp}
 
@@ -54,7 +54,7 @@ Từ bảng~\ref{tab:perclass}:
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.95\textwidth]{fig2_confusion_matrices}
-  \caption{Ma trận lỗi của bốn mô hình khi thực hiện dự đoán trên tập kiểm tra (\ntest{} mẫu)}
+  \caption{Ma trận lỗi của bốn mô hình khi dự đoán trên tập kiểm tra (\ntest{} mẫu)}
   \label{fig:confusion}
 \end{figure}
 
@@ -85,7 +85,7 @@ Từ bảng~\ref{tab:perclass}:
 
 Bên cạnh các chỉ số phân loại truyền thống, việc đánh giá chất lượng xác suất dự đoán của mô hình cũng đóng vai trò quan trọng trong các ứng dụng thực tế. Một mô hình được coi là có hiệu chuẩn tốt (\textit{well-calibrated}) khi xác suất dự đoán phản ánh đúng tỷ lệ dương tính thực tế: nếu mô hình dự đoán xác suất 80\% cho một nhóm mẫu, thì khoảng 80\% số mẫu đó phải thực sự thuộc lớp dương.
 
-Điều này đặc biệt quan trọng trong bài toán phát hiện tin giả, vì người dùng hoặc hệ thống downstream cần biết mức độ tin cậy thực sự của mỗi dự đoán để quyết định hành động phù hợp (ví dụ: đánh dấu cảnh báo, chuyển sang kiểm tra thủ công hoặc tự động loại bỏ).
+Đặc điểm này đặc biệt có ý nghĩa trong bài toán phát hiện tin giả: người dùng hoặc hệ thống downstream cần biết mức độ tin cậy thực sự của mỗi dự đoán để đưa ra hành động phù hợp (ví dụ: đánh dấu cảnh báo, chuyển sang kiểm tra thủ công hoặc tự động loại bỏ).
 
 Nghiên cứu sử dụng ba chỉ số đánh giá hiệu chuẩn~\cite{naeini2015ece}:
 
@@ -138,19 +138,19 @@ Từ bảng~\ref{tab:calibration} và Hình~\ref{fig:calibration}, có thể rú
 \begin{itemize}[leftmargin=2em]
   \item \textbf{Các mô hình học máy truyền thống có hiệu chuẩn tốt nhất:} SVM đạt ECE thấp nhất (\svmeCE) và MCE thấp nhất (\svmmCE), theo sau là LR (ECE = \lreCE). Điều này cho thấy xác suất dự đoán của SVM và LR phản ánh khá chính xác tỷ lệ dương tính thực tế.
 
-  \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertbrier), phản ánh khả năng phân loại vượt trội. Tuy nhiên, MCE cao (\phobertmCE) cho thấy mô hình có khuynh hướng \textit{overconfident} --- đưa ra xác suất rất cao (gần 0 hoặc 1) ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu nhỏ.
+  \item \textbf{PhoBERT có Brier Score tốt nhất nhưng MCE cao:} PhoBERT đạt Brier Score thấp nhất (\phobertbrier), phản ánh khả năng phân loại vượt trội. Tuy vậy, MCE cao (\phobertmCE) cho thấy mô hình có xu hướng \textit{overconfident} --- đưa ra xác suất rất gần 0 hoặc 1 ngay cả khi dự đoán sai. Hiện tượng này là đặc trưng phổ biến của các mô hình Transformer, đặc biệt sau quá trình fine-tuning trên tập dữ liệu có quy mô vừa phải.
 
   \item \textbf{BiLSTM có hiệu chuẩn kém nhất:} với ECE = \bilstmeCE{} và Brier Score = \bilstmbrier, BiLSTM cho thấy mức độ tin cậy của các xác suất dự đoán chưa tương ứng tốt với hiệu năng thực tế của mô hình.
 \end{itemize}
 
-\textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần áp dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature scaling hoặc Platt scaling để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể được sử dụng trực tiếp với độ tin cậy cao hơn.
+\textbf{Hàm ý thực tế.} Phân tích hiệu chuẩn cho thấy trong các hệ thống triển khai thực tế, \textit{không nên sử dụng trực tiếp} xác suất thô (raw probability) của PhoBERT làm mức độ tin cậy. Thay vào đó, cần áp dụng kỹ thuật hiệu chuẩn hậu xử lý (\textit{post-hoc calibration}) như Temperature scaling hoặc Platt scaling để cải thiện chất lượng xác suất trước khi đưa vào hệ thống ra quyết định. Ngược lại, xác suất từ SVM và LR có thể sử dụng trực tiếp với độ tin cậy cao hơn.
 
 \section{Kiểm định thống kê}
 \label{sec:statistics}
 
 \subsection{Kiểm định McNemar}
 
-Kiểm định McNemar~\cite{mcnemar1947} là một phương pháp thống kê dùng để đánh giá sự khác biệt giữa hai mô hình phân loại khi cả hai cùng được áp trên cùng một tập dữ liệu kiểm thử. Thay vì xem xét kết quả của từng mô hình một cách độc lập, kiểm định dựa trên cặp dự đoán tương ứng của từng mẫu (\textit{paired predictions}). Nhờ đặc điểm này, McNemar phù hợp để kiểm tra liệu chênh lệch về kết quả phân loại giữa hai mô hình có đủ bằng chứng để xem là có ý nghĩa thống kê hay có thể xuất hiện do biến động ngẫu nhiên của dữ liệu.
+Kiểm định McNemar~\cite{mcnemar1947} là một phương pháp thống kê dùng để so sánh hiệu năng của hai mô hình phân loại khi cả hai cùng được đánh giá trên một tập dữ liệu kiểm thử. Thay vì xem xét kết quả của từng mô hình một cách tách biệt, kiểm định tận dụng cặp dự đoán tương ứng của từng mẫu (\textit{paired predictions}). Nhờ đặc điểm này, McNemar đặc biệt phù hợp để kiểm tra liệu chênh lệch về kết quả phân loại giữa hai mô hình có đủ bằng chứng thống kê hay chỉ là biến động ngẫu nhiên của dữ liệu.
 
 Hai giả thuyết được đặt ra trong kiểm định gồm:
 
@@ -166,13 +166,13 @@ Thống kê kiểm định được tính theo công thức:
 
 $$\chi^2 = \frac{(|B - C| - 1)^2}{b + c}$$
 
-Hai đại lượng $b$ và $c$ đại diện cho các trường hợp bất đồng (discordant pairs) giữa hai mô hình. Các trường hợp cả hai cùng đúng hoặc cùng sai không ảnh hưởng đến thống kê kiểm định vì không phản ánh sự khác biệt tương đối.
+Hai đại lượng $b$ và $c$ biểu diễn các trường hợp bất đồng (discordant pairs) giữa hai mô hình --- tức là những mẫu mà hai mô hình đưa ra dự đoán khác nhau. Những trường hợp cả hai cùng đúng hoặc cùng sai không đóng góp vào thống kê kiểm định vì không phản ánh sự khác biệt tương đối giữa hai mô hình.
 
-Giá trị $\chi^2$ càng lớn cho thấy mức độ chênh lệch giữa $b$ và $c$ càng cao --- tức là sự khác biệt có xu hướng mang tính hệ thống thay vì ngẫu nhiên. Giá trị $p$-value được tính dựa trên phân phối chi-square với $1$ bậc tự do. Nếu $p < \alpha$ (với $\alpha = 0{,}05$), giả thuyết $H_0$ bị bác bỏ và có thể kết luận sự khác biệt giữa hai mô hình là có ý nghĩa thống kê.
+Giá trị $\chi^2$ càng lớn cho thấy mức chênh lệch giữa $b$ và $c$ càng rõ --- tức là sự khác biệt mang tính hệ thống chứ không phải do ngẫu nhiên. Giá trị $p$-value được tính dựa trên phân phối chi-square với $1$ bậc tự do. Nếu $p < \alpha$ (với $\alpha = 0{,}05$), giả thuyết $H_0$ bị bác bỏ và có thể kết luận sự khác biệt giữa hai mô hình mang ý nghĩa thống kê.
 
-Hệ số điều chỉnh $(-1)$ trong tử số là hiệu chỉnh liên tục (\textit{continuity correction}), giúp giảm sai số loại I khi kích thước mẫu không quá lớn.
+Hệ số điều chỉnh $(-1)$ trong tử số là hiệu chỉnh liên tục (\textit{continuity correction}), giúp giảm sai số loại I khi kích thước mẫu chưa quá lớn.
 
-Do nghiên cứu thực hiện sáu phép so sánh cặp mô hình, việc tiến hành nhiều kiểm định đồng thời có thể làm gia tăng xác suất sai loại I. Để kiểm soát mức sai số toàn cục (\textit{family-wise error rate}), phương pháp hiệu chỉnh Holm--Bonferroni được áp dụng. Cụ thể, các $p$-value được sắp xếp theo thứ tự tăng dần và so sánh tuần tự với các ngưỡng hiệu chỉnh tương ứng, bảo đảm rằng xác suất xuất hiện ít nhất một kết luận sai không vượt quá mức ý nghĩa $\alpha$ đã lựa chọn.
+Vì nghiên cứu thực hiện sáu phép so sánh cặp mô hình, việc tiến hành nhiều kiểm định đồng thời có thể làm tăng xác suất sai loại I. Để kiểm soát mức sai số toàn cục (\textit{family-wise error rate}), phương pháp hiệu chỉnh Holm--Bonferroni được áp dụng. Theo đó, các $p$-value được sắp xếp theo thứ tự tăng dần rồi so sánh tuần tự với ngưỡng hiệu chỉnh tương ứng --- đảm bảo xác suất xuất hiện ít nhất một kết luận sai không vượt quá mức ý nghĩa $\alpha$ đã lựa chọn.
 
 Với hiệu chỉnh Holm-Bonferroni~\cite{holm1979} cho 6 phép so sánh:
 
@@ -194,22 +194,22 @@ BiLSTM  & PhoBERT & \mcnbilstmphobERTChi & $<$0{,}001  & Có ý nghĩa (***) \\
 \end{tabular}
 \end{table}
 
-\phobert vượt trội so với cả ba mô hình còn lại ($p < 0{,}001$). LR, SVM và BiLSTM không khác nhau lắm ($p \geq 0{,}05$ sau hiệu chỉnh Holm-Bonferroni) dù kiến trúc khác nhau hoàn toàn.
+\phobert vượt trội so với cả ba mô hình còn lại ($p < 0{,}001$). LR, SVM và BiLSTM không có sự khác biệt có ý nghĩa thống kê ($p \geq 0{,}05$ sau hiệu chỉnh Holm-Bonferroni) dù kiến trúc hoàn toàn khác nhau.
 
 \subsection{Khoảng tin cậy Bootstrap}
 
 Bên cạnh kiểm định McNemar, nghiên cứu tiếp tục sử dụng phương pháp bootstrap nhằm ước lượng độ ổn định của chỉ số F1-score và đánh giá độ tin cậy của sự khác biệt giữa các mô hình.
 
-Bootstrap là kỹ thuật lấy mẫu lặp lại có hoàn lại (\textit{resampling with replacement}) từ tập kiểm thử ban đầu để tạo ra nhiều tập mẫu giả lập. Trong nghiên cứu này, quá trình lấy mẫu được thực hiện 10{,}000 lần. Với mỗi lần lấy mẫu, F1-score được tính lại, từ đó xây dựng phân phối thực nghiệm của chỉ số này.
+Bootstrap là kỹ thuật lấy mẫu lặp lại có hoàn lại (\textit{resampling with replacement}) từ tập kiểm thử ban đầu để tạo ra nhiều tập mẫu giả lập. Trong nghiên cứu này, quá trình lấy mẫu được lặp lại 10{,}000 lần. Với mỗi lần, F1-score được tính lại; từ tập giá trị thu được, nghiên cứu xây dựng phân phối thực nghiệm của chỉ số này.
 
-Khoảng tin cậy 95\% (95\% Confidence Interval --- CI) được xác định từ phân vị 2.5\% và 97.5\% của phân phối bootstrap. Khoảng này biểu diễn miền giá trị mà tham số thực (F1-score kỳ vọng trên tổng thể) có khả năng nằm trong đó với mức tin cậy 95\%.
+Khoảng tin cậy 95\% (95\% Confidence Interval --- CI) được xác định từ phân vị 2.5\% và 97.5\% của phân phối bootstrap. Khoảng này mô tả miền giá trị mà tham số thực (F1-score kỳ vọng trên tổng thể) có khả năng nằm trong với mức tin cậy 95\%.
 
-Việc sử dụng bootstrap mang có vai trò đáng kể trong quá trình đánh giá mô hình vì:
+Việc sử dụng bootstrap có vai trò đáng kể trong quá trình đánh giá mô hình vì:
 
 \begin{itemize}
-    \item Không giả định phân phối chuẩn của F1-score.
-    \item Phản ánh mức độ dao động của mô hình khi dữ liệu thay đổi.
-    \item Cho phép so sánh mức độ chồng lấp giữa các khoảng tin cậy, từ đó hỗ trợ xác nhận sự khác biệt có tính hệ thống.
+    \item Không yêu cầu giả định phân phối chuẩn của F1-score.
+    \item Phản ánh mức dao động của mô hình khi dữ liệu thay đổi.
+    \item Cho phép so sánh mức chồng lấp giữa các khoảng tin cậy, từ đó hỗ trợ xác nhận sự khác biệt có tính hệ thống.
 \end{itemize}
 
 Kết quả khoảng tin cậy 95\% cho các mô hình được trình bày trong Bảng~\ref{tab:ci}.
@@ -235,22 +235,22 @@ Từ bảng~\ref{tab:ci} có thể quan sát rằng:
 \begin{itemize}
     \item PhoBERT đạt F1-score trung bình cao nhất (\phobertfone\%) với khoảng tin cậy 95\% là {\phobertfonecI{}}.
     \item Khoảng tin cậy của PhoBERT không chồng lấp với bất kỳ mô hình nào còn lại.
-    \item Các mô hình LR, SVM và BiLSTM có khoảng tin cậy tương đối gần nhau và tồn tại hiện tượng chồng lấp.
+    \item Khoảng tin cậy của LR, SVM và BiLSTM nằm khá gần nhau và có hiện tượng chồng lấp ở một số vùng.
 \end{itemize}
 
-Sự không chồng lấp khoảng tin cậy giữa PhoBERT và các mô hình khác củng cố kết luận từ kiểm định McNemar rằng sự vượt trội của PhoBERT không phải do dao động ngẫu nhiên mà mang tính ổn định thống kê. Ngược lại, sự chồng lấp giữa LR, SVM và BiLSTM làm rõ sự khác biệt về hiệu quả phân loại giữa ba mô hình này chưa đủ mạnh để kết luận tồn tại ưu thế rõ ràng.
+Sự tách biệt khoảng tin cậy giữa PhoBERT và các mô hình còn lại củng cố kết luận từ kiểm định McNemar rằng sự vượt trội của PhoBERT không phải do dao động ngẫu nhiên mà mang tính ổn định thống kê. Ngược lại, sự chồng lấp giữa LR, SVM và BiLSTM cho thấy sự khác biệt về hiệu quả phân loại giữa ba mô hình này chưa đủ lớn để kết luận tồn tại ưu thế rõ ràng.
 
-Như vậy, bootstrap đóng vai trò bổ sung cho kiểm định McNemar: nếu McNemar kiểm tra sự khác biệt ở mức dự đoán từng mẫu (\textit{instance-level comparison}), thì bootstrap đánh giá độ ổn định của chỉ số tổng hợp (F1-score) dưới biến thiên dữ liệu (\textit{metric-level stability}). Việc kết hợp cả hai phương pháp giúp tăng độ tin cậy và tính thuyết phục cho kết luận thực nghiệm.
+Như vậy, bootstrap đóng vai trò bổ sung cho kiểm định McNemar: nếu McNemar kiểm tra sự khác biệt ở mức dự đoán từng mẫu (\textit{instance-level comparison}), thì bootstrap đánh giá độ ổn định của chỉ số tổng hợp (F1-score) dưới biến thiên dữ liệu (\textit{metric-level stability}). Việc kết hợp hai phương pháp giúp tăng độ tin cậy và tính thuyết phục cho kết luận thực nghiệm.
 
 \subsection{Kiểm tra chéo (Cross-Validation)}
 
-Bên cạnh kết quả thu được từ tập kiểm tra cố định, độ ổn định của các mô hình học máy truyền thống còn được xem xét thông qua phương pháp kiểm tra chéo phân tầng (\textit{stratified cross-validation}). Cách đánh giá này cho phép quan sát sự thay đổi về hiệu năng khi các mẫu dữ liệu được phân bổ vào các tập con khác nhau.
+Bên cạnh kết quả thu được từ tập kiểm tra cố định, độ ổn định của các mô hình học máy truyền thống còn được xem xét thông qua phương pháp kiểm tra chéo phân tầng (\textit{stratified cross-validation}). Cách đánh giá này giúp quan sát sự thay đổi về hiệu năng khi các mẫu dữ liệu được phân bổ vào các tập con khác nhau.
 
-Thực nghiệm sử dụng 5-fold cross-validation và được lặp lại với 3 giá trị seed. Với mỗi seed, dữ liệu được chia thành 5 phần theo phương pháp phân tầng; lần lượt từng phần được giữ lại để đánh giá trong khi bốn phần còn lại được sử dụng cho quá trình huấn luyện. Do đó, toàn bộ thí nghiệm tạo ra 15 lần chạy độc lập. Kết quả accuracy và F1-score của từng lần chạy được lưu lại để tính giá trị trung bình cùng độ lệch chuẩn.
+Thực nghiệm sử dụng 5-fold cross-validation và lặp lại với 3 giá trị seed. Với mỗi seed, dữ liệu được chia thành 5 phần theo phương pháp phân tầng; lần lượt từng phần được giữ lại để đánh giá, trong khi bốn phần còn lại phục vụ huấn luyện. Như vậy, toàn bộ thí nghiệm tạo ra 15 lần chạy độc lập. Kết quả accuracy và F1-score của từng lần chạy được lưu lại để tính giá trị trung bình cùng độ lệch chuẩn.
 
-Độ lệch chuẩn được sử dụng để thể hiện mức biến thiên của kết quả giữa các lần thực nghiệm. Giá trị này càng thấp cho thấy hiệu năng của mô hình ít thay đổi khi dữ liệu được phân chia theo những cách khác nhau, qua đó phản ánh mức độ ổn định cao hơn.
+Độ lệch chuẩn phản ánh mức biến thiên của kết quả giữa các lần thực nghiệm. Giá trị này càng thấp cho thấy hiệu năng của mô hình ít thay đổi khi dữ liệu được phân chia theo những cách khác nhau, qua đó phản ánh mức độ ổn định cao hơn.
 
-Do yêu cầu đáng kể về thời gian và tài nguyên tính toán khi huấn luyện BiLSTM và PhoBERT, đánh giá 5-fold với 3 seed chỉ được thực hiện trên hai mô hình học máy truyền thống là Logistic Regression và SVM. Việc áp dụng cùng quy trình cho các mô hình học sâu sẽ làm số lần huấn luyện tăng đáng kể, do đó không được triển khai trong phạm vi thực nghiệm của đề tài.
+Do chi phí đáng kể về thời gian và tài nguyên tính toán khi huấn luyện BiLSTM và PhoBERT, đánh giá 5-fold với 3 seed chỉ được thực hiện trên hai mô hình học máy truyền thống là Logistic Regression và SVM. Việc áp dụng cùng quy trình cho các mô hình học sâu sẽ làm số lần huấn luyện tăng mạnh, vì vậy không được triển khai trong phạm vi thực nghiệm của đề tài.
 \begin{table}[H]
 \centering
 \caption{Kết quả kiểm tra chéo 5-fold (3 seeds)}
@@ -270,10 +270,10 @@ Từ bảng~\ref{tab:cv} có thể quan sát rằng:
 \begin{itemize}
     \item SVM đạt hiệu năng trung bình cao hơn Logistic Regression ở cả accuracy và F1-score.
     \item Độ lệch chuẩn của cả hai mô hình đều nhỏ ($\leq 0{,}010$), cho thấy hiệu năng ổn định qua các lần chia dữ liệu.
-    \item Kết quả giữa các lần phân chia dữ liệu có sự chênh lệch không đáng kể, cho thấy mô hình vẫn duy trì hiệu năng tương đối ổn định khi thay đổi cách chia tập dữ liệu.
+    \item Kết quả giữa các lần phân chia dữ liệu có sự chênh lệch không đáng kể, cho thấy mô hình duy trì hiệu năng tương đối ổn định khi thay đổi cách chia tập dữ liệu.
 \end{itemize}
 
-So với kiểm định McNemar và bootstrap, cross-validation bổ sung một góc nhìn khác trong đánh giá thực nghiệm: nếu McNemar kiểm tra sự khác biệt ở việc dự đoán từng mẫu (\textit{instance-level comparison}) và bootstrap đánh giá độ ổn định của chỉ số trên tập kiểm thử cố định, thì cross-validation đánh giá mức độ ổn định của mô hình khi thay đổi dữ liệu được sử dụng trong quá trình huấn luyện.
+So với kiểm định McNemar và bootstrap, cross-validation bổ sung một góc nhìn khác trong đánh giá thực nghiệm: nếu McNemar kiểm tra sự khác biệt ở việc dự đoán từng mẫu (\textit{instance-level comparison}) và bootstrap đánh giá độ ổn định của chỉ số trên tập kiểm thử cố định, thì cross-validation đánh giá mức ổn định của mô hình khi thay đổi dữ liệu sử dụng trong quá trình huấn luyện.
 
 Sự kết hợp của ba phương pháp McNemar, Bootstrap và Cross-Validation giúp đảm bảo rằng kết luận về hiệu năng mô hình không chỉ dựa trên một lần thử nghiệm duy nhất, mà được xác nhận dưới nhiều góc độ thống kê khác nhau.
 
