@@ -34,6 +34,20 @@ MODEL_COLORS = {
 }
 
 
+__all__ = [
+    "compute_calibration_curve",
+    "expected_calibration_error",
+    "maximum_calibration_error",
+    "brier_score",
+    "load_all_predictions",
+    "analyze_calibration",
+    "plot_calibration_curves",
+    "plot_calibration_overlay",
+    "save_calibration_results",
+    "generate_calibration_latex_table",
+]
+
+
 def compute_calibration_curve(
     y_true: np.ndarray,
     y_prob: np.ndarray,

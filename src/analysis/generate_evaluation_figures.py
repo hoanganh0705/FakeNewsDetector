@@ -14,7 +14,6 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# Publication-quality settings
 plt.rcParams.update({
     'font.size': 11,
     'font.family': 'serif',

@@ -12,6 +12,8 @@ from transformers import (
 )
 from transformers.modeling_outputs import SequenceClassifierOutput
 
+__all__ = ["PhoBertClassifier"]
+
 
 class PhoBertClassifier(nn.Module):
     def __init__(

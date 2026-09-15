@@ -10,6 +10,11 @@ from src.utils.common import load_csv
 from src.utils.logger import get_logger
 log = get_logger(__name__)
 
+__all__ = [
+    "TfidfFeatureExtractor",
+    "extract_tfidf_features",
+]
+
 
 class TfidfFeatureExtractor:
     def __init__(

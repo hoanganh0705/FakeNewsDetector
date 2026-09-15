@@ -17,9 +17,13 @@ from src.features.embedding_features import TextDataset, collate_fn
 from src.evaluation.metrics import compute_metrics, print_metrics
 from src.models.student_model import StudentBiLSTM
 from src.utils.logger import get_logger
+from src.utils.common import to_list
 from config import cfg
 
 log = get_logger(__name__)
+
+
+__all__ = ["StudentBiLSTMTrainer", "distillation_loss"]
 
 
 def distillation_loss(
@@ -445,24 +449,24 @@ def main(
         {
             "model_name": "student_bilstm",
             "train": {
-                "y_true": _to_list(y_train),
-                "y_pred": _to_list(trainer.predict(train_loader)[0]),
-                "y_prob": _to_list(trainer.predict(train_loader)[1]),
-                "raw_logit": _to_list(teacher_train_logits),
+                "y_true": to_list(y_train),
+                "y_pred": to_list(trainer.predict(train_loader)[0]),
+                "y_prob": to_list(trainer.predict(train_loader)[1]),
+                "raw_logit": to_list(teacher_train_logits),
                 "n_samples": int(len(y_train)),
             },
             "val": {
-                "y_true": _to_list(y_val),
-                "y_pred": _to_list(trainer.predict(val_loader)[0]),
-                "y_prob": _to_list(trainer.predict(val_loader)[1]),
-                "raw_logit": _to_list(teacher_val_logits),
+                "y_true": to_list(y_val),
+                "y_pred": to_list(trainer.predict(val_loader)[0]),
+                "y_prob": to_list(trainer.predict(val_loader)[1]),
+                "raw_logit": to_list(teacher_val_logits),
                 "n_samples": int(len(y_val)),
             },
             "test": {
-                "y_true": _to_list(y_test),
-                "y_pred": _to_list(y_pred),
-                "y_prob": _to_list(y_prob),
-                "raw_logit": _to_list(teacher_test_logits),
+                "y_true": to_list(y_test),
+                "y_pred": to_list(y_pred),
+                "y_prob": to_list(y_prob),
+                "raw_logit": to_list(teacher_test_logits),
                 "n_samples": int(len(y_test)),
             },
         },
@@ -499,12 +503,6 @@ def main(
     log.info("Saved student metrics → %s/metrics.json", model_dir)
 
     return metrics_dict
-
-
-def _to_list(arr):
-    if isinstance(arr, np.ndarray):
-        return arr.tolist()
-    return list(arr)
 
 
 def _to_serializable(obj):

@@ -20,6 +20,12 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
+__all__ = [
+    "get_scorers",
+    "run_cross_validation",
+]
+
+
 def get_scorers() -> Dict:
     return {
         'accuracy': 'accuracy',

@@ -7,6 +7,9 @@ from src.utils.logger import get_logger
 
 log = get_logger(__name__)
 
+__all__ = ["GPUMonitor", "shutdown"]
+
+
 try:
     import pynvml as _nvml  # type: ignore
     _NVML_AVAILABLE = True

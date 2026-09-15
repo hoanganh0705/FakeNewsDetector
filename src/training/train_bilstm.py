@@ -27,6 +27,8 @@ from config import cfg
 from src.utils.logger import get_logger
 log = get_logger(__name__)
 
+__all__ = ["BiLSTMTrainer"]
+
 
 # BiLSTMClassifier is defined in src/models/bilstm_model.py
 # and imported above — keeping training logic and architecture separate.

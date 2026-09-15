@@ -11,6 +11,19 @@ import pandas as pd
 
 from config import cfg
 
+__all__ = [
+    "MODEL_DIR_MAP",
+    "DIR_MODEL_MAP",
+    "load_metrics",
+    "load_all_metrics",
+    "compute_balanced_class_weights",
+    "set_reproducibility_seeds",
+    "validate_dataframe_columns",
+    "load_csv",
+    "ExperimentTracker",
+    "to_list",
+]
+
 MODEL_DIR_MAP: Dict[str, str] = {
     'Logistic Regression': 'lr',
     'SVM': 'svm',
@@ -19,6 +32,31 @@ MODEL_DIR_MAP: Dict[str, str] = {
 }
 
 DIR_MODEL_MAP: Dict[str, str] = {v: k for k, v in MODEL_DIR_MAP.items()}
+
+
+def to_list(arr):
+    """Convert a numpy array, torch tensor, or array-like to a plain Python list.
+
+    Centralized helper (Phase 3, Task 3.1) — previously duplicated in 4 places
+    (`src/training/runner.py`, `src/training/reproduce_predictions.py`,
+    `src/training/train_student.py`, `src/evaluation/post_hoc_calibration.py`).
+    Use this for JSON serialization of model predictions / metrics.
+
+    Args:
+        arr: A numpy ndarray, torch Tensor, or any object with ``tolist()`` /
+            ``detach()``. ``None`` is returned as ``None`` (so callers can pass
+            optional arrays without extra branching).
+
+    Returns:
+        A plain Python list, or ``None`` if input was ``None``.
+    """
+    if arr is None:
+        return None
+    if hasattr(arr, "detach"):  # torch.Tensor → numpy
+        arr = arr.detach().cpu().numpy()
+    if hasattr(arr, "tolist"):
+        return arr.tolist()
+    return list(arr)
 
 
 

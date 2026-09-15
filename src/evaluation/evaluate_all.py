@@ -26,6 +26,18 @@ except OSError:
 sns.set_palette("husl")
 
 
+__all__ = [
+    "create_comparison_table",
+    "create_per_class_table",
+    "plot_model_comparison",
+    "plot_confusion_matrices_grid",
+    "plot_roc_curves_comparison",
+    "plot_training_history",
+    "generate_latex_table",
+    "save_predictions_for_analysis",
+]
+
+
 def create_comparison_table(metrics: Dict[str, dict]) -> pd.DataFrame:
     rows = []
     

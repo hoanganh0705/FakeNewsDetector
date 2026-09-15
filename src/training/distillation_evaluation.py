@@ -20,6 +20,15 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
+__all__ = [
+    "_infer_teacher_params",
+    "_count_params_torch",
+    "_size_mb_torch",
+    "_measure_inference_time",
+    "run_distillation_evaluation",
+]
+
+
 def _count_params_torch(model: torch.nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 

@@ -17,6 +17,16 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
+__all__ = [
+    "load_text_data",
+    "ablation_tfidf_vocab_size",
+    "ablation_ngram_range",
+    "ablation_word_segmentation",
+    "ablation_lr_regularization",
+    "ablation_sublinear_tf",
+]
+
+
 def load_text_data() -> Tuple[pd.Series, pd.Series, np.ndarray, np.ndarray]:
     train_path = os.path.join(cfg.PATHS.splits_dir, 'train.csv')
     test_path = os.path.join(cfg.PATHS.splits_dir, 'test.csv')

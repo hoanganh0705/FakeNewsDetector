@@ -6,6 +6,8 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
+__all__ = ["BiLSTMClassifier"]
+
 
 class BiLSTMClassifier(nn.Module):
     def __init__(

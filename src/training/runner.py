@@ -10,17 +10,12 @@ import joblib
 from datetime import datetime
 
 from src.evaluation.metrics import save_metrics
-from src.utils.common import ExperimentTracker
+from src.utils.common import ExperimentTracker, to_list
 from src.utils.logger import get_logger
 
 log = get_logger(__name__)
 
-
-def _to_list(arr):
-    """Convert an array-like to a plain Python list."""
-    if hasattr(arr, 'tolist'):
-        return arr.tolist()
-    return list(arr)
+__all__ = ["save_training_results"]
 
 
 def save_training_results(
@@ -64,9 +59,9 @@ def save_training_results(
     predictions_path = os.path.join(model_dir, 'predictions.pkl')
     joblib.dump(
         {
-            'y_true': _to_list(y_true),
-            'y_pred': _to_list(y_pred),
-            'y_prob': _to_list(y_prob),
+            'y_true': to_list(y_true),
+            'y_pred': to_list(y_pred),
+            'y_prob': to_list(y_prob),
         },
         predictions_path,
     )

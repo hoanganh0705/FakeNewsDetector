@@ -21,6 +21,16 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
+__all__ = [
+    "compute_metrics",
+    "print_metrics",
+    "plot_confusion_matrix",
+    "plot_roc_curve",
+    "plot_precision_recall_curve",
+    "save_metrics",
+]
+
+
 def compute_metrics(
     y_true: np.ndarray,
     y_pred: np.ndarray,

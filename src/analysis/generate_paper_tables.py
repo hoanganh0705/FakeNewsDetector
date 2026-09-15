@@ -8,6 +8,14 @@ from config import cfg
 from src.utils.logger import get_logger
 log = get_logger(__name__)
 
+__all__ = [
+    "table1_dataset_statistics",
+    "table2_model_comparison",
+    "table3_per_class_metrics",
+    "table4_hyperparameters",
+    "table5_training_time",
+]
+
 
 def _fetch_all_metrics():
     return load_all_metrics()

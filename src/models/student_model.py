@@ -6,6 +6,8 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
+__all__ = ["StudentBiLSTM"]
+
 
 class StudentBiLSTM(nn.Module):
     DEFAULT_EMBEDDING_DIM: int = 300

@@ -1,13 +1,4 @@
-"""
-PhoBERT Training Script for Vietnamese Fake News Detection
-
-
-This script fine-tunes PhoBERT (Pre-trained language model for Vietnamese)
-for fake news classification task.
-"""
-
 import os
-import re
 import joblib
 import time
 import numpy as np
@@ -29,10 +20,10 @@ from config import cfg
 from src.utils.logger import get_logger
 log = get_logger(__name__)
 
+__all__ = ["PhoBertTrainer"]
+
 
 class PhoBertTrainer:
-    """Trainer for PhoBERT model."""
-    
     def __init__(
         self,
         num_classes: int = None,
@@ -43,23 +34,10 @@ class PhoBertTrainer:
         freeze_bert: bool = False,
         device: str = None
     ):
-        """
-        Initialize the trainer.
-        
-        Args:
-            num_classes: Number of output classes (defaults to cfg.PHOBERT.num_classes)
-            dropout: Dropout rate (defaults to cfg.PHOBERT.dropout)
-            learning_rate: Learning rate (defaults to cfg.PHOBERT.learning_rate)
-            weight_decay: L2 regularization (defaults to cfg.PHOBERT.weight_decay)
-            warmup_ratio: Ratio of warmup steps (defaults to cfg.PHOBERT.warmup_ratio)
-            freeze_bert: Whether to freeze BERT layers
-            device: Device to use
-        """
         self.learning_rate = learning_rate if learning_rate is not None else cfg.PHOBERT.learning_rate
         self.weight_decay = weight_decay if weight_decay is not None else cfg.PHOBERT.weight_decay
         self.warmup_ratio = warmup_ratio if warmup_ratio is not None else cfg.PHOBERT.warmup_ratio
         
-        # Set device
         if device is None:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
@@ -67,7 +45,6 @@ class PhoBertTrainer:
         
         log.info(f"Using device: {self.device}")
         
-        # Initialize model
         self.model = PhoBertClassifier(
             num_classes=num_classes if num_classes is not None else cfg.PHOBERT.num_classes,
             dropout=dropout if dropout is not None else cfg.PHOBERT.dropout,
@@ -90,20 +67,7 @@ class PhoBertTrainer:
         self._saved_scheduler_state = None
 
     @staticmethod
-    def _get_logits(outputs) -> torch.Tensor:
-        """
-        Extract the logits tensor from a HuggingFace transformer output.
-
-        ``PhoBertClassifier`` (via ``AutoModelForSequenceClassification``) returns
-        a ``SequenceClassifierOutput`` dataclass with ``.logits`` *only when* the
-        forward call is made **without** ``labels``.  PyTorch loss functions
-        (``CrossEntropyLoss``, etc.) require a raw ``Tensor`` — passing the wrapper
-        raises ``TypeError: cross_entropy_loss(): argument 'input' must be Tensor,
-        not SequenceClassifierOutput``.
-
-        This helper centralises that extraction so all three call sites in this
-        trainer behave consistently, regardless of the transformers version.
-        """
+    def _get_logits(outputs) -> torch.Tensor:   
         if hasattr(outputs, "logits"):
             return outputs.logits
         if isinstance(outputs, torch.Tensor):
@@ -122,25 +86,10 @@ class PhoBertTrainer:
         class_weights: np.ndarray = None,
         gradient_accumulation_steps: int = None
     ) -> 'PhoBertTrainer':
-        """
-        Train the model.
-        
-        Args:
-            train_loader: Training data loader
-            val_loader: Validation data loader
-            epochs: Number of epochs
-            patience: Early stopping patience
-            class_weights: Class weights for imbalanced data
-            gradient_accumulation_steps: Steps to accumulate gradients
-            
-        Returns:
-            self
-        """
         epochs = epochs if epochs is not None else cfg.PHOBERT.epochs
         patience = patience if patience is not None else cfg.PHOBERT.patience
         gradient_accumulation_steps = gradient_accumulation_steps if gradient_accumulation_steps is not None else cfg.PHOBERT.gradient_accumulation_steps
 
-        # Setup loss function (with label smoothing)
         if class_weights is not None:
             weights = torch.tensor(class_weights, dtype=torch.float32).to(self.device)
             self.criterion = nn.CrossEntropyLoss(weight=weights, label_smoothing=cfg.PHOBERT.label_smoothing)
@@ -301,7 +250,6 @@ class PhoBertTrainer:
         return self
     
     def _evaluate(self, data_loader: DataLoader) -> Tuple[float, float, float]:
-        """Evaluate model on a data loader."""
         self.model.eval()
         total_loss = 0
         all_preds = []
@@ -329,7 +277,6 @@ class PhoBertTrainer:
         return avg_loss, metrics['accuracy'], metrics['f1_macro']
     
     def predict(self, data_loader: DataLoader) -> Tuple[np.ndarray, np.ndarray]:
-        """Get predictions and probabilities."""
         self.model.eval()
         all_preds = []
         all_probs = []
@@ -350,12 +297,10 @@ class PhoBertTrainer:
         return np.array(all_preds), np.array(all_probs)
     
     def evaluate(self, data_loader: DataLoader, y_true: np.ndarray) -> dict:
-        """Evaluate on a dataset."""
         y_pred, y_prob = self.predict(data_loader)
         return compute_metrics(y_true, y_pred, y_prob)
     
     def save(self, path: str) -> None:
-        """Save the model, optimizer, and scheduler state for full resumption."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
         checkpoint = {
             'model_state_dict':     self.model.state_dict(),
@@ -371,12 +316,6 @@ class PhoBertTrainer:
     
     @classmethod
     def load(cls, path: str, device: str = None) -> 'PhoBertTrainer':
-        """
-        Load a saved model.
-
-        Restores model weights, optimizer state (if present), and scheduler
-        state (if present) so training can resume exactly where it stopped.
-        """
         checkpoint = torch.load(path, map_location='cpu', weights_only=True)
 
         trainer = cls(device=device)
@@ -392,8 +331,7 @@ class PhoBertTrainer:
         return trainer
 
 
-def main():
-    """Main training function."""
+def main(): 
     from src.utils.common import set_reproducibility_seeds
 
     set_reproducibility_seeds()

@@ -7,7 +7,15 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.gridspec as gridspec
-    
+
+__all__ = [
+    "load_all_attributions",
+    "find_best_record",
+    "create_phobert_attribution_figure",
+    "create_method_agreement_figure",
+    "create_cross_model_agreement_figure",
+]
+
 plt.rcParams.update({
     'font.size': 12,
     'font.family': 'DejaVu Sans',

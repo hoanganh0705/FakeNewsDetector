@@ -16,11 +16,21 @@ from src.evaluation.calibration_analysis import (
     expected_calibration_error,
     maximum_calibration_error,
 )
-from src.utils.common import MODEL_DIR_MAP
+from src.utils.common import MODEL_DIR_MAP, to_list
 from src.utils.logger import get_logger
 from src.evaluation.metrics import compute_metrics
 
 log = get_logger(__name__)
+
+__all__ = [
+    "CalibratedProb",
+    "platt_scaling",
+    "temperature_scaling",
+    "isotonic_regression",
+    "evaluate_recalibration",
+    "run_post_hoc_calibration",
+    "asdict_safe",
+]
 
 
 @dataclass
@@ -258,12 +268,12 @@ def run_post_hoc_calibration(
                 "isotonic":    asdict_safe(iso),
             },
             "test_prob_recalibrated": {
-                "platt":       _to_list(test_prob_platt) if test_prob_platt is not None else None,
-                "temperature": _to_list(test_prob_temp)  if test_prob_temp  is not None else None,
-                "isotonic":    _to_list(test_prob_iso)   if test_prob_iso   is not None else None,
+                "platt":       to_list(test_prob_platt) if test_prob_platt is not None else None,
+                "temperature": to_list(test_prob_temp)  if test_prob_temp  is not None else None,
+                "isotonic":    to_list(test_prob_iso)   if test_prob_iso   is not None else None,
             },
-            "y_true_test": _to_list(test_y),
-            "y_prob_orig": _to_list(test_prob_orig),
+            "y_true_test": to_list(test_y),
+            "y_prob_orig": to_list(test_prob_orig),
         }
         out_pkl = model_dir / "raw_logits_recal.pkl"
         joblib.dump(recal_bundle, out_pkl)
@@ -487,12 +497,6 @@ def _sigmoid(x: np.ndarray) -> np.ndarray:
     return out
 
 
-def _to_list(arr: Optional[np.ndarray]) -> Optional[list]:
-    if arr is None:
-        return None
-    return np.asarray(arr, dtype=np.float64).tolist()
-
-
 def _fmt(x: float) -> str:
     try:
         v = float(x)
@@ -503,25 +507,9 @@ def _fmt(x: float) -> str:
     return f"{v:.4f}".replace(".", "{,}")
 
 
-def asdict_safe(cal: Optional[CalibratedProb]) -> Optional[Dict]:
-    if cal is None:
-        return None
-    return {"method": cal.method, "params": cal.params}
-
 def main() -> None:
     log.info("=" * 60)
     log.info("  POST-HOC CALIBRATION")
     log.info("=" * 60)
     run_post_hoc_calibration()
     log.info("Done.")
-
-
-__all__ = [
-    "CalibratedProb",
-    "platt_scaling",
-    "temperature_scaling",
-    "isotonic_regression",
-    "evaluate_recalibration",
-    "run_post_hoc_calibration",
-    "main",
-]

@@ -21,6 +21,8 @@ from config import cfg
 from src.utils.logger import get_logger
 log = get_logger(__name__)
 
+__all__ = ["LogisticRegressionTrainer"]
+
 
 class LogisticRegressionTrainer:
     """Trainer for Logistic Regression model."""

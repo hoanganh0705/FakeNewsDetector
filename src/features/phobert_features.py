@@ -13,6 +13,14 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
+__all__ = [
+    "PhoBertFeatureExtractor",
+    "PhoBertDataset",
+    "extract_phobert_features",
+    "create_phobert_data_loaders",
+]
+
+
 class PhoBertFeatureExtractor:
     MODEL_NAME = cfg.PHOBERT.model_name
 

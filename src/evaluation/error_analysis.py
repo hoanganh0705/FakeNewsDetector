@@ -13,6 +13,16 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
+__all__ = [
+    "load_test_data_with_predictions",
+    "analyze_error_patterns",
+    "plot_error_analysis",
+    "find_hard_examples",
+    "track_per_id_confidence",
+    "analyze_hard_examples",
+]
+
+
 def load_test_data_with_predictions():
     test_path = os.path.join(cfg.PATHS.splits_dir, 'test.csv')
     test_df = load_csv(test_path, required_columns=['text', 'label'])

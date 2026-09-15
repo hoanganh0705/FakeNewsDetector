@@ -20,14 +20,17 @@ import torch  # noqa: E402
 from config import cfg  # noqa: E402
 from src.utils.logger import get_logger  # noqa: E402
 from src.evaluation.metrics import compute_metrics, save_metrics  # noqa: E402
+from src.utils.common import to_list  # noqa: E402
 
 log = get_logger(__name__)
 
 
-def _to_list(arr):
-    if hasattr(arr, "tolist"):
-        return arr.tolist()
-    return list(arr)
+__all__ = [
+    "_resolve_raw_logit_sklearn",
+    "stage_a",
+    "stage_b",
+    "stage_c",
+]
 
 
 def _resolve_raw_logit_sklearn(model, X: np.ndarray) -> np.ndarray:
@@ -78,10 +81,10 @@ def stage_a(force: bool = False) -> None:
             y_prob = np.asarray(model.predict_proba(X)[:, 1], dtype=np.float64)
             raw_logit = _resolve_raw_logit_sklearn(model, X)
             combined[split_name] = {
-                "y_true": _to_list(y),
-                "y_pred": _to_list(y_pred),
-                "y_prob": _to_list(y_prob),
-                "raw_logit": _to_list(raw_logit),
+                "y_true": to_list(y),
+                "y_pred": to_list(y_pred),
+                "y_prob": to_list(y_prob),
+                "raw_logit": to_list(raw_logit),
                 "n_samples": int(len(y)),
             }
             metrics = compute_metrics(np.asarray(y), y_pred, y_prob)
@@ -156,33 +159,33 @@ def stage_b(skip_retrain: bool = False, device: str = None, epochs: int = None) 
     test_logits = _extract_logits_bilstm(trainer, test_loader)
 
     joblib.dump({
-        "y_true": _to_list(y_test),
-        "y_pred": _to_list(test_pred),
-        "y_prob": _to_list(test_prob),
+        "y_true": to_list(y_test),
+        "y_pred": to_list(test_pred),
+        "y_prob": to_list(test_prob),
     }, pred_path)
 
     joblib.dump({
         "model_name": "BiLSTM",
         "timestamp": datetime.now().isoformat(),
         "train": {
-            "y_true": _to_list(y_train),
-            "y_pred": _to_list(train_pred),
-            "y_prob": _to_list(train_prob),
-            "raw_logit": _to_list(train_logits[:, 1]),  # logit for class 1
+            "y_true": to_list(y_train),
+            "y_pred": to_list(train_pred),
+            "y_prob": to_list(train_prob),
+            "raw_logit": to_list(train_logits[:, 1]),  # logit for class 1
             "n_samples": int(len(y_train)),
         },
         "val": {
-            "y_true": _to_list(y_val),
-            "y_pred": _to_list(val_pred),
-            "y_prob": _to_list(val_prob),
-            "raw_logit": _to_list(val_logits[:, 1]),  # logit for class 1
+            "y_true": to_list(y_val),
+            "y_pred": to_list(val_pred),
+            "y_prob": to_list(val_prob),
+            "raw_logit": to_list(val_logits[:, 1]),  # logit for class 1
             "n_samples": int(len(y_val)),
         },
         "test": {
-            "y_true": _to_list(y_test),
-            "y_pred": _to_list(test_pred),
-            "y_prob": _to_list(test_prob),
-            "raw_logit": _to_list(test_logits[:, 1]),
+            "y_true": to_list(y_test),
+            "y_pred": to_list(test_pred),
+            "y_prob": to_list(test_prob),
+            "raw_logit": to_list(test_logits[:, 1]),
             "n_samples": int(len(y_test)),
         },
     }, logits_path)
@@ -278,33 +281,33 @@ def stage_c(skip_retrain: bool = False, device: str = None, epochs: int = None) 
     test_logits = _extract_logits_phobert(trainer, test_loader)
 
     joblib.dump({
-        "y_true": _to_list(y_test),
-        "y_pred": _to_list(test_pred),
-        "y_prob": _to_list(test_prob),
+        "y_true": to_list(y_test),
+        "y_pred": to_list(test_pred),
+        "y_prob": to_list(test_prob),
     }, pred_path)
 
     joblib.dump({
         "model_name": "PhoBERT",
         "timestamp": datetime.now().isoformat(),
         "train": {
-            "y_true": _to_list(y_train),
-            "y_pred": _to_list(train_pred),
-            "y_prob": _to_list(train_prob),
-            "raw_logit": _to_list(train_logits[:, 1]),
+            "y_true": to_list(y_train),
+            "y_pred": to_list(train_pred),
+            "y_prob": to_list(train_prob),
+            "raw_logit": to_list(train_logits[:, 1]),
             "n_samples": int(len(y_train)),
         },
         "val": {
-            "y_true": _to_list(y_val),
-            "y_pred": _to_list(val_pred),
-            "y_prob": _to_list(val_prob),
-            "raw_logit": _to_list(val_logits[:, 1]),
+            "y_true": to_list(y_val),
+            "y_pred": to_list(val_pred),
+            "y_prob": to_list(val_prob),
+            "raw_logit": to_list(val_logits[:, 1]),
             "n_samples": int(len(y_val)),
         },
         "test": {
-            "y_true": _to_list(y_test),
-            "y_pred": _to_list(test_pred),
-            "y_prob": _to_list(test_prob),
-            "raw_logit": _to_list(test_logits[:, 1]),
+            "y_true": to_list(y_test),
+            "y_pred": to_list(test_pred),
+            "y_prob": to_list(test_prob),
+            "raw_logit": to_list(test_logits[:, 1]),
             "n_samples": int(len(y_test)),
         },
     }, logits_path)

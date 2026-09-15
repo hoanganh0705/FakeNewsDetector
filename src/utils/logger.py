@@ -9,6 +9,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, module=r"sklearn(\.|$)
 warnings.filterwarnings("ignore", category=FutureWarning, module=r"scipy(\.|$)")
 warnings.filterwarnings("ignore", category=FutureWarning, module=r"joblib(\.|$)")
 
+__all__ = ["get_logger", "set_global_level"]
 
 _LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 _DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
