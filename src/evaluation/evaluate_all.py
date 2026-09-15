@@ -1,15 +1,3 @@
-"""
-Comprehensive Evaluation Script for All Models
-
-
-This script:
-1. Loads all trained models
-2. Evaluates on test set
-3. Generates comparison tables
-4. Creates visualizations (confusion matrices, ROC curves, etc.)
-5. Performs statistical analysis
-"""
-
 import os
 import json
 import joblib
@@ -31,9 +19,6 @@ from src.utils.common import load_all_metrics, MODEL_DIR_MAP
 from src.utils.logger import get_logger
 log = get_logger(__name__)
 
-
-# Set style for plots
-# Support both matplotlib ≥ 3.6 (seaborn-v0_8-*) and older versions
 try:
     plt.style.use('seaborn-v0_8-whitegrid')
 except OSError:
@@ -42,7 +27,6 @@ sns.set_palette("husl")
 
 
 def create_comparison_table(metrics: Dict[str, dict]) -> pd.DataFrame:
-    """Create a comparison table of all models."""
     rows = []
     
     for model_name, model_metrics in metrics.items():
@@ -64,7 +48,6 @@ def create_comparison_table(metrics: Dict[str, dict]) -> pd.DataFrame:
 
 
 def create_per_class_table(metrics: Dict[str, dict]) -> pd.DataFrame:
-    """Create per-class performance table."""
     rows = []
     
     class_names = ['Thật (0)', 'Giả (1)']
@@ -86,7 +69,6 @@ def create_per_class_table(metrics: Dict[str, dict]) -> pd.DataFrame:
 
 
 def plot_model_comparison(df: pd.DataFrame, save_path: str):
-    """Create bar chart comparing all models."""
     fig, ax = plt.subplots(figsize=(12, 6))
     
     metrics_to_plot = ['Accuracy', 'Precision', 'Recall', 'F1-Score']
@@ -97,7 +79,6 @@ def plot_model_comparison(df: pd.DataFrame, save_path: str):
         offset = (i - 1.5) * width
         bars = ax.bar(x + offset, df[metric], width, label=metric)
         
-        # Add value labels on bars
         for bar in bars:
             height = bar.get_height()
             ax.annotate(f'{height:.3f}',
@@ -123,7 +104,6 @@ def plot_model_comparison(df: pd.DataFrame, save_path: str):
 
 
 def plot_confusion_matrices_grid(metrics: Dict[str, dict], save_path: str):
-    """Plot confusion matrices for all models in a grid."""
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
     
@@ -143,7 +123,6 @@ def plot_confusion_matrices_grid(metrics: Dict[str, dict], save_path: str):
         axes[idx].set_xlabel('Dự đoán', fontsize=10)
         axes[idx].set_ylabel('Thực tế', fontsize=10)
         
-        # Add accuracy annotation
         acc = model_metrics['test']['accuracy']
         axes[idx].text(0.5, -0.15, f'Độ chính xác: {acc:.4f}', 
                       transform=axes[idx].transAxes, ha='center', fontsize=10)
@@ -158,7 +137,6 @@ def plot_confusion_matrices_grid(metrics: Dict[str, dict], save_path: str):
 
 
 def plot_roc_curves_comparison(save_path: str):
-    """Plot ROC curves for all models on the same graph."""
     fig, ax = plt.subplots(figsize=(10, 8))
     
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
@@ -166,7 +144,6 @@ def plot_roc_curves_comparison(save_path: str):
     from sklearn.metrics import roc_curve, auc
     
     for (model_name, dir_name), color in zip(MODEL_DIR_MAP.items(), colors):
-        # Load predictions if available
         pred_path = os.path.join(cfg.PATHS.experiments_dir, dir_name, 'predictions.pkl')
         
         if os.path.exists(pred_path):
@@ -195,7 +172,6 @@ def plot_roc_curves_comparison(save_path: str):
 
 
 def plot_training_history(save_path: str):
-    """Plot training history for deep learning models."""
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     
     # BiLSTM history
@@ -204,7 +180,6 @@ def plot_training_history(save_path: str):
     
     models_data = []
     
-    # Try to load training history from model files
     bilstm_model_path = os.path.join(cfg.PATHS.bilstm_dir, 'bilstm_model.pt')
     if os.path.exists(bilstm_model_path):
         checkpoint = torch.load(bilstm_model_path, map_location='cpu', weights_only=True)
@@ -224,7 +199,6 @@ def plot_training_history(save_path: str):
     
     colors = {'BiLSTM': '#2ca02c', 'PhoBERT': '#d62728'}
     
-    # Plot loss
     for model_name, history in models_data:
         if 'train_loss' in history and 'val_loss' in history:
             epochs = range(1, len(history['train_loss']) + 1)
@@ -239,7 +213,6 @@ def plot_training_history(save_path: str):
     axes[0].legend(fontsize=9)
     axes[0].grid(True, alpha=0.3)
     
-    # Plot F1
     for model_name, history in models_data:
         if 'val_f1' in history:
             epochs = range(1, len(history['val_f1']) + 1)
@@ -262,17 +235,12 @@ def plot_training_history(save_path: str):
 
 
 def generate_latex_table(df: pd.DataFrame, save_path: str):
-    """Generate LaTeX table for paper."""
-    # Format numbers
     df_formatted = df.copy()
     for col in ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'ROC-AUC']:
         if col in df_formatted.columns:
             df_formatted[col] = df_formatted[col].apply(lambda x: f'{x:.4f}')
     
     latex = df_formatted.to_latex(index=False, escape=False)
-    
-    # Add best result highlighting
-    # Find best values and bold them
     
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     with open(save_path, 'w') as f:
@@ -282,15 +250,8 @@ def generate_latex_table(df: pd.DataFrame, save_path: str):
 
 
 def save_predictions_for_analysis():
-    """Ensure predictions files exist for all trained models.
-
-    Training scripts already save ``predictions.pkl`` — this function only
-    regenerates missing files (e.g. if the user deleted them but kept models).
-    """
     log.info("Checking predictions for all models...")
 
-    # Load test features
-    # TF-IDF features for LR and SVM
     tfidf_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_features.pkl')
     if not os.path.exists(tfidf_path):
         log.warning("TF-IDF features not found at %s", tfidf_path)
@@ -301,7 +262,6 @@ def save_predictions_for_analysis():
     X_test = tfidf_features['X_test']
     y_test = tfidf_features['y_test']
     
-    # Logistic Regression
     lr_pred_path = os.path.join(cfg.PATHS.lr_dir, 'predictions.pkl')
     lr_model_path = os.path.join(cfg.PATHS.lr_dir, 'lr_model.pkl')
     if os.path.exists(lr_pred_path):
@@ -317,7 +277,6 @@ def save_predictions_for_analysis():
         joblib.dump({'y_true': y_test, 'y_pred': y_pred, 'y_prob': y_prob}, pred_path)
         log.info("\u2705 LR predictions saved")
     
-    # SVM
     svm_pred_path = os.path.join(cfg.PATHS.svm_dir, 'predictions.pkl')
     svm_model_path = os.path.join(cfg.PATHS.svm_dir, 'svm_model.pkl')
     if os.path.exists(svm_pred_path):
@@ -333,7 +292,6 @@ def save_predictions_for_analysis():
         joblib.dump({'y_true': y_test, 'y_pred': y_pred, 'y_prob': y_prob}, pred_path)
         log.info("SVM predictions saved")
     
-    # BiLSTM
     embedding_path = os.path.join(cfg.PATHS.embedding_dir, 'embedding_features.pkl')
     bilstm_model_path = os.path.join(cfg.PATHS.bilstm_dir, 'bilstm_model.pt')
     bilstm_pred_path = os.path.join(cfg.PATHS.bilstm_dir, 'predictions.pkl')
@@ -356,7 +314,6 @@ def save_predictions_for_analysis():
         joblib.dump({'y_true': emb_features['y_test'], 'y_pred': y_pred, 'y_prob': y_prob}, pred_path)
         log.info("BiLSTM predictions saved")
     
-    # PhoBERT
     phobert_path = os.path.join(cfg.PATHS.phobert_dir, 'phobert_features.pkl')
     phobert_model_path = os.path.join(cfg.PATHS.bert_dir, 'phobert_model.pt')
     phobert_pred_path = os.path.join(cfg.PATHS.bert_dir, 'predictions.pkl')
@@ -385,19 +342,16 @@ def save_predictions_for_analysis():
 
 
 def main():
-    """Run comprehensive evaluation."""
 
     log.info("=" * 60)
     log.info("COMPREHENSIVE MODEL EVALUATION")
     log.info("=" * 60)
 
-    # Output directories
     figures_dir = cfg.PATHS.figures_dir
     tables_dir = cfg.PATHS.tables_dir
     os.makedirs(figures_dir, exist_ok=True)
     os.makedirs(tables_dir, exist_ok=True)
 
-    # 1. Load all metrics
     log.info("Loading model metrics...")
     metrics = load_all_metrics()
 
@@ -405,10 +359,8 @@ def main():
         log.warning("No metrics found. Please train models first.")
         return
 
-    # 2. Save predictions for ROC curves
     save_predictions_for_analysis()
     
-    # 3. Create comparison table
     log.info("Creating comparison tables...")
     comparison_df = create_comparison_table(metrics)
 
@@ -417,38 +369,29 @@ def main():
     log.info("=" * 60)
     log.info("\n%s", comparison_df.to_string(index=False))
     
-    # Save tables
     comparison_df.to_csv(os.path.join(tables_dir, 'model_comparison.csv'), index=False)
     generate_latex_table(comparison_df, os.path.join(tables_dir, 'model_comparison.tex'))
     
-    # Per-class table
     per_class_df = create_per_class_table(metrics)
     per_class_df.to_csv(os.path.join(tables_dir, 'per_class_metrics.csv'), index=False)
 
     log.info("Per-Class Metrics:")
     log.info("\n%s", per_class_df.to_string(index=False))
 
-    # 4. Generate visualizations
     log.info("Generating visualizations...")
     
-    # Model comparison bar chart
     plot_model_comparison(comparison_df, os.path.join(figures_dir, 'model_comparison.png'))
     
-    # Confusion matrices
     plot_confusion_matrices_grid(metrics, os.path.join(figures_dir, 'confusion_matrices.png'))
     
-    # ROC curves
     plot_roc_curves_comparison(os.path.join(figures_dir, 'roc_curves.png'))
     
-    # Training history
     plot_training_history(os.path.join(figures_dir, 'training_history.png'))
     
-    # 5. Summary statistics
     log.info("=" * 60)
     log.info("SUMMARY STATISTICS")
     log.info("=" * 60)
 
-    # Find best model
     best_model = comparison_df.iloc[0]['Model']
     best_f1 = comparison_df.iloc[0]['F1-Score']
     best_acc = comparison_df.iloc[0]['Accuracy']
@@ -457,7 +400,6 @@ def main():
     log.info("  - Accuracy: %.4f", best_acc)
     log.info("  - F1-Score: %.4f", best_f1)
     
-    # Improvement over baseline (only if LR result is present)
     lr_rows = comparison_df[comparison_df['Model'] == 'Logistic Regression']['F1-Score']
     if len(lr_rows) > 0 and best_model != 'Logistic Regression':
         baseline_f1 = lr_rows.values[0]
@@ -466,7 +408,6 @@ def main():
     else:
         improvement = 0.0
     
-    # Save summary
     summary = {
         'best_model': best_model,
         'best_accuracy': float(best_acc),

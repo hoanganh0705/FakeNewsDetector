@@ -1,40 +1,28 @@
-"""
-Explainability and Interpretability Analysis
-
-
-Provides interpretability insights for model predictions:
-1. TF-IDF feature importance for LR (top predictive words)
-2. SVM feature analysis
-4. Error categorization taxonomy
-"""
-
 from __future__ import annotations
 
-# Phase 1: token-level attribution helpers live in sibling modules and are
-# re-exported here so callers can keep using ``from src.analysis import explainability``.
-from src.analysis.lr_svm_shap import (  # noqa: F401
+from src.analysis.lr_svm_shap import (
     lr_kernel_shap,
     svm_linear_shap,
     visualize_token_importance as visualize_lr_svm_token_importance,
 )
-from src.analysis.bilstm_attribution import (  # noqa: F401
+from src.analysis.bilstm_attribution import (
     bilstm_simple_gradients,
     bilstm_ig,
     visualize_bilstm_attribution,
 )
-from src.analysis.phobert_attribution import (  # noqa: F401
+from src.analysis.phobert_attribution import (
     compare_attribution_methods,
     phobert_attention_rollout,
     phobert_integrated_gradients,
     phobert_shap,
 )
-from src.analysis.method_agreement import (  # noqa: F401
+from src.analysis.method_agreement import (
     agreement_matrix,
     cross_model_agreement,
     faithfulness,
     rank_agreement,
 )
-from src.analysis.explainability_runner import (  # noqa: F401
+from src.analysis.explainability_runner import (
     run_explainability,
 )
 
@@ -55,13 +43,11 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 __all__ = [
-    # ── existing paper §4.6.3 / §4.6.4 analyses (unchanged) ──
     "analyze_lr_feature_importance",
     "analyze_error_categories",
     "create_feature_importance_plot",
     "create_error_taxonomy_plot",
     "main",
-    # ── Phase 1 token-level attribution API ──
     "lr_kernel_shap",
     "svm_linear_shap",
     "visualize_lr_svm_token_importance",
@@ -81,22 +67,10 @@ __all__ = [
 
 
 def analyze_lr_feature_importance(top_n: int = 30) -> Dict:
-    """
-    Analyze Logistic Regression feature importance using model coefficients.
-    
-    Identifies the most predictive words for each class (Real vs Fake).
-    
-    Args:
-        top_n: Number of top features to extract per class
-        
-    Returns:
-        Dictionary with feature importance analysis
-    """
     log.info("\n" + "="*60)
     log.info("1. LOGISTIC REGRESSION FEATURE IMPORTANCE")
     log.info("="*60)
     
-    # Load LR model
     model_path = os.path.join(cfg.PATHS.lr_dir, 'lr_model.pkl')
     if not os.path.exists(model_path):
         log.info("LR model not found")
@@ -105,10 +79,8 @@ def analyze_lr_feature_importance(top_n: int = 30) -> Dict:
     model_data = joblib.load(model_path)
     lr_model = model_data['model']
     
-    # Load TF-IDF vectorizer
     tfidf_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_vectorizer.pkl')
     if not os.path.exists(tfidf_path):
-        # Try alternative path
         tfidf_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_features.pkl')
         if not os.path.exists(tfidf_path):
             log.info("TF-IDF vectorizer not found")
@@ -128,11 +100,9 @@ def analyze_lr_feature_importance(top_n: int = 30) -> Dict:
     feature_names = vectorizer.get_feature_names_out()
     coefficients = lr_model.coef_[0]
     
-    # Top features for Fake news (positive coefficient)
     fake_indices = np.argsort(coefficients)[-top_n:][::-1]
     fake_features = [(feature_names[i], round(coefficients[i], 4)) for i in fake_indices]
     
-    # Top features for Real news (negative coefficient)
     real_indices = np.argsort(coefficients)[:top_n]
     real_features = [(feature_names[i], round(coefficients[i], 4)) for i in real_indices]
     
@@ -153,25 +123,13 @@ def analyze_lr_feature_importance(top_n: int = 30) -> Dict:
 
 
 def analyze_error_categories() -> Dict:
-    """
-    Categorize prediction errors into meaningful taxonomy.
-    
-    Categories:
-    - Short text: < 50 words
-    - Medium text: 50-200 words  
-    - Long text: > 200 words
-    - High confidence errors: model was very confident but wrong
-    - Low confidence errors: model was uncertain
-    """
     log.info("\n" + "="*60)
     log.info("2. ERROR CATEGORIZATION TAXONOMY")
     log.info("="*60)
     
-    # Load test data
     test_path = os.path.join(cfg.PATHS.splits_dir, 'test.csv')
     test_df = load_csv(test_path, required_columns=['text', 'label'])
     
-    # Load predictions
     models = MODEL_DIR_MAP
     
     all_errors = {}
@@ -211,7 +169,6 @@ def analyze_error_categories() -> Dict:
         errors_mask = (y_pred != y_true)
         error_indices = np.where(errors_mask)[0]
         
-        # Categorize errors
         error_analysis = {
             'total_errors': int(np.sum(errors_mask)),
             'false_positives': int(np.sum((y_pred == 1) & (y_true == 0))),
@@ -256,13 +213,11 @@ def analyze_error_categories() -> Dict:
 
 
 def create_feature_importance_plot(feature_analysis: Dict, save_dir: str):
-    """Create feature importance visualization."""
     if not feature_analysis:
         return
     
     fig, axes = plt.subplots(1, 2, figsize=(16, 10))
     
-    # Fake news features
     fake_features = feature_analysis['fake_news_features'][:20]
     words = [f[0] for f in fake_features]
     coefs = [f[1] for f in fake_features]
@@ -274,7 +229,6 @@ def create_feature_importance_plot(feature_analysis: Dict, save_dir: str):
     axes[0].set_title('Từ dự đoán hàng đầu cho Tin giả', fontsize=13, fontweight='bold')
     axes[0].invert_yaxis()
     
-    # Real news features
     real_features = feature_analysis['real_news_features'][:20]
     words = [f[0] for f in real_features]
     coefs = [abs(f[1]) for f in real_features]
@@ -296,13 +250,11 @@ def create_feature_importance_plot(feature_analysis: Dict, save_dir: str):
 
 
 def create_error_taxonomy_plot(error_analysis: Dict, save_dir: str):
-    """Create error taxonomy visualization."""
     if not error_analysis:
         return
     
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     
-    # Error type distribution (FP vs FN)
     models = list(error_analysis.keys())
     fp_counts = [error_analysis[m]['false_positives'] for m in models]
     fn_counts = [error_analysis[m]['false_negatives'] for m in models]
@@ -318,7 +270,6 @@ def create_error_taxonomy_plot(error_analysis: Dict, save_dir: str):
     axes[0].set_title('Phân phối loại lỗi', fontsize=13, fontweight='bold')
     axes[0].legend()
     
-    # Error by text length
     categories = ['short', 'medium', 'long']
     bottom = np.zeros(len(models))
     colors = ['#e74c3c', '#f39c12', '#27ae60']
@@ -344,24 +295,18 @@ def create_error_taxonomy_plot(error_analysis: Dict, save_dir: str):
 
 
 def main():
-    """Run all explainability analyses."""
-
-
     print("="*60)
     print("EXPLAINABILITY & INTERPRETABILITY ANALYSIS")
     print("="*60)
     
     results = {}
     
-    # 1. Feature importance
     feature_analysis = analyze_lr_feature_importance(top_n=30)
     results['feature_importance'] = feature_analysis
     
-    # 2. Error categorization
     error_analysis = analyze_error_categories()
     results['error_taxonomy'] = error_analysis
     
-    # Create visualizations
     figures_dir = os.path.join(cfg.PATHS.figures_dir, 'explainability')
     paper_figures_dir = cfg.PATHS.paper_figures_dir
     
@@ -369,8 +314,6 @@ def main():
     create_feature_importance_plot(feature_analysis, paper_figures_dir)
     create_error_taxonomy_plot(error_analysis, figures_dir)
     create_error_taxonomy_plot(error_analysis, paper_figures_dir)
-    
-    # Save results
     results_dir = cfg.PATHS.tables_dir
     os.makedirs(results_dir, exist_ok=True)
     

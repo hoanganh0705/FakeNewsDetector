@@ -1,29 +1,3 @@
-"""
-Lightweight NVIDIA GPU monitor for training-time telemetry.
-
-Uses the ``nvidia-ml-py3`` package (which exposes the ``pynvml`` module)
-to read GPU name, utilization, VRAM usage, and temperature without
-spawning any shell commands.
-
-Design principles:
-- Import is lazy + optional: if the library is missing or NVML cannot be
-  initialised (no driver, no GPU, container without access), the monitor
-  degrades to a no-op logger and training continues uninterrupted.
-- All reads are cached for one second so calling once per epoch is cheap.
-- No background threads, no subprocesses — pure synchronous NVML calls.
-
-Usage::
-
-    from src.utils.gpu_monitor import GPUMonitor
-
-    monitor = GPUMonitor()              # picks GPU 0 by default
-    monitor.log_once()                   # one-shot summary line
-
-    for epoch in range(epochs):
-        ...
-        monitor.log_epoch(epoch + 1)    # "GPU: ... | VRAM: ... | Util: ... | Temp: ..."
-"""
-
 from __future__ import annotations
 
 import time
@@ -33,10 +7,7 @@ from src.utils.logger import get_logger
 
 log = get_logger(__name__)
 
-# Try to import the NVIDIA management library.  ``nvidia-ml-py3`` is the
-# actively-maintained PyPI package; it registers itself under the legacy
-# ``pynvml`` module name so the import below works for both.
-try:  # pragma: no cover - exercised only when the lib is present
+try:
     import pynvml as _nvml  # type: ignore
     _NVML_AVAILABLE = True
 except Exception:  # ImportError, OSError (no libnvidia-driver), etc.
@@ -45,14 +16,6 @@ except Exception:  # ImportError, OSError (no libnvidia-driver), etc.
 
 
 class GPUMonitor:
-    """Best-effort GPU telemetry reader.
-
-    If NVML cannot be initialised (driver missing, no GPU, container
-    without /dev/nvidia*), every method becomes a no-op and ``available``
-    is set to ``False``.  Training code can therefore call this freely
-    without guarding.
-    """
-
     def __init__(self, device_index: int = 0) -> None:
         self.device_index = device_index
         self._handle = None
@@ -68,7 +31,6 @@ class GPUMonitor:
 
         try:
             _nvml.nvmlInit()
-            # Make sure the requested GPU exists; fall back to 0 otherwise.
             count = _nvml.nvmlDeviceGetCount()
             if count == 0:
                 log.debug("NVML reports zero GPUs; monitoring disabled.")
@@ -85,20 +47,15 @@ class GPUMonitor:
                 "GPU monitor attached to %s (%.0f MiB total).",
                 self._name, self._total_mem_mb,
             )
-        except Exception as e:  # NVML_ERROR_*, driver issues, etc.
+        except Exception as e:
             log.debug("NVML init failed; GPU monitoring disabled: %s", e)
             self._handle = None
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
     @property
     def available(self) -> bool:
-        """True iff NVML is initialised and a GPU handle is bound."""
         return self._handle is not None
 
     def log_once(self) -> None:
-        """Print a single header line with the GPU identity (or skip)."""
         if not self.available:
             return
         stats = self._read_stats(force=True)
@@ -114,7 +71,6 @@ class GPUMonitor:
         )
 
     def log_epoch(self, epoch: int, total_epochs: int) -> None:
-        """Per-epoch one-liner with a small cache to avoid NVML spam."""
         if not self.available:
             return
         stats = self._read_stats(force=False)
@@ -131,9 +87,6 @@ class GPUMonitor:
             stats["temp_c"],
         )
 
-    # ------------------------------------------------------------------
-    # Internals
-    # ------------------------------------------------------------------
     def _read_stats(self, force: bool = False) -> Optional[dict]:
         if not self.available:
             return None
@@ -171,8 +124,7 @@ class GPUMonitor:
         return stats
 
 
-def shutdown() -> None:  # pragma: no cover - safe no-op when unavailable
-    """Release NVML.  Call once at process exit if you initialised it manually."""
+def shutdown() -> None:
     if _NVML_AVAILABLE:
         try:
             _nvml.nvmlShutdown()

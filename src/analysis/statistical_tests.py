@@ -1,14 +1,3 @@
-"""
-Statistical Significance Testing for Model Comparison
-
-
-Performs:
-1. McNemar's test for comparing classifier predictions
-2. Holm-Bonferroni correction for multiple comparisons
-3. Bootstrap confidence intervals (configurable via cfg.ANALYSIS.bootstrap_iterations)
-4. Effect size calculations (Cohen's d)
-"""
-
 import os
 import json
 import joblib
@@ -25,27 +14,12 @@ log = get_logger(__name__)
 
 
 def mcnemar_test(y_true: np.ndarray, y_pred1: np.ndarray, y_pred2: np.ndarray) -> Tuple[float, float]:
-    """
-    Perform McNemar's test to compare two classifiers.
-    
-    Uses continuity correction: chi2 = (|b - c| - 1)^2 / (b + c)
-    
-    Args:
-        y_true: Ground truth labels
-        y_pred1: Predictions from model 1
-        y_pred2: Predictions from model 2
-    
-    Returns:
-        chi2_stat: Chi-squared statistic
-        p_value: P-value for the test
-    """
     correct1 = (y_pred1 == y_true)
     correct2 = (y_pred2 == y_true)
     
-    b = np.sum(correct1 & np.logical_not(correct2))  # Model 1 correct, Model 2 wrong
-    c = np.sum(np.logical_not(correct1) & correct2)  # Model 1 wrong, Model 2 correct
+    b = np.sum(correct1 & np.logical_not(correct2))
+    c = np.sum(np.logical_not(correct1) & correct2)
     
-    # McNemar's test with continuity correction
     if b + c == 0:
         return 0.0, 1.0
     
@@ -56,19 +30,6 @@ def mcnemar_test(y_true: np.ndarray, y_pred1: np.ndarray, y_pred2: np.ndarray) -
 
 
 def holm_bonferroni_correction(p_values: List[float], alpha: float = None) -> List[dict]:
-    """
-    Apply Holm-Bonferroni correction for multiple comparisons.
-    
-    This is a step-down procedure that is more powerful than standard
-    Bonferroni while still controlling the family-wise error rate (FWER).
-    
-    Args:
-        p_values: List of raw p-values
-        alpha: Significance level
-        
-    Returns:
-        List of dicts with original and adjusted p-values and significance
-    """
     if alpha is None:
         alpha = cfg.ANALYSIS.significance_level
 
@@ -88,7 +49,6 @@ def holm_bonferroni_correction(p_values: List[float], alpha: float = None) -> Li
             'significant': p < adjusted_alpha
         }
     
-    # Enforce monotonicity: adjusted p-values should be non-decreasing
     sorted_results = [results[idx] for idx, _ in indexed_pvalues]
     for i in range(1, len(sorted_results)):
         sorted_results[i]['adjusted_p'] = max(
@@ -106,23 +66,6 @@ def holm_bonferroni_correction(p_values: List[float], alpha: float = None) -> Li
 def bootstrap_confidence_interval(y_true: np.ndarray, y_pred: np.ndarray,
                                    metric_func, n_bootstrap: int = None,
                                    confidence: float = 0.95) -> Tuple[float, float, float]:
-    """
-    Calculate bootstrap confidence interval for a metric.
-
-    Number of bootstrap iterations defaults to `cfg.ANALYSIS.bootstrap_iterations`.
-
-    Args:
-        y_true: Ground truth labels
-        y_pred: Predicted labels
-        metric_func: Metric function(y_true, y_pred) -> float
-        n_bootstrap: Number of bootstrap iterations (if None, uses cfg)
-        confidence: Confidence level (default: 0.95)
-
-    Returns:
-        mean: Mean of bootstrap samples
-        lower: Lower bound of CI
-        upper: Upper bound of CI
-    """
     if n_bootstrap is None:
         n_bootstrap = cfg.ANALYSIS.bootstrap_iterations
 
@@ -148,15 +91,6 @@ def bootstrap_confidence_interval(y_true: np.ndarray, y_pred: np.ndarray,
 
 
 def cohens_d(group1: np.ndarray, group2: np.ndarray) -> float:
-    """
-    Calculate Cohen's d effect size.
-    
-    Interpretation:
-        |d| < 0.2: negligible
-        0.2 <= |d| < 0.5: small
-        0.5 <= |d| < 0.8: medium
-        |d| >= 0.8: large
-    """
     n1, n2 = len(group1), len(group2)
     var1, var2 = np.var(group1, ddof=1), np.var(group2, ddof=1)
     
@@ -169,7 +103,6 @@ def cohens_d(group1: np.ndarray, group2: np.ndarray) -> float:
 
 
 def load_predictions() -> Dict[str, dict]:
-    """Load predictions from all models."""
     predictions = {}
 
     for name, dir_name in MODEL_DIR_MAP.items():
@@ -181,9 +114,6 @@ def load_predictions() -> Dict[str, dict]:
 
 
 def run_statistical_analysis():
-    """Run comprehensive statistical analysis with multiple comparison correction."""
-
-
     log.info("="*70)
     log.info("STATISTICAL SIGNIFICANCE ANALYSIS")
     log.info("="*70)
@@ -196,9 +126,6 @@ def run_statistical_analysis():
     
     y_true = np.asarray(list(predictions.values())[0]['y_true'])
     
-    # ================================================================
-    # 1. McNemar's Test with Holm-Bonferroni Correction
-    # ================================================================
     log.info("\n" + "="*70)
     log.info("1. McNEMAR'S TEST (Pairwise Classifier Comparison)")
     log.info("="*70)
@@ -226,7 +153,6 @@ def run_statistical_analysis():
                 'p-value (raw)': p_value,
             })
     
-    # Apply Holm-Bonferroni correction
     corrections = holm_bonferroni_correction(raw_p_values, alpha=cfg.ANALYSIS.significance_level)
     
     for i, result in enumerate(mcnemar_results):
@@ -248,9 +174,6 @@ def run_statistical_analysis():
     log.info(f"NOTE: Holm-Bonferroni correction applied across {len(raw_p_values)} comparisons")
     log.info(f"to control family-wise error rate (FWER).")
     
-    # ================================================================
-    # 2. Bootstrap Confidence Intervals (10,000 iterations)
-    # ================================================================
     log.info("\n" + "="*70)
     log.info(f"2. BOOTSTRAP CONFIDENCE INTERVALS (95%, n={cfg.ANALYSIS.bootstrap_iterations})")
     log.info("="*70)
@@ -284,9 +207,6 @@ def run_statistical_analysis():
     
     ci_df = pd.DataFrame(ci_results)
     
-    # ================================================================
-    # 3. Effect Size (Cohen's d)
-    # ================================================================
     log.info("\n" + "="*70)
     log.info("3. EFFECT SIZE ANALYSIS (Cohen's d)")
     log.info("="*70)
@@ -317,9 +237,6 @@ def run_statistical_analysis():
     
     effect_df = pd.DataFrame(effect_sizes) if effect_sizes else pd.DataFrame()
     
-    # ================================================================
-    # Save results
-    # ================================================================
     results_dir = cfg.PATHS.tables_dir
     os.makedirs(results_dir, exist_ok=True)
     
@@ -328,7 +245,6 @@ def run_statistical_analysis():
     if len(effect_sizes) > 0:
         effect_df.to_csv(os.path.join(results_dir, 'effect_sizes.csv'), index=False)
     
-    # Save LaTeX
     with open(os.path.join(results_dir, 'statistical_tests.tex'), 'w') as f:
         f.write("% Kết quả kiểm định McNemar (với hiệu chỉnh Holm-Bonferroni)\n")
         f.write(mcnemar_df.to_latex(index=False, escape=False))
@@ -337,8 +253,7 @@ def run_statistical_analysis():
         if len(effect_sizes) > 0:
             f.write("\n\n% Độ lớn hiệu ứng (Cohen's d)\n")
             f.write(effect_df.to_latex(index=False, escape=False))
-    
-    # Save summary JSON
+        
     summary = {
         'mcnemar_tests': mcnemar_results,
         'bootstrap_ci': ci_results,

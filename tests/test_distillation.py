@@ -1,17 +1,3 @@
-"""
-Unit tests for Phase 3 — Knowledge Distillation.
-
-Covers:
-
-* ``StudentBiLSTM`` shape & parameter-count invariants
-* ``distillation_loss`` mathematical properties:
-    - L ≥ 0
-    - L(α=0) == CE(student, label)
-    - L(α=1) ≥ 0 and recovers when student = teacher
-    - L(T → ∞) → α · log(num_classes)
-* ``run_distillation_evaluation`` smoke test
-"""
-
 from __future__ import annotations
 
 import math
@@ -23,11 +9,6 @@ import numpy as np
 import pytest
 import torch
 import torch.nn.functional as F
-
-
-# ──────────────────────────────────────────────────────────────────────
-# Student model
-# ──────────────────────────────────────────────────────────────────────
 
 
 class TestStudentBiLSTM:
@@ -46,7 +27,6 @@ class TestStudentBiLSTM:
         teacher = BiLSTMClassifier(vocab_size=20000, embedding_dim=128, hidden_dim=128, num_layers=2)
         student = StudentBiLSTM(vocab_size=20000)
         assert student.count_parameters() < teacher.count_parameters()
-        # student should be at least 2× smaller (in our setup it's ~4× smaller)
         ratio = teacher.count_parameters() / student.count_parameters()
         assert ratio >= 2.0, f"compression ratio = {ratio:.2f}, expected >= 2"
 
@@ -56,7 +36,7 @@ class TestStudentBiLSTM:
 
         torch.manual_seed(0)
         teacher = BiLSTMClassifier(vocab_size=200, embedding_dim=16, hidden_dim=16, num_layers=1)
-        torch.manual_seed(0)  # reset so the embedding init is comparable
+        torch.manual_seed(0)
         student = StudentBiLSTM(vocab_size=200, embedding_dim=16, hidden_dim=16, num_layers=1)
 
         x = torch.randint(0, 200, (4, 10))
@@ -79,18 +59,12 @@ class TestStudentBiLSTM:
         n = m.count_parameters()
         sz = m.model_size_mb()
         assert n > 0
-        # 4 bytes per param float32 → n*4 / (1024^2) MB
         assert math.isclose(sz, (n * 4) / (1024 ** 2), rel_tol=1e-9)
 
     def test_invalid_vocab_size(self):
         from src.models.student_model import StudentBiLSTM
         with pytest.raises(ValueError):
             StudentBiLSTM(vocab_size=0)
-
-
-# ──────────────────────────────────────────────────────────────────────
-# KD loss
-# ──────────────────────────────────────────────────────────────────────
 
 
 class TestDistillationLoss:
@@ -107,7 +81,6 @@ class TestDistillationLoss:
             assert loss.item() >= 0.0
 
     def test_alpha_zero_recovers_cross_entropy(self):
-        """With α=0 the KD term drops out and the loss is exactly CE."""
         from src.training.train_student import distillation_loss
         torch.manual_seed(0)
         s = torch.tensor([[2.0, 1.0, 0.0], [0.5, 1.5, 0.0]])
@@ -118,21 +91,14 @@ class TestDistillationLoss:
         assert math.isclose(loss_kd.item(), loss_ce, rel_tol=1e-5, abs_tol=1e-6)
 
     def test_alpha_one_teacher_equals_student_loss_zero(self):
-        """If student matches teacher exactly, α=1 KD loss → 0."""
         from src.training.train_student import distillation_loss
         torch.manual_seed(0)
         s = torch.randn(8, 3)
         y = torch.randint(0, 3, (8,))
         loss = distillation_loss(s, s.clone(), y, alpha=1.0, temperature=2.0)
-        # KL(p ‖ p) = 0
         assert loss.item() < 1e-5
 
     def test_high_temperature_dominates_kl_part(self):
-        """As T grows the KL part scales as T² while the per-sample KL
-        itself shrinks; the product should grow but stay bounded by
-        α · log(num_classes) for *uniform* teacher distribution.
-        We just check the loss is finite and that increasing T beyond 1
-        does not blow the loss up to infinity."""
         from src.training.train_student import distillation_loss
         torch.manual_seed(0)
         B, C = 32, 4
@@ -142,13 +108,11 @@ class TestDistillationLoss:
 
         l_normal = distillation_loss(s, t, y, alpha=0.7, temperature=4.0)
         l_high = distillation_loss(s, t, y, alpha=0.7, temperature=200.0)
-        # Both should be finite, non-negative, and ≪ e^{T}.
         assert torch.isfinite(l_normal)
         assert torch.isfinite(l_high)
         assert l_high.item() < 1e8
 
     def test_teacher_gradients_dont_propagate(self):
-        """KD loss must not push gradients into teacher logits."""
         from src.training.train_student import distillation_loss
         torch.manual_seed(0)
         s = torch.randn(4, 3, requires_grad=True)
@@ -156,15 +120,8 @@ class TestDistillationLoss:
         y = torch.randint(0, 3, (4,))
         loss = distillation_loss(s, t, y, alpha=0.7, temperature=4.0)
         loss.backward()
-        # Student should have gradients
         assert s.grad is not None and torch.any(s.grad != 0).item()
-        # Teacher must NOT (we detached inside distillation_loss)
         assert t.grad is None or torch.all(t.grad == 0).item()
-
-
-# ──────────────────────────────────────────────────────────────────────
-# Trainer smoke
-# ──────────────────────────────────────────────────────────────────────
 
 
 class TestStudentBiLSTMTrainer:
@@ -198,7 +155,7 @@ class TestStudentBiLSTMTrainer:
             epochs=1, patience=10,
         )
         assert len(trainer.history["train_loss"]) == 1
-        assert trainer.best_state is not None  # at least one "best" snapshot
+        assert trainer.best_state is not None
 
     def test_save_load_roundtrip(self, tmp_path: Path):
         from src.training.train_student import StudentBiLSTMTrainer
@@ -209,10 +166,8 @@ class TestStudentBiLSTMTrainer:
         path = tmp_path / "ckpt.pt"
         trainer.save(str(path))
         loaded = StudentBiLSTMTrainer.load(str(path))
-        # Sanity: same vocab/dim and same parameter values.
         assert loaded.vocab_size == 50
         assert loaded.embedding_dim == 8
-        # Re-load weights (state_dict) and compare a few entries.
         sd_orig = trainer.model.state_dict()
         sd_new = loaded.model.state_dict()
         assert set(sd_orig.keys()) == set(sd_new.keys())
@@ -220,18 +175,10 @@ class TestStudentBiLSTMTrainer:
             assert torch.allclose(sd_orig[k], sd_new[k])
 
 
-# ──────────────────────────────────────────────────────────────────────
-# End-to-end evaluation smoke
-# ──────────────────────────────────────────────────────────────────────
-
-
 class TestDistillationEvaluation:
     def test_evaluation_produces_table_and_figure(self, monkeypatch, tmp_path):
-        """Smoke test: with fake teacher metrics + a fake student, the
-        evaluation should still produce a table and a figure."""
         from src.training import distillation_evaluation as de
 
-        # Fake student metrics
         fake_student = {
             "student_config": {
                 "n_params": 500_000,
@@ -239,7 +186,6 @@ class TestDistillationEvaluation:
             },
             "test": {"f1_macro": 0.81},
         }
-        # Patch out the heavy loaders so this test is hermetic.
         monkeypatch.setattr(de, "_load_teacher_metrics", lambda name: {
             "test": {"f1_macro": 0.89 if name == "bert" else 0.82}
         })
@@ -261,11 +207,9 @@ class TestDistillationEvaluation:
 
 
 class _DummyModel(torch.nn.Module):
-    """Tiny linear module so the timing code has *something* to call."""
     def __init__(self):
         super().__init__()
         self.lin = torch.nn.Linear(8, 2)
 
     def forward(self, x: torch.Tensor, mask=None):
-        # Use mean over time then linear.
         return self.lin(x.float().mean(dim=1))

@@ -1,0 +1,59 @@
+% =====================================================================
+%  main.tex — Đồ án ngành: "Phát hiện tin giả tiếng Việt ..."
+%
+%  Cấu trúc (refactored 2026-09):
+%    - preamble.sty           : gói lệnh, thông tin đồ án, custom commands
+%    - data_commands.sty      : toàn bộ \newcommand{...} số liệu
+%    - front/0.1-BiaNgoai    : trang bìa ngoài (HCMOU)
+%    - front/0.2-BiaTrong    : trang bìa trong (MSSV + GVHD)
+%    - front/pages/LoiCamOn   : lời cảm ơn
+%    - front/pages/GVHDNhanXet: nhận xét của GVHD
+%    - front/MucLuc_DanhMuc   : mục lục + 3 danh mục
+%    - chapters/Chuong0X_*.tex: 5 chương nội dung + kết luận
+%
+%  >>>>>> QUY ƯỚC LATEX BẮT BUỘC: xem LATEX_CONVENTIONS.md <<<<<<
+%
+%  Build: xem build.sh
+% =====================================================================
+\documentclass[12pt, a4paper]{report}
+
+% --- Load preamble (gói + thông tin đồ án + custom commands) ---
+\usepackage{preamble}
+% --- Load số liệu (toàn bộ \newcommand{...} từ data_commands.sty) ---
+\usepackage{data_commands}
+
+\begin{document}
+
+% ===== TRANG ĐẦU — không đánh số =====
+\thispagestyle{empty}
+
+% ===== PHẦN 1 — BÌA & TRANG MỞ ĐẦU (đánh số La Mã) =====
+\pagenumbering{Roman}
+\setcounter{page}{1}
+
+\input{front/0.1-BiaNgoai}        % bìa ngoài (HCMOU)
+\input{front/0.2-BiaTrong}        % bìa trong (MSSV + GVHD)
+\input{front/pages/LoiCamOn}      % lời cảm ơn
+\clearpage                       % đảm bảo trang nhận xét GVHD tách riêng
+\input{front/pages/GVHDNhanXet}   % nhận xét GVHD
+\clearpage                       % đảm bảo Tóm tắt tách riêng khỏi nhận xét
+\input{front/pages/TomTat}        % tóm tắt đồ án ngành
+
+% ===== PHẦN 2 — MỤC LỤC + DANH MỤC =====
+% (TomTat.tex đã kết thúc bằng \clearpage → trang Mục lục được tách riêng)
+\input{front/MucLuc_DanhMuc}      % mục lục + 3 danh mục
+
+% ===== PHẦN 3 — NỘI DUNG CHÍNH (5 chương) =====
+% Đánh số trang ả-rập, đặt lại từ 1
+\pagenumbering{arabic}
+
+\input{chapters/Chuong01_TongQuan}        % Tổng quan về đề tài
+\input{chapters/Chuong02_CoSoLyThuyet}    % Cơ sở lý thuyết
+\input{chapters/Chuong03_DuLieu}          % Bộ dữ liệu và tiền xử lý
+\input{chapters/Chuong04_PhuongPhap}      % Xác định tin giả (Phương pháp đề xuất)
+\input{chapters/Chuong05_KetQua}          % Kết quả thực nghiệm
+
+% ===== PHẦN 4 — KẾT LUẬN + TÀI LIỆU THAM KHẢO + PHỤ LỤC =====
+\input{chapters/Chuong99_KetLuan}          % Kết luận + TLTK + Phụ lục
+
+\end{document}

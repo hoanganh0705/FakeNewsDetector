@@ -1,20 +1,9 @@
-"""
-Smoke tests for modules that previously had zero test coverage (§7.3).
-
-Each test imports the target module and calls its ``main()`` with mocked I/O
-so that no real data, trained models, or filesystem writes are needed.
-"""
-
 from unittest.mock import patch, MagicMock, mock_open
 
 import numpy as np
 import pandas as pd
 import pytest
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 _FAKE_METRICS = {
     'Logistic Regression': {
@@ -33,7 +22,6 @@ _FAKE_METRICS = {
 
 
 def _fake_test_df() -> pd.DataFrame:
-    """Minimal DataFrame that mimics ``load_test_data_with_predictions``."""
     n = 6
     df = pd.DataFrame({
         'id': range(n),
@@ -46,10 +34,6 @@ def _fake_test_df() -> pd.DataFrame:
         df[f'{model}_correct'] = 1
     return df
 
-
-# ---------------------------------------------------------------------------
-# §7.3-a  src/analysis/explainability.py
-# ---------------------------------------------------------------------------
 
 class TestExplainabilitySmoke:
     @patch('src.analysis.explainability.json.dump')
@@ -65,15 +49,7 @@ class TestExplainabilitySmoke:
         assert isinstance(result, dict)
 
 
-# ---------------------------------------------------------------------------
-# §7.3-b  src/analysis/generate_paper_figures.py
-# ---------------------------------------------------------------------------
-
 class TestGeneratePaperFiguresSmoke:
-    # NOTE: the original §7.3 test patched `figure0_label_distribution`,
-    # which has since been split into figure0a_overall_distribution +
-    # figure0b_split_distribution. We patch both new names so the
-    # mocked-out figure functions don't try to read non-existent data.
     @patch('src.analysis.generate_paper_figures.os.listdir', return_value=[])
     @patch('src.analysis.generate_paper_figures.figure6_model_paradigm_comparison')
     @patch('src.analysis.generate_paper_figures.figure5_per_class_performance')
@@ -90,10 +66,6 @@ class TestGeneratePaperFiguresSmoke:
         main()  # returns None
 
 
-# ---------------------------------------------------------------------------
-# §7.3-c  src/analysis/generate_paper_tables.py
-# ---------------------------------------------------------------------------
-
 class TestGeneratePaperTablesSmoke:
     @patch('src.analysis.generate_paper_tables.os.makedirs')
     @patch('src.analysis.generate_paper_tables.table5_training_time')
@@ -107,10 +79,6 @@ class TestGeneratePaperTablesSmoke:
         from src.analysis.generate_paper_tables import main
         main()
 
-
-# ---------------------------------------------------------------------------
-# §7.3-d  src/evaluation/error_analysis.py
-# ---------------------------------------------------------------------------
 
 class TestErrorAnalysisSmoke:
     @patch('src.evaluation.error_analysis.track_per_id_confidence',
@@ -129,17 +97,7 @@ class TestErrorAnalysisSmoke:
         assert isinstance(result, pd.DataFrame)
 
 
-# ---------------------------------------------------------------------------
-# §7.3-e  src/evaluation/evaluate_all.py
-# ---------------------------------------------------------------------------
-
 class TestEvaluateAllSmoke:
-    # NOTE: we intentionally do NOT patch `os.makedirs` here. The real
-    # `makedirs(exist_ok=True)` call creates `results/tables/` and
-    # `results/figures/` (the parent dirs that `pandas.to_csv` and
-    # `plt.savefig` need). Patching it out breaks the writes with
-    # `OSError: Cannot save file into a non-existent directory` without
-    # providing any benefit — the paths in cfg.PATHS are sandbox-safe.
     @patch('src.evaluation.evaluate_all.json.dump')
     @patch('builtins.open', mock_open())
     @patch('src.evaluation.evaluate_all.plot_training_history')
@@ -164,10 +122,6 @@ class TestEvaluateAllSmoke:
         result = main()
         assert result is None
 
-
-# ---------------------------------------------------------------------------
-# §7.3-f  src/evaluation/cross_validation.py
-# ---------------------------------------------------------------------------
 
 class TestCrossValidationSmoke:
     _CV_RESULT = {
@@ -206,10 +160,6 @@ class TestCrossValidationSmoke:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# §7.3-g  src/evaluation/ablation_study.py
-# ---------------------------------------------------------------------------
-
 class TestAblationStudySmoke:
     _ROW_VOCAB = [{'vocab_size': 10000, 'accuracy': 0.95, 'f1_macro': 0.95, 'time_s': 1.0}]
     _ROW_NGRAM = [{'ngram_range': '(1,2)', 'label': 'Uni+Bi', 'accuracy': 0.95, 'f1_macro': 0.95, 'time_s': 1.0}]
@@ -247,10 +197,6 @@ class TestAblationStudySmoke:
         result = main()
         assert isinstance(result, dict)
 
-
-# ---------------------------------------------------------------------------
-# §7.3-h  src/training/train_all.py
-# ---------------------------------------------------------------------------
 
 class TestTrainAllSmoke:
     @patch('src.training.train_all.importlib.import_module')

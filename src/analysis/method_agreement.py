@@ -1,30 +1,3 @@
-"""
-Method-agreement analysis for token-level attributions (Phase 1, Step 1.6).
-
-Two attribution methods rarely produce *identical* scores, so we quantify
-how much they overlap on the *most-important tokens* rather than on raw
-numerical values.  This module provides four primitives:
-
-* ``rank_agreement``        — Jaccard overlap of the top-K tokens of two
-  attribution vectors.
-* ``faithfulness``          — "leave-one-out" style check: drop the top-K
-  most-attributed tokens from the input and measure how much the model
-  prediction moves.  This is the standard sanity check for
-  attribution quality (Alvarez-Melis & Jaakkola, 2018).
-* ``agreement_matrix``     — N×N pairwise rank-agreement heatmap between
-  multiple methods on the same example.
-* ``cross_model_agreement`` — intersection of the top-K most-attributed
-  tokens across the *four* models of the system (LR, SVM, BiLSTM,
-  PhoBERT).
-
-Why agreement matters
----------------------
-Token-level attributions are notoriously unstable across methods — IG,
-SHAP and attention-rollout often disagree on *which* token is most
-important.  Quantifying this disagreement is the headline finding that
-the Phase-1 paper section turns into a table.
-"""
-
 from __future__ import annotations
 
 from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -36,11 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Public helpers
-# ──────────────────────────────────────────────────────────────────────
-
-
 def rank_agreement(
     scores_a: Sequence[float],
     scores_b: Sequence[float],
@@ -48,26 +16,6 @@ def rank_agreement(
     tokens_a: Optional[Sequence[str]] = None,
     tokens_b: Optional[Sequence[str]] = None,
 ) -> Dict[str, float]:
-    """Jaccard overlap of the top-K most-attributed tokens.
-
-    The "most attributed" tokens are defined as the ``top_k`` indices
-    with the largest *absolute* score, which is more meaningful than
-    the largest signed score for binary classifiers (we want tokens
-    that push the prediction either way).
-
-    Args:
-        scores_a: Attribution scores for the first method.
-        scores_b: Attribution scores for the second method.
-        top_k:   How many top tokens to consider per method.
-        tokens_a: Optional token labels for ``scores_a`` (used to make
-            the intersection readable).
-        tokens_b: Optional token labels for ``scores_b``.
-
-    Returns:
-        Dict with ``jaccard`` (0..1), ``intersection`` and ``union``
-        sizes, and the actual ``common_tokens`` (when ``tokens_a`` /
-        ``tokens_b`` are provided).
-    """
     if len(scores_a) != len(scores_b):
         raise ValueError(
             f"score vectors must have the same length "
@@ -82,9 +30,6 @@ def rank_agreement(
     top_a = _topk_indices(arr_a, top_k)
     top_b = _topk_indices(arr_b, top_k)
 
-    # ``tokens_a`` is the *set of labels* to compare.  When the caller
-    # passes labels we use them verbatim; otherwise we fall back to
-    # integer indices so the Jaccard is well-defined and round-trip-safe.
     if tokens_a is None:
         tokens_a = list(range(len(arr_a)))
     if tokens_b is None:
@@ -112,30 +57,6 @@ def faithfulness(
     remove_top_k: int = 5,
     mask_token: str = "",
 ) -> Dict[str, float]:
-    """Drop the top-K most-attributed tokens; report the probability shift.
-
-    A *faithful* attribution method should produce tokens whose removal
-    causes the largest confidence drop for the predicted class.  We
-    measure:
-
-    * ``p_orig``     — predicted-class probability on the original input.
-    * ``p_masked``   — predicted-class probability after masking the
-      top-K tokens with ``mask_token`` (empty string by default).
-    * ``drop``       — ``p_orig − p_masked`` (positive ⇒ faithful).
-
-    Args:
-        model_predict_proba: Callable mapping a raw string to a 2-vector
-            of class probabilities (class-1 is the positive class).
-        text: Original input string.
-        attribution: Per-token attribution scores aligned with
-            ``str.split()``.
-        remove_top_k: How many top tokens to mask.
-        mask_token: Replacement string for the masked tokens (default:
-            empty string — i.e. token is removed).
-
-    Returns:
-        ``{p_orig, p_masked, drop, masked_tokens}`` dict.
-    """
     words = str(text).split()
     if len(words) != len(attribution):
         raise ValueError(
@@ -176,23 +97,6 @@ def agreement_matrix(
     save_path: Optional[str] = None,
     title: str = "Rank-agreement between attribution methods",
 ) -> np.ndarray:
-    """N×N pairwise Jaccard matrix between attribution methods.
-
-    Args:
-        methods_results: ``{method_name: scores_per_token}`` mapping.
-            Score vectors may have different lengths (e.g. LR uses n-grams
-            while BiLSTM/PhoBERT use word/subword tokenisation).  When
-            lengths differ we skip that pair and leave the matrix cell
-            as NaN so the heatmap still renders with a masked cell.
-        top_k: Forwarded to :func:`rank_agreement`.
-        save_path: Optional PNG path.  When given, the matrix is also
-            rendered as a heatmap.
-        title: Plot title.
-
-    Returns:
-        ``(N, N)`` ``np.ndarray`` of Jaccard scores in [0, 1] (NaN
-        where a pair could not be compared).  The diagonal is 1.0.
-    """
     names = list(methods_results.keys())
     n = len(names)
     matrix = np.eye(n, dtype=np.float64)
@@ -231,29 +135,6 @@ def cross_model_agreement(
     save_path: Optional[str] = None,
     title: str = "Cross-model agreement",
 ) -> Dict[str, object]:
-    """Tokens on which the available models' top-K attribution lists agree.
-
-    Uses the *native* tokenisation of each model (n-grams for LR/SVM,
-    words for BiLSTM/PhoBERT) to find the Jaccard-overlap of top-K tokens
-    within each *compatible pair* (LR vs SVM, BiLSTM vs PhoBERT).  When
-    2+ models are available a grouped bar chart of the common tokens is
-    rendered.
-
-    Args:
-        text: Original (word-segmented) input.
-        lr_attrs / svm_attrs / bilstm_attrs / phobert_attrs: Per-token
-            attribution scores (aligned with their respective ``*_tokens``).
-        lr_tokens / svm_tokens / bilstm_tokens / phobert_tokens: Token
-            strings that correspond to the score arrays.  Required for
-            LR/SVM when their tokenisation differs from ``str.split(text)``.
-        top_k: Top-K per model.
-        save_path: Optional PNG path.
-        title: Plot title.
-
-    Returns:
-        ``{"common_tokens", "available_models", "jaccard_pairs",
-        "<model>_scores"}`` dict.
-    """
     words = str(text).split()
     vectors: Dict[str, np.ndarray] = {}
     token_lists: Dict[str, List[str]] = {}
@@ -274,13 +155,11 @@ def cross_model_agreement(
     if not vectors:
         raise ValueError("At least one model's attribution vector must be provided")
 
-    # ── Per-model top-K using *native* tokenisation ──────────────────
     tops: Dict[str, set[str]] = {}
     for name, vec in vectors.items():
         idx = _topk_indices(vec, top_k)
         tops[name] = {str(i) for i in idx}   # store integer indices
 
-    # ── Jaccard per compatible pair ───────────────────────────────────
     jaccard_pairs: Dict[str, float] = {}
     for (na, ta), (nb, tb) in [
         (("LR", tops.get("LR", {})), ("SVM", tops.get("SVM", {}))),
@@ -296,9 +175,7 @@ def cross_model_agreement(
         "jaccard_pairs":     jaccard_pairs,
     }
 
-    # ── Bar chart: common tokens across *all* available models ────────
     if len(vectors) >= 2:
-        # Align all models to word level before computing intersection.
         word_vecs: Dict[str, np.ndarray] = {}
         for name in vectors:
             vec  = vectors[name]
@@ -326,26 +203,10 @@ def cross_model_agreement(
     return result
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Internals
-# ──────────────────────────────────────────────────────────────────────
-
-
 def _topk_indices(arr: np.ndarray, k: int) -> np.ndarray:
-    """Indices of the ``k`` largest-absolute elements of ``arr``.
-
-    When there are ties (multiple elements with the same absolute
-    value), ``np.argpartition`` may return more than ``k`` indices
-    because the partition is only guaranteed to place the cut *between*
-    the top-k and the rest.  We fix the length by taking the first
-    ``k`` indices returned by ``argsort`` (descending), which is also
-    O(n log n) in the worst case but unambiguous.
-    """
     if k >= len(arr):
         return np.arange(len(arr))
     abs_arr = np.abs(arr)
-    # ``argsort`` is O(n log n) but the descending-absolute order is
-    # unambiguous; we then slice the top-k.
     order = np.argsort(-abs_arr, kind="stable")
     return order[:k]
 
@@ -357,16 +218,11 @@ def _render_heatmap(
     title: str,
     nan_mask: Optional[np.ndarray] = None,
 ) -> None:
-    """Save an N×N heatmap to ``save_path`` (PNG + PDF).
-
-    NaN cells are rendered as grey ("0.5" grayscale) and labelled "—".
-    """
     import os
 
     n = len(labels)
     fig, ax = plt.subplots(figsize=(max(4, 0.8 * n + 2), max(4, 0.8 * n + 2)))
 
-    # Replace NaN with a placeholder value for imshow (grey = 0.5).
     display = matrix.copy()
     display[np.isnan(display)] = 0.5
 
@@ -407,12 +263,6 @@ def _render_cross_model_bars(
     title: str,
     note: str = "",
 ) -> None:
-    """Grouped bar chart — each token's |attribution| per model.
-
-    Works with any subset of models (2–4).  Models not in ``vectors``
-    are simply omitted from the chart.  When ``common`` is empty an
-    informative placeholder figure is still rendered (not a blank PNG).
-    """
     import os
 
     tokens_sorted = sorted(common)
@@ -444,7 +294,6 @@ def _render_cross_model_bars(
         ax.set_yticklabels(tokens_sorted, fontsize=10)
         ax.set_xlabel("|Attribution| (model-specific scale)", fontsize=11)
     else:
-        # Empty chart — still render something informative.
         ax.text(0.5, 0.5,
                 f"No common top-K tokens\nacross the available models.\n{note}",
                 ha="center", va="center", fontsize=12,
@@ -469,13 +318,6 @@ def _align_to_words_simple(
     toks: List[str],
     scores: np.ndarray,
 ) -> np.ndarray:
-    """Align a native-token score vector to word level.
-
-    ``toks`` and ``scores`` have the same length (one entry per TF-IDF
-    n-gram token).  We split each n-gram on ``_`` and distribute its
-    score equally to every component word.  Returns a ``(len(words),)``
-    vector.
-    """
     word_scores = np.zeros(len(words), dtype=np.float64)
     counts      = np.zeros(len(words), dtype=np.float64)
     word_norm  = [w.lower().replace("_", " ") for w in words]
@@ -496,7 +338,6 @@ def _align_to_words_simple(
 
 
 def _split_token_ngram(tok: str) -> List[str]:
-    """Split an n-gram token into component words (underscore-separated)."""
     tok = tok.replace("▁", "").replace("##", "")
     return [p for p in tok.split("_") if p.strip()]
 

@@ -1,0 +1,253 @@
+% =====================================================================
+%  Chuong04_PhuongPhap.tex — Chương 4: Xác định tin giả (Phương pháp đề xuất)
+%
+%  Tách từ main.tex (dòng 1407-1665 trong bản cũ).
+% =====================================================================
+
+\chapter{Xác định tin giả}
+
+Chương này trình bày toàn bộ cơ sở phương pháp luận cho bài toán phát hiện tin giả bằng tiếng Việt. Nội dung được tổ chức theo trình tự từ việc làm rõ bài toán, lựa chọn mô hình, mô tả kiến trúc hệ thống đến chi tiết kỹ thuật trích xuất đặc trưng và cấu hình huấn luyện của từng mô hình. Phần cuối chương khái quát các phân tích mở rộng, giải thích mô hình, hiệu chỉnh xác suất, phân tích mẫu khó và knowledge distillation.
+
+\section{Phương pháp đề xuất}
+
+Sự phát triển nhanh của môi trường trực tuyến đã làm thay đổi đáng kể cách thông tin được tạo ra, phân phối và tiếp nhận. Bên cạnh những lợi ích về khả năng tiếp cận thông tin, môi trường này cũng tạo điều kiện cho các nội dung thiếu chính xác lan truyền với tốc độ cao. Đối với tiếng Việt, việc tự động nhận diện những nội dung sai lệch vì thế trở thành một hướng nghiên cứu đáng chú ý trong lĩnh vực xử lý ngôn ngữ tự nhiên, với tiềm năng hỗ trợ cả các nghiên cứu học thuật và những ứng dụng thực tế.
+
+Để đưa văn bản vào các mô hình học máy, nội dung ngôn ngữ cần được chuyển đổi thành dạng biểu diễn mà thuật toán có thể khai thác. Các phương pháp truyền thống như Bag-of-Words và TF-IDF biểu diễn văn bản dựa trên sự xuất hiện hoặc tần suất của các từ, trong khi word embedding cung cấp cách biểu diễn giàu thông tin hơn thông qua các vector số. Tuy nhiên, những phương pháp này vẫn gặp hạn chế trong việc mô tả đầy đủ quan hệ ngữ cảnh của từ trong câu. Các mô hình dựa trên kiến trúc Transformer đã mở rộng khả năng biểu diễn này bằng cách khai thác thông tin ngữ cảnh trong toàn bộ chuỗi văn bản, từ đó đạt hiệu quả cao trong nhiều nhiệm vụ phân loại và phân tích ngôn ngữ.
+
+Dựa trên những hướng tiếp cận nói trên, đồ án xây dựng một quy trình thực nghiệm nhằm đánh giá và đối chiếu khả năng nhận diện tin giả giữa các nhóm mô hình khác nhau. Nhóm phương pháp truyền thống được đại diện bởi Logistic Regression và SVM --- sử dụng đặc trưng trích xuất từ văn bản; nhóm học sâu gồm BiLSTM và PhoBERT --- khai thác biểu diễn ngữ cảnh. Việc đặt các phương pháp này trong cùng một quy trình đánh giá tạo cơ sở để phân tích sự khác biệt về hiệu năng giữa cách tiếp cận dựa trên đặc trưng thủ công và cách tiếp cận dựa trên học biểu diễn từ dữ liệu.
+
+\section{Lý do lựa chọn các nhóm mô hình}
+\label{sec:model_selection}
+
+Đối với nhiệm vụ phân loại văn bản,  việc đánh giá các phương pháp có thể dựa trên ba tiêu chí chính:
+\begin{itemize}
+    \item \textit{Khả năng diễn giải} --- mức độ con người có thể hiểu được logic ra quyết định của mô hình.
+    \item \textit{Chi phí tính toán} --- chi phí về thời gian và tài nguyên trong quá trình huấn luyện cũng như suy diễn.
+    \item \textit{Năng lực biểu diễn ngữ nghĩa} --- khả năng khai thác những sắc thái ngữ nghĩa trong nội dung văn bản.
+\end{itemize}
+
+Dựa trên các tiêu chí này, đồ án này so sánh hai nhóm:
+\begin{enumerate}
+    \item \textbf{Nhóm học máy truyền thống}, bao gồm:
+    \begin{itemize}
+        \item Logistic Regression
+        \item Support Vector Machine
+    \end{itemize}
+    Đầu vào của hai mô hình trên là vector TF-IDF~\cite{sparkjones1972idf}. Cả hai mô hình có nền tảng lý thuyết vững, hoạt động ổn định trên dữ liệu văn bản đặc trưng chiều cao và thưa, đồng thời thuận tiện cho việc phân tích đóng góp của từng đặc trưng và kiểm soát hiện tượng quá khớp~\cite{cortes1995svm}. Vì vậy, chúng được sử dụng làm \textit{strong baselines} --- điểm chuẩn --- để đo lường mức cải thiện thực sự mà các phương pháp phức tạp hơn mang lại.
+
+    \item \textbf{Nhóm học sâu}, bao gồm:
+    \begin{itemize}
+        \item BiLSTM
+        \item PhoBERT
+    \end{itemize}
+    BiLSTM tận dụng hai hướng xử lý của mạng LSTM để khai thác thông tin từ cả phía trước lẫn phía sau của chuỗi. Khi được bổ sung cơ chế \textit{attention}, mô hình có thể gán mức độ quan trọng khác nhau cho từng thành phần trong văn bản, từ đó giúp mô hình ưu tiên những thông tin có giá trị đối với quá trình phân loại~\cite{hochreiter1997lstm,bahdanau2015attention}.
+
+    PhoBERT kế thừa kiến trúc RoBERTa và được phát triển riêng cho ngữ liệu tiếng Việt, với quá trình tiền huấn luyện được thực hiện trên dữ liệu tiếng Việt~\cite{vaswani2017attention,liu2019roberta,phobert2020}. Nhờ học biểu diễn theo ngữ cảnh trong giai đoạn tiền huấn luyện, mô hình có khả năng tiếp thu các thông tin ngữ nghĩa ở nhiều cấp độ. Vì vậy, PhoBERT có thể được áp dụng hiệu quả cho những nhiệm vụ xử lý cũng như phân loại văn bản tiếng Việt.
+\end{enumerate}
+
+Việc đánh giá hai nhóm phương pháp trong cùng một thiết lập thực nghiệm tạo cơ sở để phân tích ba vấn đề trọng tâm của nghiên cứu:
+
+\begin{enumerate}
+    \item Liệu các mô hình phân loại truyền thống có đạt được kết quả cạnh tranh khi được trang bị đặc trưng văn bản phù hợp hay không.
+
+    \item Mức độ cải thiện hiệu năng khi chuyển từ đặc trưng TF-IDF sang biểu diễn ngữ cảnh được học bởi các mô hình học sâu.
+
+    \item Đánh giá mức độ hỗ trợ của tri thức ngôn ngữ có sẵn trong PhoBERT đối với nhiệm vụ phân loại tin giả trên dữ liệu thực tế.
+\end{enumerate}
+
+\section{Tổng quan kiến trúc hệ thống}
+
+Quy trình thực nghiệm được tổ chức thành ba giai đoạn nối tiếp, lần lượt là xử lý dữ liệu, chuẩn bị biểu diễn đầu vào và thực hiện huấn luyện, đánh giá:
+
+\begin{enumerate}[leftmargin=3.3em]
+
+    \item \textbf{Tiền xử lý dữ liệu:} các văn bản được đưa về dạng thống nhất bằng cách chuẩn hóa nội dung và loại bỏ những thành phần không cần thiết, sau đó tiến hành phân đoạn từ tiếng Việt. Kết quả xử lý được sử dụng để tạo ba tập Train, Validation và Test theo tỷ lệ đã xác định. Cách phân chia này nhằm tách biệt dữ liệu dùng cho quá trình học với dữ liệu phục vụ kiểm tra và đánh giá mô hình.
+
+    \item \textbf{Biểu diễn dữ liệu:} dữ liệu đầu vào được xây dựng theo yêu cầu của từng mô hình. Logistic Regression và SVM khai thác biểu diễn TF-IDF, trong khi BiLSTM sử dụng các vector từ được tạo bằng FastText. Với PhoBERT, văn bản được mã hóa bằng BPE (byte-pair encoding) trước khi đưa vào mô hình. Các dạng biểu diễn tương ứng sau đó được sử dụng làm đầu vào cho nhiệm vụ phân loại.
+
+    \item \textbf{Huấn luyện và đánh giá:} bốn mô hình được thực nghiệm độc lập với các thiết lập tương ứng trên cùng nguồn dữ liệu, từ đó tạo cơ sở cho việc đối chiếu kết quả. Hiệu năng được đánh giá thông qua \textit{accuracy}, \textit{F1-score} và \textit{ROC-AUC}. Kết quả từ các thí nghiệm được tổng hợp để so sánh khả năng phân loại và xem xét sự khác biệt về hiệu năng giữa các mô hình.
+
+\end{enumerate}
+
+\section{Trích xuất đặc trưng}
+
+\subsection{TF-IDF cho mô hình học máy truyền thống}
+
+\subsubsection{Lý do lựa chọn TF-IDF}
+
+TF-IDF chuyển văn bản thành biểu diễn số dựa trên mức độ quan trọng của các từ trong tập dữ liệu. Kết quả thường là các vector thưa (\textit{sparse vectors}), trong đó mỗi chiều biểu diễn một đặc trưng từ vựng và được gán một giá trị tương ứng. Dạng biểu diễn này phù hợp với những mô hình phân loại tuyến tính như Logistic Regression và SVM, bởi các mô hình có thể trực tiếp khai thác những chiều đặc trưng có khả năng phân biệt giữa các lớp dữ liệu.
+
+Một hạn chế của TF-IDF là không mô tả được đầy đủ quan hệ ngữ nghĩa và ngữ cảnh của từ như các phương pháp \textit{word embedding} hay mô hình ngôn ngữ tiền huấn luyện. Tuy nhiên, đặc trưng dựa trên tần suất từ vẫn cung cấp những tín hiệu hữu ích cho nhiều nhiệm vụ phân loại văn bản. Đặc biệt, các từ hoặc cụm từ có mức độ phân biệt cao giữa các lớp có thể được thể hiện rõ thông qua trọng số TF-IDF. Vì vậy, phương pháp này được sử dụng như một mốc đối chứng để đánh giá mức cải thiện khi áp dụng những phương pháp biểu diễn phức tạp hơn.
+
+Đối với nhiệm vụ phát hiện tin giả, tín hiệu từ vựng có thể xuất hiện dưới nhiều dạng khác nhau, chẳng hạn cách đặt tiêu đề, những cách diễn đạt nhằm gây chú ý hoặc các từ khóa đặc trưng cho nội dung sai lệch. Việc bổ sung các đặc trưng n-gram giúp mô hình xem xét cả những chuỗi từ thay vì chỉ xử lý từng từ độc lập. Trong nghiên cứu này, TF-IDF được sử dụng cùng Logistic Regression và SVM để hình thành nhóm mô hình đối chứng, từ đó tạo cơ sở đánh giá với hai phương pháp BiLSTM và PhoBERT.
+
+\subsubsection{Cấu hình TF-IDF}
+Đối với nhóm mô hình học máy truyền thống, các thiết lập của TF-IDF được lựa chọn dựa trên kết quả \textit{ablation study} tại Mục~\ref{sec:ablation}. Mục tiêu của quá trình này là xác định cấu hình vừa cung cấp đủ thông tin cho mô hình vừa hạn chế những đặc trưng không cần thiết. Các giá trị được sử dụng gồm:
+
+\begin{itemize}[leftmargin=2em]
+
+  \item \textbf{Kích thước từ điển:} chỉ giữ lại \tfidfmaxfeatures{} từ/ngữ có mức độ xuất hiện cao nhất trong dữ liệu. Giới hạn này giúp không gian đặc trưng có kích thước phù hợp và giảm tác động của những đặc trưng ít hữu ích.
+
+  \item \textbf{N-gram:} biểu diễn được xây dựng từ cả đơn từ (Unigram) và các cặp từ (Bigram), hay còn gọi là N-Gram = (1,2). Nhờ xét thêm các chuỗi từ, mô hình có thể khai thác những cụm biểu đạt mang thông tin phân biệt mà biểu diễn unigram đơn thuần có thể bỏ qua.
+
+  \item \textbf{Tần số tài liệu:} các đặc trưng có tần suất tài liệu thấp hơn ngưỡng \texttt{min\_df=5} hoặc xuất hiện trong tỷ lệ tài liệu vượt quá \texttt{max\_df=0.95} được loại khỏi không gian đặc trưng. Điều này giúp hạn chế những từ quá hiếm hoặc quá phổ biến trong tập dữ liệu.
+
+  \item \textbf{TF sublinear:} thay cho việc sử dụng trực tiếp tần suất xuất hiện, phép biến đổi $\mathrm{TF} = 1 + \log f_{t,d}$ được áp dụng để làm giảm mức ảnh hưởng của những từ xuất hiện với số lần rất lớn trong cùng một văn bản. Nhờ đó, sự xuất hiện của từ được xem xét theo hướng ít phụ thuộc hơn vào tần suất tuyệt đối.
+
+\end{itemize}
+
+Các thiết lập trên được cố định sau quá trình lựa chọn để sử dụng trong thực nghiệm. Việc giới hạn không gian đặc trưng, kiểm soát tần suất tài liệu và sử dụng TF sublinear giúp cân đối giữa lượng thông tin được giữ lại với độ phức tạp của biểu diễn TF-IDF, đồng thời hạn chế khả năng mô hình phụ thuộc quá mức vào những đặc trưng riêng của tập dữ liệu huấn luyện.
+
+\subsection{Word Embedding cho BiLSTM}
+
+Đối với kiến trúc BiLSTM, biểu diễn văn bản được xây dựng thông qua kỹ thuật word embedding kết hợp giữa embedding tiền huấn luyện và học từ dữ liệu. Từ điển được hình thành dựa trên toàn bộ tập train, sau khi loại bỏ các từ xuất hiện dưới 2 lần nhằm giảm nhiễu và kiểm soát kích thước không gian từ vựng; kết quả thu được \bilstmvocab{} từ.
+
+Hai token đặc biệt được bổ sung: \texttt{<pad>} (Index 0) dùng để đệm các chuỗi ngắn và \texttt{<unk>} (Index 1) đại diện cho các từ ngoài từ điển. Mỗi văn bản sau tiền xử lý được chuyển đổi thành một chuỗi số nguyên với độ dài tối đa \bilstmmaxseq, đảm bảo tính nhất quán về kích thước đầu vào cho mô hình tuần tự.
+
+Các vector embedding có chiều \bilstmembdim{} được khởi tạo bằng bộ vector FastText đã được huấn luyện trước cho tiếng Việt~\cite{bojanowski2017fasttext} (\texttt{cc.vi.300.bin}). Phương pháp FastText khai thác các n-gram ở cấp độ ký tự để tạo biểu diễn cho từ, nhờ đó vẫn có thể xây dựng vector cho những từ chưa xuất hiện trong từ điển bằng cách kết hợp các vector n-gram tương ứng. Trong quá trình huấn luyện, các vector này được đưa vào lớp embedding và tiếp tục cập nhật thông qua cơ chế lan truyền ngược, giúp biểu diễn từ thích nghi với đặc điểm của nhiệm vụ phát hiện tin giả. Cách tiếp cận này vừa tận dụng được thông tin ngôn ngữ đã học từ tập ngữ liệu lớn (Common Crawl), vừa cho phép embedding thích ứng với đặc trưng của dữ liệu tiếng Việt trong bài toán.
+
+\subsection{Tokenization PhoBERT (BPE)}
+
+Quá trình mã hóa đầu vào cho PhoBERT sử dụng thuật toán byte-pair encoding (BPE)~\cite{sennrich2016bpe} với từ điển gồm 64.000 subword, cho phép mô hình xử lý hiệu quả các từ ngoài từ điển và hiện tượng đa hình trong tiếng Việt. Mỗi văn bản được tiền xử lý theo các bước:
+\begin{itemize}[leftmargin=2em]
+  \item Thêm token đặc biệt \texttt{[cls]} ở đầu và \texttt{[sep]} ở cuối chuỗi để đánh dấu ranh giới văn bản.
+  \item Chuỗi token được cắt hoặc đệm về độ dài cố định \phobertmaxseq{} nhằm đảm bảo tính nhất quán đầu vào.
+  \item Sinh \texttt{attention\_mask} để phân biệt token thực (1) và token đệm (0) --- hỗ trợ quá trình tính toán attention trong mô hình.
+\end{itemize}
+
+Chiến lược này giúp PhoBERT tận dụng tối đa thông tin ngữ cảnh và duy trì hiệu quả phân loại khi áp dụng trên nhiều dạng dữ liệu tiếng Việt khác nhau.
+
+\section{Các mô hình phân loại}
+
+\subsection{Các mô hình học máy truyền thống}
+
+\subsubsection{Logistic Regression}
+
+Mô hình Logistic Regression được thiết lập với điều chuẩn L2 để giảm nguy cơ quá khớp, đồng thời sử dụng cơ chế (\texttt{class\_weight='balanced'}) nhằm điều chỉnh ảnh hưởng của sự mất cân bằng giữa các lớp. GridSearchCV được áp dụng để lựa chọn các giá trị siêu tham số phù hợp, trong đó hiệu năng của từng cấu hình được đánh giá thông qua phương pháp 5-fold cross-validation. Dựa trên kết quả thu được qua các lần đánh giá, cấu hình mang lại hiệu năng phù hợp nhất được lựa chọn cho mô hình:
+
+\begin{itemize}[leftmargin=2em]
+  \item Lưới tìm kiếm: $C \in \{0{,}5;\ 1;\ 5;\ 10;\ 20;\ 50\}$, solver $\in \{\text{liblinear},\ \text{saga}\}$
+  \item Cấu hình tối ưu: $C = \lrbestc{}$, solver = saga, max\_iter = 3000
+\end{itemize}
+
+Việc lựa chọn này giúp mô hình đạt hiệu năng tốt nhất trên tập kiểm định mà không phụ thuộc quá nhiều vào phân phối nhãn thực tế.
+
+\subsubsection{Support Vector Machine}
+
+Mô hình máy vectơ hỗ trợ (SVM) sử dụng LinearSVC với trọng số lớp cân bằng nhằm kiểm soát ảnh hưởng do phân bố nhãn không đồng đều.GridSearchCV được sử dụng để tìm kiếm cấu hình siêu tham số phù hợp, với quá trình đánh giá được thực hiện bằng 5-fold cross-validation:
+\begin{itemize}[leftmargin=2em]
+  \item Lưới tìm kiếm: $C \in \{0{,}1;\ 0{,}5;\ 1;\ 2;\ 5;\ 10\}$
+  \item Cấu hình tối ưu: $C = \svmbestc$, LinearSVC kết hợp hiệu chuẩn xác suất (Calibration)
+\end{itemize}
+
+Chiến lược này đảm bảo SVM vừa tận dụng được đặc trưng TF-IDF, vừa giữ được khả năng phân biệt tốt giữa các lớp.
+
+\subsection{Các mô hình học sâu}
+
+\subsubsection{Mạng BiLSTM}
+
+Kiến trúc BiLSTM trong nghiên cứu gồm các thành phần chính:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textbf{Embedding:} ma trận embedding kích thước $(V \times \bilstmembdim)$, cho phép học biểu diễn ngữ nghĩa trực tiếp từ dữ liệu.
+  \item \textbf{BiLSTM \bilstmlayers{} tầng:} mỗi tầng có \texttt{hidden\_dim}=\bilstmhiddendim{} cho cả hai chiều (Forward + Backward), đầu ra tại mỗi bước thời gian là $2\times\bilstmhiddendim{}$.
+  \item \textbf{Soft Attention:} cơ chế soft attention tính trọng số $\alpha_t$ cho từng bước thời gian, qua đó các thành phần mang thông tin quan trọng trong văn bản được mô hình chú trọng hơn trong quá trình xử lý.
+  \item \textbf{Classifier:} hai lớp dropout~\cite{srivastava2014dropout} (0.3) xen kẽ với các lớp tuyến tính và ReLU, giúp giảm overfitting và tăng khả năng biểu diễn phi tuyến.
+\end{enumerate}
+
+Chiến lược huấn luyện sử dụng AdamW~\cite{loshchilov2019adamw} ($\eta = 10^{-3}$, weight\_decay=$10^{-4}$), hàm mất mát CrossEntropy có trọng số lớp để xử lý mất cân bằng, batch=64, tối đa 20 epochs với cơ chế dừng sớm (patience=5). Ngoài ra, áp dụng ReduceLROnPlateau (factor=0.5, patience=2) để điều chỉnh tốc độ học và gradient clipping (max\_norm=1.0) nhằm đảm bảo ổn định quá trình tối ưu.
+
+\subsubsection{Tinh chỉnh PhoBERT}
+
+Kiến trúc PhoBERT fine-tuning gồm hai thành phần chính:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textbf{Encoder PhoBERT:} 12 lớp Transformer encoder, đầu ra vector \texttt{[cls]} 768 chiều đóng vai trò đại diện toàn cục cho văn bản.
+  \item \textbf{Classifier head:} hai lớp Dropout (0.1) xen kẽ với linear (768→384→2) và ReLU, giúp tăng khả năng biểu diễn phi tuyến và giảm overfitting.
+\end{enumerate}
+
+Chiến lược huấn luyện sử dụng AdamW~\cite{loshchilov2019adamw} ($\eta = 3 \times 10^{-5}$, weight\_decay=0.01), linear warmup (10\%), batch=16, tối đa 8 epochs, gradient accumulation steps=4, gradient clipping (max\_norm=1.0) và cơ chế dừng sớm (patience=2).
+
+\section{Chiến lược xử lý mất cân bằng nhãn}
+
+Mặc dù phân bố nhãn giữa hai lớp tương đối gần nhau (\pctreal{}\% \textit{thật} / \pctfake{}\% \textit{giả}), lớp \textit{tin giả} vẫn có số lượng thấp hơn và có thể chịu ảnh hưởng trong quá trình mô hình học và phân loại. Do đó, đồ án kết hợp hai chiến lược nhằm kiểm soát tác động của sự chênh lệch này:
+
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Chia phân tầng} (\textit{stratified split}): Phương pháp phân tầng được áp dụng khi tạo các tập Train, Validation và Test nhằm giữ lại đặc điểm phân bố nhãn của dữ liệu ban đầu. Việc duy trì tỷ lệ các lớp giữa các tập giúp hạn chế sai lệch trong quá trình đánh giá và giảm khả năng kết quả mô hình bị tác động bởi cách phân chia dữ liệu.
+
+  \item \textbf{Trọng số lớp trong hàm mất mát} (\textit{class weighting}): mỗi lớp $c$ được gán trọng số nghịch đảo tỷ lệ với tần suất xuất hiện:
+  \[
+    w_c = \frac{N}{K \cdot N_c}
+  \]
+  trong đó $N$ là tổng số mẫu, $K$ là số lớp và $N_c$ là số mẫu thuộc lớp $c$. Trọng số này được tích hợp trực tiếp vào hàm mất mát CrossEntropy --- làm tăng mức phạt cho các mẫu thuộc lớp thiểu số, từ đó cải thiện recall cho lớp tin giả. Đối với các mô hình truyền thống (LR, SVM), cơ chế tương đương được thực hiện thông qua tham số \texttt{class\_weight=`balanced'} trong scikit-learn~\cite{pedregosa2011sklearn}.
+\end{itemize}
+
+Sự kết hợp hai chiến lược trên giúp đảm bảo quá trình huấn luyện và đánh giá phản ánh đúng thực tế phân phối nhãn, đồng thời giảm thiểu nguy cơ mô hình bỏ sót các trường hợp thuộc lớp thiểu số.
+
+\section{Các phân tích mở rộng được thiết kế cho chương thực nghiệm}
+\label{sec:extended_analyses}
+
+Ngoài các độ đo hiệu năng chuẩn (Accuracy, F1, ROC-AUC), chương thực nghiệm sẽ thực hiện bốn nhóm phân tích mở rộng nhằm đánh giá mô hình một cách toàn diện hơn.
+
+\subsection{Phân tích khả năng giải thích (Explainability)}
+
+Để hiểu \emph{từ nào} trong văn bản có ảnh hưởng lớn nhất đến dự đoán của mỗi mô hình, ba họ phương pháp attribution được sử dụng:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Cho mô hình tuyến tính (LR, SVM):} KernelSHAP~\cite{lundberg2017shap} với tập nền là vector~0 (đặc trưng vắng mặt) cho LR; LinearSHAP dựa trên trọng số mô hình cho SVM. Đầu ra là đóng góp log-odds cho từng n-gram xuất hiện trong văn bản.
+
+  \item \textbf{Cho BiLSTM:} Integrated Gradients (IG, Sundararajan et al., 2017) và vanilla gradients trên embedding đầu vào với baseline là vector~0. Mỗi token được gán điểm bằng chuẩn L2 của gradient tích phân theo chiều embedding.
+
+  \item \textbf{Cho PhoBERT:} SHAP trên embedding (đầu vào liên tục), LayerIntegratedGradients từ Captum, và Attention Rollout (Abnar \& Zuidema, 2020) lấy hàng CLS của ma trận rollout qua 12 lớp Transformer.
+\end{itemize}
+
+Ngoài việc trực quan hóa token attribution trên từng mẫu, hai phép đo định lượng được sử dụng: (i) \textit{Jaccard overlap} giữa top-$k$ token quan trọng của các cặp phương pháp --- đo lường mức độ đồng thuận giữa các hướng giải thích; (ii) \textit{faithfulness score} --- mức giảm xác suất của lớp dự đoán sau khi che $k$ token được attribution đánh giá quan trọng nhất.
+
+\subsection{Hiệu chỉnh xác suất sau huấn luyện (Post-Hoc Calibration)}
+
+Phân tích sơ bộ (xem Mục~\ref{sec:evaluation}) cho thấy PhoBERT đạt Accuracy cao nhưng xác suất dự đoán có thể chưa phản ánh đúng tần suất thực nghiệm. Để khắc phục mà không cần huấn luyện lại mô hình, ba phương pháp hiệu chỉnh sau huấn luyện được áp dụng cho cả bốn mô hình:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Platt scaling} (Platt, 1999) --- hồi quy logistic một chiều trên logit: $\sigma(a \cdot z + b)$.
+  \item \textbf{Temperature scaling} (Guo et al., 2017) --- tìm hằng số $T > 0$ tối thiểu hóa NLL trên tập validation: $p = \sigma(Z / T)$.
+  \item \textbf{Isotonic regression} (Zadrozny \& Elkan, 2002) --- ánh xạ phi tham số, đơn điệu từ $\sigma(Z)$ sang xác suất hiệu chỉnh.
+\end{itemize}
+
+Cả ba phương pháp được fit trên tập validation và đánh giá trên tập kiểm tra. Đối với LR và SVM, logit được tính từ hàm quyết định (\texttt{model.decision\_function()}) của mô hình đã huấn luyện. Đối với BiLSTM và PhoBERT, logit được trích từ đầu ra trước softmax của mô hình PyTorch tương ứng. Để đảm bảo tính tái lập và tăng tốc độ thực nghiệm, logits được tính trước một lần trên tập validation và tập kiểm tra rồi lưu lại, phục vụ cho các thí nghiệm hiệu chỉnh.
+
+\subsection{Phân tích các trường hợp khó (Hard Cases)}
+
+Nhóm mẫu mà cả bốn mô hình đều phân loại sai được gọi là \textit{hard examples}. Mỗi mẫu khó được phân loại theo các chiều sau bằng heuristic tự động kết hợp kiểm tra thủ công:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Chủ đề:} dựa trên từ khóa (chính trị, tài chính, y tế,\ldots).
+  \item \textbf{Lý do thất bại:} \textit{semantic reasoning} (mô hình không nắm ngữ nghĩa); \textit{knowledge verification} (cần tri thức nền tảng); \textit{dataset ambiguity} (bản thân nhãn mơ hồ); \textit{stylistic} (văn phong đánh lừa mô hình).
+  \item \textbf{Độ dài:} số từ trong văn bản --- giúp phát hiện hiện tượng thiếu ngữ cảnh.
+  \item \textbf{Mật độ từ vực:} tỷ lệ từ mang nội dung / tổng số từ.
+\end{itemize}
+
+\subsection{Knowledge Distillation}
+
+PhoBERT đạt F1-macro cao nhất nhưng có kích thước lớn ($\sim$\phobertparams{} triệu tham số), không phù hợp với triển khai trên thiết bị biên. Một thí nghiệm knowledge distillation~\cite{hinton2015distill} được thiết kế nhằm kiểm chứng giả thuyết: một mô hình BiLSTM nhỏ (sinh viên) có thể thừa hưởng phần lớn chất lượng của một mô hình lớn (giáo viên), đổi lại một mức sụt giảm F1 có thể chấp nhận được và kích thước mô hình nhỏ hơn đáng kể. Trong thiết kế này, giáo viên được chọn là BiLSTM-gốc (đã huấn luyện trên cùng bộ dữ liệu) vì kích thước phù hợp để làm giáo viên cho một BiLSTM nhỏ hơn; PhoBERT không được sử dụng làm giáo viên do kiến trúc quá khác biệt.
+
+Hàm mất mát KD kết hợp hai thành phần:
+\[
+L = \alpha \cdot \mathrm{KL}\!\left(\frac{s}{T} \,\big\|\, \frac{t}{T}\right) \cdot T^2
+  + (1 - \alpha) \cdot \mathrm{CE}(S, Y),
+\]
+trong đó $s, t$ lần lượt là logits của sinh viên và giáo viên, $T$ là nhiệt độ phân phối và $\alpha$ là trọng số của thành phần soft target. Logits của giáo viên PhoBERT được tính trước một lần trên tập huấn luyện và tập kiểm tra rồi lưu lại để tái sử dụng suốt quá trình huấn luyện sinh viên.
+
+\section{Kết luận chương}
+
+Chương này đã trình bày phương pháp luận đầy đủ cho toàn bộ khung thực nghiệm của đồ án, xoay quanh bốn trụ cột:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Trích xuất đặc trưng:} TF-IDF (cho LR/SVM), embedding tùy chỉnh (cho BiLSTM), và BPE tokenizer của PhoBERT (cho PhoBERT).
+  \item \textbf{Kiến trúc mô hình:} bốn mô hình (LR, SVM, BiLSTM, PhoBERT) đại diện cho ba trường phái chính của NLP --- đặc trưng thủ công, học biểu diễn tuần tự, và tiền huấn luyện.
+  \item \textbf{Siêu tham số:} lựa chọn có nguyên tắc với tài liệu tham chiếu (Bengio et al., 2003 cho embedding dim $\ge 128$; Devlin et al., 2019 cho learning rate $2 \times 10^{-5}$ của Transformer).
+  \item \textbf{Phân tích mở rộng:} bốn nhóm phân tích (giải thích, hiệu chỉnh xác suất, mẫu khó, knowledge distillation) được thiết kế để đánh giá mô hình toàn diện hơn ngoài Accuracy/F1.
+\end{itemize}
+
+Thiết kế này đảm bảo so sánh công bằng trên cùng bộ dữ liệu và cùng quy trình đánh giá --- mỗi mô hình được huấn luyện với cùng phân chia tập, cùng siêu tham số đã được điều chỉnh hợp lý, và cùng ba chỉ số chính (Accuracy, F1-macro, ROC-AUC).
+
+\clearpage

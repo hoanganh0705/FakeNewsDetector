@@ -1,0 +1,18 @@
+
+\begin{table}[h]
+\centering
+\setlength{\tabcolsep}{3pt}
+\small
+\caption[So sánh hiệu suất các mô hình]{So sánh hiệu suất các mô hình trên tập kiểm tra}
+\label{tab:results}
+\begin{tabular}{lccccc}
+\toprule
+mô hình & độ chính xác & precision & recall & F1-Score & ROC-AUC \\
+\midrule
+Logistic Regression & \lrAccTab & \lrPrecTab & \lrRecTab & \lrFoneTab & \lrAUCTab \\
+SVM & \svmAccTab & \svmPrecTab & \svmRecTab & \svmFoneTab & \svmAUCTab \\
+BILSTM & \bilstmAccTab & \bilstmPrecTab & \bilstmRecTab & \bilstmFoneTab & \bilstmAUCTab \\
+PhoBERT & \phobertAccTab & \phobertPrecTab & \phobertRecTab & \phobertFoneTab & \phobertAUCTab \\
+\bottomrule
+\end{tabular}
+\end{table}

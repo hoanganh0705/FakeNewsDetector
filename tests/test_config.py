@@ -1,13 +1,9 @@
-"""Tests for the centralised config object — structure & types only."""
-
 import pytest
 
 from config import cfg, Config, Paths
 
 
 class TestConfig:
-    """Smoke-tests for the centralised config object."""
-
     def test_random_state_is_int(self):
         assert isinstance(cfg.RANDOM_STATE, int)
 
@@ -35,7 +31,6 @@ class TestConfig:
         assert hasattr(cfg.BILSTM, "fasttext_path")
 
     def test_all_path_fields_are_strings(self):
-        """Every field in Paths should be a non-empty string."""
         import dataclasses
 
         for f in dataclasses.fields(cfg.PATHS):
@@ -44,13 +39,11 @@ class TestConfig:
             assert len(value) > 0, f"PATHS.{f.name} is empty"
 
     def test_learning_rates_are_positive_floats(self):
-        """Model learning rates must be positive floats."""
         for section in (cfg.BILSTM, cfg.PHOBERT):
             assert isinstance(section.learning_rate, float)
             assert section.learning_rate > 0
 
     def test_fresh_config_equal_to_singleton(self):
-        """A freshly constructed Config should match the module-level singleton."""
         fresh = Config()
         assert fresh.RANDOM_STATE == cfg.RANDOM_STATE
         assert fresh.DATA.train_ratio == cfg.DATA.train_ratio

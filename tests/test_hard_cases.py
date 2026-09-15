@@ -1,12 +1,3 @@
-"""Tests for ``src.evaluation.hard_cases`` (Phase 4).
-
-These tests cover:
-* The annotation pipeline (topic detection, reason categorisation, length bucket).
-* ``annotate_one`` produces a ``HardExampleAnnotation`` with all fields.
-* ``analyze_hard_examples`` returns a non-empty DataFrame and saves artefacts.
-* The LaTeX / figure writers don't crash on empty or populated data.
-"""
-
 from __future__ import annotations
 
 import os
@@ -27,10 +18,6 @@ from src.evaluation.hard_cases import (
     _tokenise,
 )
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Primitives
-# ──────────────────────────────────────────────────────────────────────
 
 class TestLengthBucket:
     @pytest.mark.parametrize("n,expected", [
@@ -134,18 +121,12 @@ class TestAnnotateOne:
             confidences={"Logistic Regression": 0.5, "SVM": 0.5, "BiLSTM": 0.5, "PhoBERT": 0.5},
         )
         d = ann.to_dict()
-        # to_dict must not raise and must be JSON-serialisable (tuple → list).
         import json
-        json.dumps(d)  # raises if not serialisable
+        json.dumps(d)
 
-
-# ──────────────────────────────────────────────────────────────────────
-# Pipeline — end-to-end with a minimal mock CSV
-# ──────────────────────────────────────────────────────────────────────
 
 class TestAnalyzeHardExamples:
     def test_returns_dataframe(self):
-        """Smoke test: the pipeline returns a non-empty DataFrame on real data."""
         from src.evaluation.hard_cases import analyze_hard_examples
         with tempfile.TemporaryDirectory() as tmp:
             df = analyze_hard_examples(

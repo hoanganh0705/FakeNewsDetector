@@ -1,0 +1,294 @@
+% =====================================================================
+%  preamble.sty — Khung gói lệnh & cấu hình toàn cục
+%  Dùng cho đồ án ngành: "Phát hiện tin giả tiếng Việt ..."
+%
+%  Lưu ý:
+%  - File này KHÔNG chứa nội dung văn bản, chỉ chứa cấu hình + macro.
+%  - File này không tạo output PDF (\ProvidesPackage ngăn điều đó).
+%  - Được load bằng \usepackage trong main.tex (sau \documentclass).
+%  - File data_commands.sty chứa số liệu, load ngay sau preamble.sty.
+%
+%  >>>>>> QUY ƯỚC LATEX BẮT BUỘC: xem LATEX_CONVENTIONS.md <<<<<<
+% =====================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{preamble}[2026/09/08 v1.0 Preamble cho đồ án]
+
+% ── Font & Encoding ─────────────────────────────────────────
+\usepackage{iftex}
+\ifPDFTeX
+    \usepackage[utf8]{vietnam}
+\else
+    \usepackage{fontspec}
+    \usepackage{polyglossia}
+    \setmainlanguage{vietnamese}
+\fi
+\usepackage{fix-cm}
+
+% ── Mathematics ─────────────────────────────────────────────
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{cases}
+\usepackage{pgffor}
+
+% ── Graphics & Drawing ──────────────────────────────────────
+\usepackage{tikz}
+\usepackage{graphicx}
+\usetikzlibrary{calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% ── Algorithm & Pseudocode ──────────────────────────────────
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+% ── Page Layout & Formatting ────────────────────────────────
+\usepackage[left=3.5cm,right=2cm,top=3.5cm,bottom=3cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% =====================================================================
+%  QUY ƯỚC ĐÁNH SỐ TRANG (PAGE NUMBER CONVENTION)
+% =====================================================================
+%  - Đặt page style mặc định là "plain" — số trang hiển thị CHÍNH GIỮA
+%    phía dưới (footer-center) cho MỌI trang nội dung.
+%  - KHÔNG dùng \pagestyle{empty} ở preamble (sẽ tắt số trang toàn cục).
+%  - KHÔNG dùng \let\@oddfoot\@empty / \let\@evenfoot\@empty — các lệnh
+%    này thay đổi vĩnh viễn page style cho MỌI trang phía sau (gây lỗi
+%    "mất số trang" từ trang tiếp theo trở đi).
+%  - MUỐN ẨN SỐ TRANG trên một trang cụ thể → dùng \thispagestyle{empty}
+%    NGAY TRONG FILE .tex của trang đó (chỉ có tác dụng 1 trang, an toàn).
+%  - MUỐN ĐÁNH LẠI SỐ TRANG (Roman → Arabic) → dùng \pagenumbering{...}
+%    trong main.tex (đã làm ở đó).
+% =====================================================================
+\pagestyle{plain}
+% Nếu sau này muốn đổi sang header có tên chương + footer có số trang,
+% có thể đổi sang \pagestyle{fancy} với:
+%   \fancyhf{}
+%   \fancyfoot[C]{\thepage}
+%   \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+%   \fancyhead[L]{\leftmark}
+% =====================================================================
+\usepackage{changepage}
+\usepackage{scrextend}
+\usepackage[Lenny]{fncychap}
+\changefontsizes{13pt}
+\renewcommand{\baselinestretch}{1.5}
+
+% ── Typography ──────────────────────────────────────────────
+\usepackage[protrusion=alltext-nott]{microtype}
+\usepackage{indentfirst}
+\setlength{\parindent}{1.5em}
+
+% ── Tables ──────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{siunitx}
+\sisetup{
+  output-decimal-marker={,},
+  group-separator={.},
+  group-minimum-digits=4
+}
+
+% ── Figures ─────────────────────────────────────────────────
+\usepackage[bf]{caption}
+\usepackage{subcaption}
+\usepackage{adjustbox}
+\usepackage{float}
+\usepackage[section]{placeins}
+\graphicspath{{./figures/}{../figures/}{./}{../}}
+
+\usepackage{xstring}
+
+% ── Colors ──────────────────────────────────────────────────
+\usepackage{xcolor}
+% Lưu ý: dùng model "RGB" (hoa) cho số 0-255; "rgb" thường là số 0-1.
+\definecolor{primaryblue}{RGB}{0, 70, 127}
+\definecolor{primarypurple}{RGB}{128, 0, 128}
+
+% ── Code listings ───────────────────────────────────────────
+\usepackage{listings}
+\lstset{
+  basicstyle=\small\ttfamily,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!8},
+}
+
+% ── TOC formatting ──────────────────────────────────────────
+\usepackage{tocloft}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsubsecleader}{\cftdotfill{\cftdotsep}}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% ── Chapter titles: "Chương X" theo template ────────────────
+\ChTitleVar{\LARGE\bfseries\centering\ChTitleUpperCase}
+\ChNameVar{\large\bfseries}
+\ChNumVar{\fontsize{60}{62}\bfseries}
+\renewcommand{\chaptername}{Chương}
+
+% ── PDF & Misc ──────────────────────────────────────────────
+\usepackage[final]{pdfpages}
+\usepackage{pdflscape}
+\usepackage{balance}
+\usepackage{latexsym}
+\usepackage{dirtytalk}
+
+% ── Hyperlinks ──────────────────────────────────────────────
+\usepackage{xurl}
+\usepackage[unicode,hyperfootnotes=false]{hyperref}
+\usepackage{bookmark}
+\usepackage{csquotes}
+\usepackage[capitalise,nameinlink,noabbrev]{cleveref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=primaryblue,
+  citecolor=primarypurple,
+  urlcolor={red!70!black},
+  filecolor={red!70!black},
+  pdfborder={0 0 0},
+  pdfhighlight=/N,
+  pdftitle={Phát hiện tin giả tiếng Việt sử dụng học máy và học sâu},
+  pdfauthor={Nguyễn Hoàng Anh},
+  pdfsubject={Đồ án ngành -- Trường Đại học Mở TP.HCM},
+  pdfkeywords={fake news detection, vietnamese NLP, PhoBERT, BiLSTM, TF-IDF, SVM, Logistic Regression},
+  pdflang={vi-vn},
+}
+\crefname{figure}{hình}{hình}
+\Crefname{figure}{Hình}{Hình}
+\crefname{table}{bảng}{bảng}
+\Crefname{table}{Bảng}{Bảng}
+\crefname{section}{mục}{mục}
+\Crefname{section}{Mục}{Mục}
+
+% ── Bibliography ────────────────────────────────────────────
+\usepackage{cite}
+
+% ── Utilities ───────────────────────────────────────────────
+\usepackage{enumitem}
+\usepackage{xspace}
+\newcommand{\phobert}{PhoBERT\xspace}
+\newcommand{\bilstm}{BiLSTM\xspace}
+% Hiển thị URL: fill đến hết chiều rộng dòng rồi mới thêm "…".
+% Hyperlink luôn trỏ đến URL đầy đủ.
+% Thuật toán: thử N từ 60 giảm dần, chọn N lớn nhất
+% sao cho <N ký tự sau "//"> + "…" vừa khít ≤ 1 dòng.
+\makeatletter
+\newcommand{\smarturl}[1]{%
+  \begingroup
+  % đo URL đầy đủ trước; nếu vừa thì hiển thị nguyên bản
+  \settowidth{\@tempdima}{\href{#1}{\color{primarypurple}#1}}%
+  \ifdim\@tempdima>\dimexpr\linewidth-2\fboxsep\relax
+    \StrBehind{#1}{//}[\@body]%
+    \StrLen{\@body}[\@bodylen]%
+    % N = min(\@bodylen, 60)
+    \ifnum\@bodylen>60
+      \StrLeft{\@body}{60}[\@body]%
+      \@tempcnta=60\relax
+    \else
+      \@tempcnta=\@bodylen\relax
+    \fi
+    % thử từ N xuống 10, chọn N lớn nhất vừa khít
+    \loop
+      \ifnum\@tempcnta<10
+        % fallback: cắt cứng 10 ký tự
+        \@tempcnta=10\relax
+      \fi
+      \StrLeft{\@body}{\the\@tempcnta}[\@try]%
+      \settowidth{\@tempdima}{\href{#1}{\color{primarypurple}\@try\dots}}%
+      \ifdim\@tempdima>\dimexpr\linewidth-2\fboxsep\relax
+        \advance\@tempcnta by -1\relax
+      \else
+        \href{#1}{\color{primarypurple}\@try\dots}%
+        \@tempcnta=0\relax % thoát vòng lặp
+      \fi
+    \ifnum\@tempcnta>0 \repeat
+  \else
+    \href{#1}{\color{primarypurple}#1}%
+  \fi
+  \endgroup
+}
+\makeatother
+
+% =====================================================================
+%  \imagesource{URL} — chèn footnote "nguồn ảnh: <URL>" ở chân trang
+%
+%  Cách dùng:
+%
+%    \begin{figure}
+%      \includegraphics{...}
+%      \caption{Mô tả \protect\imagesource{URL}}
+%    \end{figure}
+%
+%  Hoặc (đặt marker trong caption, footnote ở cuối trang):
+%
+%    \begin{figure}
+%      \includegraphics{...}
+%      \caption{Mô tả \protect\imagesourcemark}
+%    \end{figure}
+%    \imagesource{URL}
+%
+%  Cơ chế:
+%    - \imagesourcemark: in superscript và tăng counter `imagesourcecount`.
+%    - \imagesource{URL}: dùng giá trị hiện tại của counter cho footnote.
+%
+%  2-pass: trong mỗi lần chạy pdflatex, caption được xử lý 2 lần.
+%  Nhưng nhờ giá trị counter được lưu vào .aux, lần chạy pdflatex sau
+%  sẽ sử dụng giá trị đúng.
+% =====================================================================
+
+\makeatletter
+\newcounter{imagesourcecount}
+
+% \imagesourcemark: chỉ in superscript với giá trị HIỆN TẠI của counter
+% (chưa được tăng bởi \imagesource). Đặt trong \caption.
+% Không tăng counter tại đây — counter chỉ tăng khi \imagesource chạy.
+%
+% LƯU Ý KHI DÙNG TRONG \caption:
+%   Vì \listoffigures ghi lại toàn bộ text của \caption, số "1" ở
+%   superscript sẽ xuất hiện trong "Danh mục hình vẽ". Để ẩn nó ở
+%   danh mục, hãy LUÔN dùng cú pháp \caption[short]{long}:
+%
+%     \caption[Minh họa XYZ]{Minh họa XYZ\protect\imagesourcemark}
+%
+%   Trong đó short là caption không có \imagesourcemark, long là
+%   caption đầy đủ có \imagesourcemark. Nhờ đó LOF dùng short
+%   (không có số "1"), còn hình thật vẫn hiện số "1" như mong muốn.
+\protected\def\imagesourcemark{%
+  \textsuperscript{\the\numexpr\value{imagesourcecount}+1\relax}%
+}
+
+% \imagesource{URL}: tăng counter, in footnote ở chân trang với số
+% hiện tại. Đặt sau \end{figure}.
+\newcommand{\imagesource}[1]{%
+  \stepcounter{imagesourcecount}%
+  \footnotetext[\value{imagesourcecount}]{%
+    \footnotesize
+    \textit{nguồn ảnh:}~\smarturl{#1}%
+  }%
+}
+\makeatother
+
+% ────────────────────────────────────────────────────────────
+%  THÔNG TIN ĐỒ ÁN (theo template yêu cầu)
+% ────────────────────────────────────────────────────────────
+\newcommand{\studentname}{NGUYỄN HOÀNG ANH}
+\newcommand{\thesistitle}{PHÁT HIỆN TIN GIẢ TIẾNG VIỆT SỬ DỤNG HỌC MÁY VÀ HỌC SÂU}
+\newcommand{\studentid}{2351010009}
+\newcommand{\major}{TRÍ TUỆ NHÂN TẠO}
+\newcommand{\supervisor}{TS. LÊ QUANG MINH}
+\newcommand{\currentyear}{2026}
+
+% ── Custom commands ─────────────────────────────────────────
+\newcommand{\nocontentsline}[3]{}
+\newcommand{\tocless}[2]{\bgroup\let\addcontentsline=\nocontentsline#1{#2}\egroup}
+
+\endinput

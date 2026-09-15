@@ -30,10 +30,6 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# PhoBertClassifier is defined in src/models/phobert_model.py
-# and imported above — keeping training logic and architecture separate.
-
-
 class PhoBertTrainer:
     """Trainer for PhoBERT model."""
     
@@ -90,7 +86,6 @@ class PhoBertTrainer:
         }
         self.best_val_f1 = 0
         self.best_model_state = None
-        # Saved state dicts for resuming training (populated by load())
         self._saved_optimizer_state = None
         self._saved_scheduler_state = None
 
@@ -109,10 +104,8 @@ class PhoBertTrainer:
         This helper centralises that extraction so all three call sites in this
         trainer behave consistently, regardless of the transformers version.
         """
-        # Newer transformers (>=4.46): always a dataclass-like output.
         if hasattr(outputs, "logits"):
             return outputs.logits
-        # Defensive fallback for an unusually bare return value.
         if isinstance(outputs, torch.Tensor):
             return outputs
         raise TypeError(
@@ -154,10 +147,8 @@ class PhoBertTrainer:
         else:
             self.criterion = nn.CrossEntropyLoss(label_smoothing=cfg.PHOBERT.label_smoothing)
 
-        # Setup optimizer with layer-wise learning rate decay for BERT encoder
         no_decay = ['bias', 'LayerNorm.weight']
 
-        # Collect parameters by encoder layer index
         layer_map = {}
         for n, p in self.model.named_parameters():
             m = re.search(r'encoder.layer.(\d+)', n)
@@ -177,7 +168,6 @@ class PhoBertTrainer:
                 if params_no_decay:
                     optimizer_grouped_parameters.append({'params': params_no_decay, 'weight_decay': 0.0, 'lr': lr})
 
-        # Embeddings and pooler (slightly lower LR)
         embed_params = [p for n, p in self.model.named_parameters() if 'embeddings' in n]
         pooler_params = [p for n, p in self.model.named_parameters() if 'pooler' in n]
         if embed_params:
@@ -185,14 +175,12 @@ class PhoBertTrainer:
         if pooler_params:
             optimizer_grouped_parameters.append({'params': pooler_params, 'weight_decay': 0.0, 'lr': self.learning_rate * cfg.PHOBERT.layer_lr_decay})
 
-        # Classifier heads (use base LR)
         classifier_params = [p for n, p in self.model.named_parameters() if n.startswith('classifier') or 'classifier' in n]
         if classifier_params:
             optimizer_grouped_parameters.append({'params': classifier_params, 'weight_decay': self.weight_decay, 'lr': self.learning_rate})
 
         self.optimizer = optim.AdamW(optimizer_grouped_parameters, lr=self.learning_rate)
         
-        # Setup scheduler with warmup
         total_steps = len(train_loader) * epochs // gradient_accumulation_steps
         warmup_steps = int(total_steps * self.warmup_ratio)
         
@@ -202,7 +190,6 @@ class PhoBertTrainer:
             num_training_steps=total_steps
         )
         
-        # Restore optimizer/scheduler state if resuming from a checkpoint
         if self._saved_optimizer_state is not None:
             self.optimizer.load_state_dict(self._saved_optimizer_state)
             self._saved_optimizer_state = None
@@ -214,7 +201,6 @@ class PhoBertTrainer:
         log.info(f"Total steps: {total_steps}, Warmup steps: {warmup_steps}")
         log.info(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
 
-        # Lightweight per-epoch GPU telemetry (no-ops if no GPU / NVML).
         gpu_monitor = GPUMonitor(device_index=0)
         if gpu_monitor.available:
             gpu_monitor.log_once()
@@ -226,7 +212,6 @@ class PhoBertTrainer:
         for epoch in range(epochs):
             epoch_start = time.time()
             
-            # Training phase
             self.model.train()
             train_loss = 0
             train_correct = 0
@@ -244,7 +229,6 @@ class PhoBertTrainer:
                     logits = self._get_logits(outputs)
                     loss = self.criterion(logits, labels)
                     
-                    # Gradient accumulation
                     loss = loss / gradient_accumulation_steps
                     loss.backward()
                 except torch.cuda.OutOfMemoryError:
@@ -269,7 +253,6 @@ class PhoBertTrainer:
                 train_total += labels.size(0)
                 train_correct += predicted.eq(labels).sum().item()
                 
-                # Progress update
                 if (batch_idx + 1) % 50 == 0:
                     log.info(f"Batch {batch_idx + 1}/{len(train_loader)}, "
                           f"Loss: {loss.item() * gradient_accumulation_steps:.4f}")
@@ -277,10 +260,8 @@ class PhoBertTrainer:
             train_loss /= len(train_loader)
             train_acc = train_correct / train_total
             
-            # Validation phase
             val_loss, val_acc, val_f1 = self._evaluate(val_loader)
             
-            # Save history
             self.training_history['train_loss'].append(train_loss)
             self.training_history['train_acc'].append(train_acc)
             self.training_history['val_loss'].append(val_loss)
@@ -293,10 +274,8 @@ class PhoBertTrainer:
             log.info(f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f}")
             log.info(f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}")
 
-            # Per-epoch GPU telemetry (no-op when monitor unavailable).
             gpu_monitor.log_epoch(epoch + 1, epochs)
 
-            # Early stopping check
             if val_f1 > best_val_f1:
                 best_val_f1 = val_f1
                 self.best_val_f1 = val_f1
@@ -313,7 +292,6 @@ class PhoBertTrainer:
         log.info(f"\n Training complete in {total_time:.2f}s")
         log.info(f"Best Val F1: {self.best_val_f1:.4f}")
         
-        # Restore best model
         if self.best_model_state is not None:
             self.model.load_state_dict(self.best_model_state)
             self.model.to(self.device)
@@ -384,7 +362,6 @@ class PhoBertTrainer:
             'training_history':     self.training_history,
             'best_val_f1':          self.best_val_f1,
         }
-        # Persist optimizer & scheduler so training can resume without LR jump
         if self.optimizer is not None:
             checkpoint['optimizer_state_dict'] = self.optimizer.state_dict()
         if self.scheduler is not None:
@@ -407,8 +384,6 @@ class PhoBertTrainer:
         trainer.training_history = checkpoint['training_history']
         trainer.best_val_f1      = checkpoint['best_val_f1']
 
-        # Stash optimizer/scheduler state for deferred restore in train()
-        # (optimizer & scheduler are None until train() creates them)
         if 'optimizer_state_dict' in checkpoint:
             trainer._saved_optimizer_state = checkpoint['optimizer_state_dict']
         if 'scheduler_state_dict' in checkpoint:
@@ -427,12 +402,10 @@ def main():
     log.info("PhoBERT TRAINING")
     log.info("=" * 60)
 
-    # Paths
     features_path = os.path.join(cfg.PATHS.phobert_dir, 'phobert_features.pkl')
     model_dir = cfg.PATHS.bert_dir
     os.makedirs(model_dir, exist_ok=True)
 
-    # Load features
     log.info("Loading PhoBERT features...")
     features = joblib.load(features_path)
 
@@ -444,7 +417,6 @@ def main():
     log.info("Val samples: %d", len(y_val))
     log.info("Test samples: %d", len(y_test))
 
-    # Create datasets
     train_dataset = PhoBertDataset(
         features['train_input_ids'],
         features['train_attention_mask'],
@@ -460,24 +432,19 @@ def main():
         features['test_attention_mask'],
         y_test
     )
-
-    # Create data loaders
-    batch_size = cfg.PHOBERT.batch_size  # Smaller batch for BERT due to memory
+    batch_size = cfg.PHOBERT.batch_size
 
     _num_workers = min(4, os.cpu_count() or 1)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,  num_workers=_num_workers, pin_memory=True)
     val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=_num_workers, pin_memory=True)
     test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False, num_workers=_num_workers, pin_memory=True)
 
-    # Compute class weights
     from src.utils.common import compute_balanced_class_weights
     class_weights = compute_balanced_class_weights(y_train)
     log.info("Class weights: %s", class_weights)
 
-    # Initialize trainer (defaults pulled from cfg.PHOBERT)
     trainer = PhoBertTrainer()
 
-    # Train
     log.info("-" * 60)
     trainer.train(
         train_loader,
@@ -485,24 +452,20 @@ def main():
         class_weights=class_weights,
     )
 
-    # Evaluate on validation set
     log.info("-" * 60)
     log.info("Validation Results:")
     val_metrics = trainer.evaluate(val_loader, y_val)
     print_metrics(val_metrics)
 
-    # Evaluate on test set — compute predictions once, reuse for metrics and saving
     log.info("-" * 60)
     log.info("Test Results:")
     y_pred, y_prob = trainer.predict(test_loader)
     test_metrics = compute_metrics(y_test, y_pred, y_prob)
     print_metrics(test_metrics)
 
-    # Save model
     model_path = os.path.join(model_dir, 'phobert_model.pt')
     trainer.save(model_path)
 
-    # Save results (metrics, predictions, experiment log)
     save_training_results(
         model_name='PhoBERT',
         model_dir=model_dir,

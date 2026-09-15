@@ -1,0 +1,542 @@
+% =====================================================================
+%  Chuong02_CoSoLyThuyet.tex — Chương 2: Cơ sở lý thuyết
+%
+%  Tách từ main.tex (dòng 711-1199 trong bản cũ).
+% =====================================================================
+
+\chapter{Nền tảng lý thuyết}
+
+Chương này tập hợp các kiến thức nền mà đồ án khai thác để huấn luyện và đánh giá bốn mô hình xác định tin giả. Nội dung được sắp xếp theo trình tự tăng dần: khởi đầu bằng các khái niệm cơ bản --- văn bản, đặc trưng và phép ánh xạ sang không gian số; tiếp đó giới thiệu những thuật toán học máy kinh điển gồm Hồi quy Logistic và Máy vectơ hỗ trợ; sau đó mở rộng sang các kiến trúc học sâu --- mạng hồi tiếp, LSTM hai chiều, cơ chế chú ý và Transformer; cuối cùng khép lại ở PhoBERT. Phần kết chương hệ thống lại các độ đo hiệu năng, kiểm định thống kê và phép phân tích hiệu chuẩn xác suất --- bộ công cụ sử dụng xuyên suốt các chương thực nghiệm về sau.
+
+\section{Các khái niệm cơ bản}\label{sec:khainiem}
+
+\subsection{Văn bản và biểu diễn văn bản}
+
+Trong các hệ thống xử lý ngôn ngữ tự nhiên, dạng dữ liệu được sử dụng phổ biến nhất chính là văn bản, cách thức giao tiếp quen thuộc giữa người với người. Xét về cấu trúc, một văn bản là chuỗi nhiều câu; mỗi câu gồm nhiều từ và ký tự. Vấn đề đặt ra là máy tính không trực tiếp xử lý được chuỗi ký tự thô; do đó văn bản cần được chuyển sang một dạng biểu diễn số để các thuật toán học máy có thể thao tác. Hai kỹ thuật kinh điển thường được dùng cho mục đích này là bag-of-words và TF-IDF --- theo đó mỗi từ được ánh xạ thành một chiều trong vector đặc trưng nhiều chiều. Minh họa trực quan cho cách biểu diễn bằng TF-IDF có thể xem tại Hình~\ref{fig:tfidf}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{textpreprocessing.jpg}
+  \caption[Minh họa phương pháp biểu diễn văn bản bằng TF-IDF]{Minh họa phương pháp biểu diễn văn bản bằng TF-IDF\protect\imagesourcemark}
+  \label{fig:tfidf}
+\end{figure}
+\imagesource {https://www.linkedin.com/pulse/creating-tf-idf-model-from-scratch-python-noor-saeed}
+
+\subsection{Đặc trưng văn bản và tiền xử lý}
+Đặc trưng văn bản là vector số trích xuất từ văn bản gốc, đóng vai trò đầu vào cho mô hình ở cả giai đoạn huấn luyện lẫn suy diễn. Tuy nhiên, trước khi trích xuất, dữ liệu thô cần được đưa về một dạng thống nhất nhằm loại bỏ nhiễu và san phẳng sự chênh lệch giữa các tài liệu. Quá trình chuẩn bị dữ liệu tập trung vào việc đưa văn bản về một kiểu đồng nhất, loại bỏ những ký tự không cần thiết, tách từ và lọc stopword. Riêng với tiếng Việt, khâu tách từ đóng vai trò thiết yếu quan trọng do ranh giới từ và âm tiết không trùng nhau, cùng với sự phong phú của từ ghép và từ láy.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{textpreprocessing}
+  \caption[Hình ảnh minh họa bước tiền xử lý văn bản.]{Hình ảnh minh họa bước tiền xử lý văn bản.\protect\imagesourcemark}
+  \label{fig:preprocessing}
+\end{figure}
+\imagesource{https://www.couchbase.com/blog/data-preprocessing-in-machine-learning/}
+
+\subsection{Phân loại nội dung văn bản}
+
+Xét về bản chất, phát hiện tin giả là bài toán phân loại nhị phân: ứng với mỗi văn bản đầu vào, mô hình cần gán một trong hai nhãn --- \textit{thật} hoặc \textit{giả}. Dưới góc nhìn tính toán, bài toán được xem như quá trình học một ánh xạ từ không gian đặc trưng sang không gian nhãn, sao cho mô hình có thể phân biệt chính xác các mẫu thuộc từng lớp trong tập huấn luyện.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{1.1.3.png}
+  \caption[Minh họa bài toán phân loại văn bản]{Minh họa bài toán phân loại văn bản\protect\imagesourcemark}
+  \label{fig:classification}
+\end{figure}
+\imagesource{https://maelfabien.github.io/machinelearning/NLP\_5/}
+
+\section{Đặc trưng và xử lý ngôn ngữ tiếng Việt}\label{sec:nlp-vi}
+
+\subsection{Những đặc trưng của tiếng Việt}
+
+Khi đặt cạnh tiếng Anh và phần lớn các ngôn ngữ châu Âu, tiếng Việt sở hữu hàng loạt đặc thù cấu trúc mà người xây dựng hệ thống NLP cần nắm rõ. Tiếng Việt là ngôn ngữ đơn lập (isolating) và không biến hình (non-inflectional); các đặc trưng nổi bật gồm:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Không có dấu phân cách từ rõ ràng:} ranh giới giữa các từ và âm tiết không trùng khớp. Ví dụ, ``thành phố'' là một từ duy nhất nhưng được viết thành hai âm tiết tách rời nhau.
+  \item \textbf{Từ ghép và từ láy phong phú:} nhiều khái niệm được diễn đạt bằng cụm gồm nhiều âm tiết, chẳng hạn các từ ghép ``học\_sinh'', ``kinh\_tế'' hay từ láy ``lung\_linh''.
+  \item \textbf{Hệ thanh điệu:} tiếng Việt có sáu thanh; mỗi thanh mang một giá trị ngữ nghĩa riêng mà vẫn duy trì cấu trúc hình thái của từ.
+  \item \textbf{Ngôn ngữ cô lập về mặt hình thái:} các quan hệ ngữ pháp chủ yếu được thể hiện thông qua trật tự từ và hư từ, thay vì qua biến đổi hình thái như ở tiếng Anh.
+\end{itemize}
+
+Chính những đặc điểm này đòi hỏi phải có một bước tiền xử lý dành riêng cho tiếng Việt trước khi áp dụng phần lớn các mô hình hiện đại.
+
+\subsection{Phân đoạn từ (Word Segmentation)}\label{sec:vncore_2018}
+
+Phân đoạn từ là bước xác định ranh giới giữa các từ trong một câu tiếng Việt. Hầu hết mô hình NLP --- đặc biệt là PhoBERT --- đều được huấn luyện trên dữ liệu đã được phân đoạn từ. Do đó, cách tách từ phải nhất quán giữa quá trình huấn luyện và suy diễn; nếu cách tách lệch so với từ vựng mà mô hình ngôn ngữ đã học, chất lượng biểu diễn embedding sẽ giảm đáng kể.
+
+Ví dụ, một câu gốc có thể được phân đoạn thành:
+\begin{quote}
+
+  \textit{Trước:} ``Đối với tôi, thịt bò ngon hơn thịt trâu.'' \\
+  \textit{Sau:} ``Đối với tôi, thịt\_bò ngon hơn thịt\_trâu.''
+
+\end{quote}
+
+\subsection{Biểu diễn văn bản số}
+
+Để đưa văn bản thô vào mô hình học máy, cần chuyển sang dạng số. Trong đề tài này, ba cách biểu diễn được sử dụng, từng nhóm mô hình có một cách phù hợp riêng:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textbf{TF-IDF:} Vector đặc trưng thưa dựa trên tần suất từ --- dùng cho LR và SVM.
+  \item \textbf{Word Embedding:} Vector dày đặc học được~\cite{mikolov2013word2vec}, khởi tạo từ FastText tiếng Việt~\cite{bojanowski2017fasttext} --- dùng cho BiLSTM.
+  \item \textbf{Subword Tokenization (BPE):} Tách từ thành các đơn vị con, đặc biệt phù hợp với PhoBERT.
+\end{enumerate}
+
+\subsection{Quá trình hình thành, phát triển và các nghiên cứu liên quan}
+Nghiên cứu xử lý ngôn ngữ tự nhiên (NLP) cho tiếng Việt phải giải quyết nhiều đặc trưng riêng của ngôn ngữ này. Một vấn đề thiết yếu là xác định đơn vị từ, bởi khoảng trắng trong văn bản không phải lúc nào cũng biểu thị ranh giới giữa các từ. Một từ có thể gồm nhiều âm tiết được viết tách nhau, vì thế việc phân đoạn từ thường được thực hiện như một bước chuẩn bị trước khi áp dụng các phương pháp NLP. Cùng với đó, nhu cầu xử lý tiếng Việt cũng thúc đẩy sự phát triển của các tài nguyên và công cụ chuyên dụng.
+
+Trong các nghiên cứu trước đây, đặc biệt trước năm 2010, phân đoạn từ là một trong những hướng được nhắc đến nhiều và CRF (Conditional Random Fields) thường được sử dụng cho mục đích này. Từ khoảng năm 2015, các phương pháp học sâu dần được đưa vào nhiều bài toán NLP tiếng Việt, ví dụ như phân đoạn từ, gán nhãn từ và phân tích cú pháp. RDRSegmenter~\cite{rdrsegmenter2018} là một công cụ tiêu biểu cho hướng tiếp cận này --- nó kết hợp mạng nơ-ron hồi quy với cơ chế suy luận ngược (Backward Inference) và đạt độ chính xác trên 98\% trên tập VLSP 2013.
+
+Các nghiên cứu trước đây cho thấy việc xác định nội dung sai lệch không chỉ phụ thuộc vào đặc điểm ngữ nghĩa của văn bản mà còn liên quan đến phong cách ngôn ngữ, ngữ cảnh lan truyền và độ tin cậy của nguồn thông tin~\cite{shu2017fake}. Từ những yếu tố này, có thể nhận ra ba nhóm phương pháp chính: kết hợp mô hình học máy với các đặc trưng do con người xây dựng; tận dụng khả năng biểu diễn của kiến trúc học sâu như BiLSTM và CNN; hoặc sử dụng các mô hình ngôn ngữ tiền huấn luyện thuộc họ BERT như BERT, RoBERTa và PhoBERT~\cite{zhou2020survey}. Bên cạnh nhiệm vụ phát hiện tin giả, các nghiên cứu trong CheckThat! Lab~\cite{nakov2022overview} cũng quan tâm đến bài toán xác định mức độ đáng kiểm chứng của thông tin (Check-Worthiness), có mối liên hệ với việc đánh giá nội dung cần được xác minh.
+
+Trên cơ sở các hướng tiếp cận trên, nghiên cứu lựa chọn bốn mô hình gồm LR, SVM, BiLSTM và PhoBERT để tiến hành thực nghiệm. Bốn phương pháp này tạo thành các nhóm có mức độ biểu diễn và độ phức tạp khác nhau.
+
+\section{Học máy}\label{sec:hocmay}
+
+\subsection{Định nghĩa}
+
+Học máy (Machine Learning) có thể được xem là một hướng tiếp cận trong trí tuệ nhân tạo, trong đó mô hình được xây dựng để rút ra thông tin và quy luật từ dữ liệu thay vì phải xác định trước toàn bộ các bước xử lý. Quá trình học cho phép mô hình tận dụng những mẫu dữ liệu đã có để hình thành cơ sở cho việc dự đoán trên các dữ liệu khác.
+
+Đối với bài toán phát hiện tin giả của đồ án, dữ liệu được gán vào một trong hai lớp \textit{thật} và \textit{giả}, vì vậy bài toán được triển khai theo phương pháp \textit{học có giám sát} (Supervised Learning). Mô hình sử dụng các mẫu được gán nhãn trong tập huấn luyện để tìm ra mối liên hệ giữa đặc trưng đầu vào và nhãn đầu ra. Sau khi học xong, mô hình sẽ xác định nhãn cho những văn bản không thuộc tập dữ liệu huấn luyện.
+
+Học máy cũng bao gồm nhiều cách tiếp cận khác, chẳng hạn học không giám sát (Unsupervised Learning), học bán giám sát (Semi-Supervised Learning) và học tăng cường (Reinforcement Learning). Vì không nằm trong phạm vi thực nghiệm của đề tài, các phương pháp này chỉ được giới thiệu ở mức tổng quan.
+
+\subsection{Các mô hình học máy cho bài toán phân loại}
+
+\subsubsection{Logistic Regression (LR)}
+Logistic Regression (LR)~\cite{cox1958regression} là một mô hình thuộc nhóm học có giám sát, được ứng dụng rộng rãi trong các bài toán phân loại — trong đó phổ biến nhất là trường hợp nhị phân. Đầu ra của mô hình là một giá trị thực nằm trong khoảng $(0,1)$, biểu thị xác suất mẫu thuộc về lớp đang xét. Giá trị này được tính bằng cách đưa tổ hợp tuyến tính giữa các đặc trưng và hệ số chệch $b$ qua hàm sigmoid. Với $\mathbf{x} \in \mathbb{R}^d$ là vector đặc trưng và $\mathbf{w} \in \mathbb{R}^d$ là vector trọng số, xác suất để mẫu rơi vào lớp $y=1$ được xác định:
+
+\[
+P(y=1 \mid \mathbf{x}) = \sigma(\mathbf{w}^\top \mathbf{x} + b) = \frac{1}{1 + \exp(-(\mathbf{w}^\top \mathbf{x} + b))}
+\]
+
+Hàm mất mát sử dụng trong huấn luyện là \textit{Binary Cross-Entropy} (\textit{Log-Loss}), đo lường sai số giữa xác suất dự đoán và nhãn thực tế. Quá trình tối ưu các tham số của mô hình hướng đến việc giảm thiểu giá trị hàm mất mát trên toàn bộ tập mẫu:
+
+\[
+\mathcal{L}(\mathbf{w}) = -\frac{1}{n}\sum_{i=1}^{n}\!\Bigl[
+    y_i \log \hat{y}_i + (1-y_i)\log(1-\hat{y}_i)
+\Bigr]
+\]
+
+Với mẫu thứ $i$, biểu thức $\hat{y}_i = \sigma(\mathbf{w}^\top\mathbf{x}_i + b)$ cho biết xác suất mà mô hình gán cho lớp dương. Nhờ đặc tính đưa đầu ra về khoảng $(0,1)$ của hàm sigmoid, kết quả từ Logistic Regression có thể được diễn giải trực tiếp dưới dạng xác suất. Ngoài lợi thế có thể giải thích được nhờ các hệ số trọng số, mô hình này còn có số phép tính tương đối nhỏ --- điều này khiến LR phù hợp làm mô hình đối chứng với chi phí huấn luyện và suy diễn thấp.
+
+\subsubsection{Support Vector Machine (SVM)}
+
+Support Vector Machine (SVM)~\cite{cortes1995svm} là thuật toán phân loại có giám sát, tiếp cận bài toán bằng cách xác định một ranh giới phân tách giữa các lớp dữ liệu. Trong bài toán phân loại nhị phân, mô hình tìm một siêu phẳng (Hyperplane) đóng vai trò ranh giới giữa hai lớp. Mục tiêu của phương pháp không đơn thuần là xác định một đường phân chia phù hợp giữa các nhóm dữ liệu, SVM còn chọn siêu phẳng sao cho khoảng cách đến các điểm gần ranh giới nhất --- gọi là biên (margin) được cực đại hóa. Việc tối đa hóa giá trị này giúp mô hình xác định một đường phân loại có tính ổn định cao hơn, đồng thời cải thiện khả năng tổng quát hóa khi xử lý các dữ liệu chưa được quan sát.
+
+Ranh giới quyết định của mô hình có dạng $\mathbf{w}^\top\mathbf{x} + b = 0$, trong đó $\mathbf{w}$ là vector trọng số và $b$ là hệ số chệch. Cho tập dữ liệu huấn luyện $\mathcal{D} = \{(\mathbf{x}_i, y_i)\}_{i=1}^{n}$ với nhãn $y_i \in \{-1,+1\}$, bài toán xác định siêu phẳng tối ưu được phát biểu như sau:
+
+\[
+  \min_{\mathbf{w}, b} \frac{1}{2}\|\mathbf{w}\|^2 \quad \text{s.t.} \quad y_i(\mathbf{w}^\top \mathbf{x}_i + b) \geq 1,\; \forall i
+\]
+
+Đây là dạng \textit{hard-margin SVM} --- chỉ áp dụng được khi dữ liệu hoàn toàn phân tách tuyến tính. Trên thực tế, hầu hết tập dữ liệu đều có nhiễu và hiện tượng chồng lấn giữa hai lớp; vì thế SVM thường được mở rộng sang dạng \textit{soft-margin} bằng cách đưa vào biến slack $\xi_i \geq 0$ cho phép một số điểm vi phạm biên:
+
+\[
+  \min_{\mathbf{w}, b, \boldsymbol{\xi}} \frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{i=1}^{n}\xi_i
+  \quad \text{s.t.} \quad
+  y_i(\mathbf{w}^\top \mathbf{x}_i + b) \geq 1 - \xi_i,\; \xi_i \geq 0,\; \forall i
+\]
+
+Hằng số $C > 0$ điều chỉnh sự cân bằng giữa mức cực đại hóa margin và mức phạt áp cho các điểm vi phạm. Những mẫu huấn luyện có $\alpha_i > 0$ trong nghiệm của bài toán đối ngẫu được gọi là \textit{support vectors} --- chúng quyết định vị trí của siêu phẳng tối ưu. Nhờ cơ chế kernel, SVM có khả năng ánh xạ dữ liệu sang không gian đặc trưng số chiều cao mà không cần biểu diễn tường minh các tọa độ trong không gian đó, qua đó xử lý hiệu quả những bài toán có ranh giới quyết định phi tuyến~\cite{cortes1995svm}. Kernel RBF (Radial Basis Function) được sử dụng phổ biến vì cho phép xử lý những trường hợp dữ liệu có cấu trúc phi tuyến và khó phân tách trực tiếp trong không gian đặc trưng.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{1.3.2.2.png}
+  \caption[Minh họa thuật toán nhị phân SVM]{Minh họa thuật toán nhị phân SVM\protect\imagesourcemark}
+  \label{fig:svm}
+\end{figure}
+\imagesource{https://statusneo.com/wp-content/uploads/2023/08/SVM\_3-1.png}
+
+\subsection{Biểu diễn đặc trưng cơ bản}
+
+\subsubsection{TF-IDF (Term Frequency -- Inverse Document Frequency)}\label{sec:tfidf}
+
+TF-IDF~\cite{sparkjones1972idf} cung cấp một cơ chế mã hóa nội dung thành vector đặc trưng dựa trên thông tin từ vựng — kết quả này sau đó được đưa vào các mô hình phân loại như đầu vào. Trọng số của một từ được xác định dựa trên cả mức độ xuất hiện của từ đó trong từng tài liệu và mức độ phổ biến của nó trên toàn bộ tập dữ liệu. Theo cách này, những từ vừa có mặt thường xuyên trong một tài liệu vừa ít xuất hiện ở những tài liệu khác được đánh giá là đặc trưng có tính phân biệt cao — cao hơn nhiều so với các từ xuất hiện thường xuyên trên nhiều tài liệu.
+
+Cụ thể hơn, một từ mà trong tài liệu đang xét xuất hiện nhiều lần nhưng lại ít gặp ở các tài liệu còn lại sẽ nhận trọng số TF-IDF lớn hơn. Ngược lại, những từ xuất hiện phổ biến trên phần lớn tài liệu sẽ có trọng số thấp hơn do khả năng phân biệt giữa các tài liệu là không cao. Đặc điểm này đặc biệt hữu ích khi xử lý các từ có tần suất lớn nhưng chứa ít thông tin phân loại — ví dụ như các stopword.
+
+Term Frequency (TF) đo số lần xuất hiện của từ $t$ trong tài liệu $d$. Để tránh tình trạng tài liệu dài có TF lớn một cách giả tạo, TF thường được chuẩn hóa theo tổng số từ trong tài liệu:
+
+\[
+TF(T, D) = \frac{f_{t,d}}{\sum_{t' \in d} f_{t',d}}
+\]
+
+trong đó $f_{t,d}$ là số lần xuất hiện của từ $t$ trong tài liệu $d$.
+
+Inverse Document Frequency (IDF) được sử dụng để xác định mức độ phổ biến của một từ xét trên toàn bộ tập văn bản. Giá trị IDF phản ánh mức độ phổ biến của một từ trong toàn bộ tập tài liệu. Từ càng ít xuất hiện ở các tài liệu khác nhau thì giá trị IDF càng cao, trong khi các từ xuất hiện thường xuyên sẽ có giá trị IDF thấp. Giá trị này được xác định theo công thức:
+
+\[
+IDF(T) = \log \left( \frac{N}{df_t} \right)
+\]
+
+với $N$ là số lượng tài liệu trong tập dữ liệu và $df_t$ là số tài liệu có chứa từ $t$.
+
+Trọng số TF-IDF là tích của TF và IDF trên:
+
+\[
+TF\text{-}IDF(T, D) = TF(T, D) \times IDF(T)
+\]
+
+Sau khi tính trọng số cho toàn bộ từ vựng, mỗi tài liệu được mã hóa dưới dạng một vector có số chiều bằng kích thước từ điển --- thường ở dạng vector thưa (sparse) --- và đưa vào làm đầu vào cho những mô hình học máy truyền thống như LR hay SVM. Hình~\ref{fig:tfidf_example} minh họa cách tính TF-IDF trên một tập tài liệu nhỏ gồm hai văn bản giả định; qua ví dụ có thể nhận ra rằng những từ chỉ xuất hiện ở một tài liệu sẽ nhận giá trị IDF cao hơn (vì hiếm gặp trên toàn tập), kéo theo trọng số TF-IDF lớn hơn; ngược lại, những từ xuất hiện ở cả hai tài liệu lại có IDF thấp hơn nên trọng số TF-IDF bị nén xuống.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{tfidf_example.png}
+    \caption[Ví dụ minh họa cách tính TF-IDF trên hai tài liệu]{Ví dụ minh họa cách tính TF-IDF trên hai tài liệu\protect\imagesourcemark}
+    \label{fig:tfidf_example}
+\end{figure}
+\imagesource{https://dataaspirant.com/tf-idf-term-frequency-inverse-document-frequency/}
+
+\section{Học sâu}\label{sec:hocsau}
+
+\subsection{Định nghĩa}
+
+Học sâu (Deep Learning) là nhánh mở rộng của học máy, trong đó mạng nơ-ron được xếp thành nhiều tầng chồng lên nhau nhằm xử lý dữ liệu theo từng cấp độ trừu tượng. Thông tin đầu vào được biến đổi dần qua các tầng, tạo nên những biểu diễn ngày càng phù hợp với nhiệm vụ cần giải quyết. Khác với các phương pháp học máy dựa trên đặc trưng được thiết kế thủ công (hand-crafted features), mô hình học sâu có thể tự học các biểu diễn cần thiết ngay trong quá trình tối ưu tham số.
+
+Về nguyên lý, dữ liệu được đưa vào mạng và lần lượt truyền qua các tầng theo chiều thuận (Feedforward). Tại mỗi tầng, một phép biến đổi được áp dụng lên đầu ra của tầng liền trước để hình thành biểu diễn mới. Ở đầu ra cuối cùng, hàm mất mát được dùng để đo lường mức chênh lệch giữa dự đoán của mô hình và nhãn thực tế. Giá trị chênh lệch này tiếp tục được lan truyền ngược (Backpropagation) qua các tầng của mạng để tính gradient và xác định hướng cập nhật tham số. Vòng lặp này được thực hiện xuyên suốt quá trình huấn luyện nhằm cải thiện dần khả năng dự đoán của mô hình.
+
+Việc xếp chồng nhiều tầng xử lý giúp học sâu có thể xây dựng các biểu diễn thích hợp với những dạng dữ liệu có cấu trúc phức tạp như văn bản, hình ảnh và âm thanh. Trong đề tài này, hai mô hình BiLSTM và PhoBERT được lựa chọn cho nhiệm vụ xử lý văn bản tiếng Việt. BiLSTM tận dụng thông tin từ cả chiều thuận và chiều ngược của chuỗi, còn PhoBERT sử dụng biểu diễn ngữ cảnh học được từ quá trình tiền huấn luyện trên kho ngữ liệu tiếng Việt. Hai mô hình tiếp cận bài toán phát hiện tin giả theo những hướng khác nhau.
+\subsection{Mạng nơ-ron nhân tạo (Artificial Neural Network)}
+
+ANN (Artificial Neural Network) là một mô hình tính toán được xây dựng dựa trên ý tưởng mô phỏng quá trình tiếp nhận và xử lý thông tin của hệ thần kinh sinh học. Trong hệ thần kinh, mỗi neuron là một đơn vị cơ bản với thân tế bào chứa nhân, các sợi nhánh (Dendrite) tiếp nhận tín hiệu từ neuron khác và sợi trục (Axon) truyền tín hiệu đi. Tương tự, trong ANN, mỗi neuron nhân tạo nhận tín hiệu đầu vào, kết hợp với các trọng số tương ứng rồi áp dụng một \textit{hàm kích hoạt} (Activation Function) để tạo đầu ra. Nhờ việc mô hình hóa các phép xử lý này dưới dạng toán học, ANN có thể học được những quy luật và mối quan hệ phức tạp từ dữ liệu đầu vào.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{1.4.2.png}
+  \caption[Minh họa mạng nơ-ron nhân tạo]{Minh họa mạng nơ-ron nhân tạo\protect\imagesourcemark}
+  \label{fig:ann}
+\end{figure}
+\imagesource{http://www.wpclipart.com/medical/anatomy/cells/neuron/neuron.png.html}
+
+Mạng nơ-ron nhân tạo gồm nhiều neuron nhân tạo được sắp xếp thành các tầng xử lý. Theo quy ước, dữ liệu đi từ tầng đầu vào, qua các tầng ẩn (Hidden Layer), đến tầng đầu ra. Số lớp của mạng thường được tính bằng tổng của tầng đầu vào và các tầng ẩn, không tính tầng đầu ra. Neuron ở hai tầng kề nhau liên kết đầy đủ với nhau để trao đổi thông tin, trong khi các neuron trong cùng một tầng không có kết nối trực tiếp.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{annlayers.png}
+  \caption[Minh họa kiến trúc nhiều lớp của mạng nơ-ron nhân tạo]{Minh họa kiến trúc nhiều lớp của mạng nơ-ron nhân tạo\protect\imagesourcemark}
+  \label{fig:annlayers}
+\end{figure}
+\imagesource{https://www.researchgate.net/figure/A-general-model-of-a-deep-neural-network-It-consists-of-an-input-layer-some-here-two\_fig1\_308414212}
+
+Quá trình huấn luyện ANN diễn ra theo vòng lặp: dữ liệu được truyền thuận qua các tầng để tạo đầu ra; sai số giữa đầu ra và nhãn thực tế được hàm mất mát lượng hóa; thuật toán lan truyền ngược tính gradient của sai số theo từng tham số; và các tham số được cập nhật theo hướng làm giảm sai số. Chu trình này được lặp lại cho đến khi mô hình hội tụ hoặc đạt điều kiện dừng.
+
+Kiến trúc cụ thể của ANN được lựa chọn dựa trên đặc điểm bài toán và bản chất dữ liệu đầu vào.
+
+\subsubsection{Một số thành phần cần chú ý}
+
+Trong ANN, hàm kích hoạt đóng vai trò quyết định tính phi tuyến của mô hình. Sau khi tín hiệu đầu vào được tổ hợp với trọng số và hệ số chệch, hàm kích hoạt biến đổi giá trị nhận được thành đầu ra của neuron. Nếu thiếu bước phi tuyến này, ANN về bản chất chỉ thực hiện những phép biến đổi tuyến tính, từ đó khó có thể học được các quan hệ phức tạp vốn có trong dữ liệu thực tế.
+
+Trong ANN, Sigmoid, Tanh và ReLU là những hàm kích hoạt thường gặp. Đối với bài toán phân loại nhị phân, Sigmoid được ưu tiên sử dụng ở tầng cuối nhờ đưa đầu ra về khoảng $(0,1)$ --- thuận tiện cho việc diễn giải dưới dạng xác suất. Với bài toán phân loại đa lớp, Softmax được áp dụng ở tầng đầu ra để tính xác suất dự đoán cho từng lớp.
+
+Trong quá trình huấn luyện, mô hình sử dụng hàm mất mát để đánh giá mức độ sai lệch của kết quả đầu ra so với nhãn tương ứng. Với các bài toán phân loại văn bản, cross-entropy là một lựa chọn phổ biến vì nó đánh giá sự khác biệt giữa xác suất dự đoán của mô hình và phân phối nhãn thực tế. Khi giá trị hàm mất mát giảm, khả năng dự đoán đúng của mô hình được cải thiện.
+
+Tối ưu mạng nơ-ron chính là quá trình hiệu chỉnh các tham số của mô hình sao cho giá trị hàm mất mát giảm dần. Tại mỗi vòng lặp, dữ liệu được truyền thuận qua mạng để tính đầu ra, sai số giữa đầu ra và mục tiêu được xác định thông qua hàm mất mát. Lan truyền ngược giúp tính gradient của hàm mất mát theo từng tham số; dựa trên gradient này, phương pháp tối ưu (thường là các biến thể của Gradient Descent) cập nhật trọng số và hệ số chệch theo hướng giảm sai số.
+
+Với mạng nhiều tầng, quá trình tối ưu có thể gặp hai hiện tượng đáng lo ngại: \textit{gradient biến mất} (vanishing) và \textit{gradient bùng nổ} (exploding). Cả hai hiện tượng đều làm cho việc cập nhật tham số trở nên thiếu ổn định và kéo dài thời gian hội tụ. Để khắc phục, nhiều kiến trúc mạng đã được đề xuất với các cơ chế xử lý khác nhau. LSTM sử dụng hệ thống các cổng để kiểm soát dòng thông tin và duy trì các phụ thuộc dài hạn, trong khi Transformer dựa trên cơ chế Attention để thiết lập quan hệ trực tiếp giữa các phần tử trong chuỗi. Nhờ đó, các kiến trúc trên có khả năng khai thác ngữ cảnh hiệu quả trong các bài toán xử lý ngôn ngữ tự nhiên nói chung và phát hiện tin giả nói riêng.
+
+\subsection{Recurrent Neural Networks (RNN)}
+
+RNN (Recurrent Neural Networks) là kiến trúc mạng được thiết kế cho dữ liệu có tính tuần tự, trong đó thông tin ở các bước trước có thể được sử dụng khi xử lý các bước tiếp theo. Trong quá trình xử lý, mô hình duy trì một trạng thái ẩn (hidden state) để lưu giữ thông tin từ các bước trước rồi truyền sang bước sau, qua đó nắm bắt sự phụ thuộc giữa các phần tử trong chuỗi. Khác với mạng truyền thẳng xử lý từng đầu vào một cách độc lập, RNN có vòng lặp nội tại giúp thông tin lan truyền từ bước trước sang bước sau.
+
+Khi chuỗi đầu vào có độ dài lớn, RNN thường gặp khó khăn trong việc duy trì thông tin từ các bước xa do hiện tượng vanishing hoặc exploding gradient. Điều này khiến mô hình khó bảo toàn các quan hệ phụ thuộc dài hạn trong chuỗi. LSTM là một trong những kiến trúc được đề xuất nhằm khắc phục hạn chế này.
+
+
+\subsection{Long Short-Term Memory (LSTM)}
+
+LSTM (Long Short-Term Memory)~\cite{hochreiter1997lstm} được xây dựng với mục tiêu xử lý hiệu quả các chuỗi có độ dài lớn. Điểm khác biệt cốt lõi so với RNN truyền thống là LSTM duy trì một trạng thái bộ nhớ riêng (memory cell) và vận hành ba cổng chức năng --- cổng quên, cổng đầu vào và cổng đầu ra --- nhằm kiểm soát luồng thông tin đi vào, được lưu giữ hay đưa ra khỏi bộ nhớ. Cơ chế này giúp mô hình giữ lại những thông tin cần thiết qua nhiều bước mà không bị suy hao do lan truyền gradient.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{lstm}
+  \caption[Minh họa cấu trúc mạng LSTM]{Minh họa cấu trúc mạng LSTM\protect\imagesourcemark}
+  \label{fig:LSTM}
+\end{figure}
+\imagesource{https://towardsdatascience.com/an-introduction-to-long-short-term-memory-networks-lstm-27af36dde85d/}
+
+LSTM (Long Short-Term Memory) ra đời nhằm tăng khả năng giải quyết các chuỗi có phụ thuộc giữa những phần tử ở xa nhau. Trong quá trình đọc dữ liệu, mô hình duy trì một trạng thái bộ nhớ và liên tục cập nhật trạng thái này qua từng bước. Do có khả năng lưu trữ thông tin và cập nhật trạng thái theo từng bước, LSTM phù hợp với nhiều bài toán liên quan đến dữ liệu tuần tự, điển hình như phân tích ngôn ngữ tự nhiên, dịch máy, nhận dạng giọng nói và dự báo chuỗi thời gian. Đối với phân loại văn bản, mô hình có thể sử dụng thông tin từ các bước xử lý trước đó để hình thành biểu diễn ngữ cảnh của văn bản, qua đó hỗ trợ phát hiện những đặc trưng liên quan đến tin giả.
+
+Thông tin được lưu giữ trong LSTM được kiểm soát thông qua ba cổng chính. Cổng quên quyết định thành phần nào của trạng thái bộ nhớ trước đó sẽ tiếp tục được giữ lại. Tiếp theo, cổng vào kiểm soát thông tin mới được phép bổ sung vào bộ nhớ. Cuối cùng, cổng ra xác định phần thông tin trong trạng thái bộ nhớ được dùng để tạo trạng thái ẩn ở bước đang xét. Sự phối hợp giữa các cổng cho phép mô hình kiểm soát quá trình lưu giữ và cập nhật thông tin theo thời gian, đồng thời hạn chế ảnh hưởng của hiện tượng suy giảm gradient khi xử lý chuỗi có độ dài lớn so với RNN truyền thống.
+\subsection{Mạng LSTM hai chiều (Bidirectional LSTM)}
+
+LSTM tiêu chuẩn chỉ khai thác ngữ cảnh theo một chiều --- từ trái sang phải. Tuy nhiên, ý nghĩa của một từ trong câu thường chịu ảnh hưởng đồng thời từ cả phần ngữ cảnh phía trước lẫn phía sau. Để tận dụng triệt để thông tin ngữ cảnh, kiến trúc \textit{Bidirectional LSTM} (BiLSTM) sử dụng hai nhánh xử lý độc lập: một nhánh đọc chuỗi theo chiều thuận và nhánh còn lại đọc theo chiều nghịch. Tại mỗi vị trí trong chuỗi, hai trạng thái ẩn từ hai hướng xử lý được nối lại (Concatenation) để tạo thành một vector biểu diễn duy nhất, chứa thông tin từ cả hai chiều. Trong đồ án, đặc tính này giúp BiLSTM khai thác đầy đủ ngữ cảnh văn bản và phân biệt hai nhóm nhãn.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{bilstm.png}
+  \caption[Minh họa cấu trúc mạng LSTM hai chiều]{Minh họa cấu trúc mạng LSTM hai chiều\protect\imagesourcemark}
+  \label{fig:BiLSTM}
+\end{figure}
+\imagesource{https://www.geeksforgeeks.org/nlp/bidirectional-lstm-in-nlp/}
+
+\subsection{Cơ chế chú ý (Attention Mechanism)}
+
+Trong các mô hình xử lý chuỗi truyền thống, thông tin của cả câu thường được nén vào một vector duy nhất trước khi chuyển sang bước xử lý tiếp theo. Cơ chế chú ý (Attention Mechanism)~\cite{bahdanau2015attention} ra đời để khắc phục hạn chế này, cho phép mô hình tập trung vào những phần thông tin có giá trị trong từng bước xử lý.. Ý tưởng cốt lõi là để mô hình tự động học trọng số ưu tiên cho từng bước thời gian, từ đó tập trung tính toán vào các thành phần thực sự cần thiết cho nhiệm vụ dự đoán.
+
+Giả sử $\{h_1, h_2, \dots, h_T\}$ là các trạng thái ẩn thu được từ mô hình LSTM hoặc BiLSTM. Tại bước $t$, một điểm số $e_t$ đo mức độ liên quan của trạng thái $h_t$ với đầu ra cuối cùng:
+\begin{align}
+  e_t &= \mathbf{v}^{\top} \tanh(\mathbf{W}_a \overleftrightarrow{\mathbf{h}}_t)
+\end{align}
+
+Hàm softmax được áp dụng lên các điểm số thu được để xác định trọng số chú ý tương ứng $\alpha_t$.:
+\begin{align}
+  \alpha_t &= \frac{\exp(e_t)}{\sum_{k=1}^{T} \exp(e_k)}
+\end{align}
+
+Cuối cùng, vector ngữ cảnh $c$ là tổng có trọng số của toàn bộ trạng thái ẩn:
+\begin{align}
+  \mathbf{c} &= \sum_{t=1}^{T} \alpha_t \overleftrightarrow{\mathbf{h}}_t
+\end{align}
+
+Ở đầu ra của cơ chế chú ý, mỗi vị trí trong chuỗi được gán một giá trị $\alpha_t$ thể hiện vai trò của vị trí đó đối với biểu diễn tổng thể. Những vị trí chứa thông tin hữu ích sẽ có ảnh hưởng lớn hơn đến kết quả tổng hợp, trong khi những vị trí ít mang tính phân biệt chỉ đóng góp ở mức thấp hơn. Cách phân bổ trọng số này giúp mô hình lựa chọn thông tin cần thiết thay vì phân bổ đều mức xử lý cho toàn bộ chuỗi.
+
+Đối với văn bản, cơ chế chú ý có thể khai thác các dấu hiệu liên quan đến nội dung và cách diễn đạt, ví dụ như đặc điểm hành văn, các chi tiết bất thường hoặc những nội dung dễ gây tranh cãi. Việc phân bổ mức độ quan tâm khác nhau cho từng thành phần giúp mô hình khai thác các tín hiệu có giá trị phân loại, qua đó hỗ trợ quá trình nhận diện văn bản thuộc hai nhóm \textit{thật} và \textit{giả}.
+
+Một trường hợp đặc biệt của cơ chế chú ý là \textit{tự chú ý} (self-attention) --- thành phần trung tâm của kiến trúc Transformer, sẽ được trình bày cụ thể tại Mục~\ref{sec:transformer}. Với self-attention, biểu diễn của mỗi phần tử được tính từ mối tương quan với toàn bộ các phần tử còn lại trong chuỗi, thay vì chỉ dựa vào các vị trí lân cận. Nhờ vậy, biểu diễn thu được có thể phản ánh mối quan hệ giữa các thành phần trên phạm vi toàn chuỗi.
+
+\section{Biểu diễn phân tán và mã hóa con (Distributed \& Subword Representations)}\label{sec:embedding}
+Dù các phương pháp biểu diễn văn bản truyền thống như bag-of-words và TF-IDF (trình bày tại Mục~\ref{sec:tfidf}) có ưu điểm về tính đơn giản và phù hợp với những mô hình tuyến tính, chúng vẫn tồn tại hai hạn chế lớn. Thứ nhất là \textit{curse of dimensionality}: số chiều vector tỉ lệ thuận với kích thước từ vựng, khiến vector đặc trưng trở nên rất thưa với hàng chục nghìn chiều --- vừa tốn bộ nhớ vừa khó xử lý. Thứ hai là \textit{orthogonality}: hai từ bất kỳ luôn có vector trực giao với nhau, không phản ánh được mối quan hệ ngữ nghĩa giữa các từ. Để khắc phục, các phương pháp biểu diễn phân tán (Distributed Representations) đã được đề xuất, trong đó mỗi từ được mã hóa bằng một vector có số chiều cố định (thường từ 50 đến 300). Trong không gian này, những từ có nghĩa gần nhau sẽ có xu hướng nằm gần nhau hơn.
+
+\subsection{Word2Vec và GloVe}
+
+Word2Vec~\cite{mikolov2013word2vec} học biểu diễn vector cho từng từ thông qua mối quan hệ giữa từ đó và các từ lân cận trong ngữ liệu. Hai kiểu huấn luyện phổ biến gồm \textit{continuous bag-of-words} (CBOW) và \textit{skip-gram}. Ở chế độ CBOW, các từ ngữ cảnh được sử dụng để suy ra từ mục tiêu; trong khi đó, skip-gram thực hiện ngược lại --- dùng từ mục tiêu để dự đoán các từ xung quanh. Sau huấn luyện, mô hình thu được một ma trận $\mathbf{E} \in \mathbb{R}^{V \times d}$, trong đó $V$ là kích thước từ vựng và $d$ là số chiều vector.
+
+Một đặc tính đáng chú ý của không gian Word2Vec là khoảng cách và hướng giữa các vector có thể phản ánh một số mối quan hệ ngữ nghĩa. Phép toán minh họa:
+\[
+\text{vua} - \text{nam} + \text{nữ} \approx \text{hoàng hậu}
+\]
+
+Một giới hạn của Word2Vec là mỗi từ chỉ được biểu diễn bởi một vector duy nhất, không phụ thuộc vào ngữ cảnh cụ thể mà từ đó xuất hiện. Vì vậy, khi cùng một từ mang những nghĩa khác nhau tùy theo ngữ cảnh, mô hình không sinh được các biểu diễn riêng biệt cho từng nghĩa. Đây là vấn đề thường được gọi là \textit{word-sense ambiguity}.
+
+GloVe~\cite{pennington2014glove} tiếp cận bài toán biểu diễn từ theo hướng khai thác thông tin đồng xuất hiện trên toàn bộ tập văn bản. Trong khi Word2Vec chỉ tận dụng quan hệ ngữ cảnh cục bộ, GloVe sử dụng ma trận đồng xuất hiện (co-occurrence matrix) để đưa thống kê toàn cục vào quá trình tối ưu. Mối quan hệ giữa từ mục tiêu $i$ và từ ngữ cảnh $j$ được mô hình hóa bằng:
+
+\[
+\log \hat{P}(i \mid j) = \mathbf{u}_i^\top \mathbf{v}_j + b_i + b_j
+\]
+
+trong đó $\hat{P}(i \mid j)$ là xác suất quan sát từ $i$ trong ngữ cảnh của từ $j$. Việc đưa thông tin đồng xuất hiện ở quy mô toàn tập giúp GloVe xây dựng không gian biểu diễn dựa trên quan hệ thống kê giữa các từ, phục vụ tốt cho các tác vụ yêu cầu đo lường tương đồng ngữ nghĩa.
+
+\subsection{FastText và thông tin subword}
+
+Cả Word2Vec và GloVe đều có cùng một nhược điểm: \textit{từ hiếm} và \textit{từ ngoài từ vựng} (OOV --- Out-Of-Vocabulary) không có embedding vì chúng không xuất hiện trong tập huấn luyện. Với tiếng Việt --- ngôn ngữ có tính tổng hợp và đa dạng hình thái --- vấn đề này càng rõ nét, vì cùng một gốc từ có thể sinh ra hàng chục biến thể khác nhau.
+
+FastText~\cite{bojanowski2017fasttext} khắc phục hạn chế này bằng cách biểu diễn mỗi từ như một tập các n-gram ký tự (character n-grams). Với từ $w$ và tập n-gram $\mathcal{G}_w \subseteq \{3, 4, \dots, 6\}$, embedding của $w$ được tính theo:
+\[
+  \mathbf{e}_w = \sum_{g \in \mathcal{G}_w} \mathbf{z}_g
+\]
+trong đó $\mathbf{z}_g$ là vector embedding của n-gram $g$. Nhờ vậy, ngay cả khi một từ chưa từng xuất hiện trong tập huấn luyện, mô hình vẫn có thể tính được embedding từ các n-gram con, qua đó tăng độ phủ từ vựng và giảm thiểu hiện tượng OOV với những từ ghép ít gặp.
+
+\subsection{Mã hóa con (Subword Tokenization)}
+
+Trong khi FastText khai thác n-gram ký tự ở cấp độ từ, các mô hình Transformer hiện đại như BERT~\cite{devlin2019bert} và PhoBERT~\cite{phobert2020} lại sử dụng BPE (Byte Pair Encoding)~\cite{sennrich2016bpe}z. Quy trình chính của BPE gồm các bước:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item Khởi tạo từ vựng bằng tất cả các ký tự xuất hiện trong kho ngữ liệu.
+  \item Lặp $K$ vòng, mỗi vòng xác định cặp ký hiệu liền kề có tần suất xuất hiện cao nhất, gộp chúng thành một ký hiệu mới và cập nhật vào từ vựng.
+  \item Sau $K$ lần hợp nhất, từ vựng gồm $K + |\Sigma|$ token, với $|\Sigma|$ là số ký tự gốc.
+\end{enumerate}
+
+Kết quả thu được là một từ vựng cân bằng giữa kích thước và độ bao phủ: các từ phổ biến được giữ nguyên (1 token), trong khi những từ hiếm được tách thành một vài đơn vị con (subword) có nghĩa. Ví dụ, từ tiếng Việt \texttt{khó} có thể được biểu diễn bằng \texttt{kh} + \texttt{ó}. Cách tiếp cận này giải quyết triệt để bài toán OOV và đưa kích thước từ vựng từ hàng trăm nghìn xuống chỉ vài chục nghìn subword.
+
+PhoBERT sử dụng BPE được phát triển dựa trên kho văn bản tiếng Việt khoảng 20GB~\cite{phobert2020}, cho từ vựng khoảng 64{,}000 subword. Kết hợp với RDRSegmenter (Mục~\ref{sec:vncore_2018}), PhoBERT có thể biểu diễn hiệu quả cả những từ ghép và từ Hán-Việt dài mà không cần mở rộng từ vựng.
+
+\section{Mô hình Transformer và phương thức Self-Attention}
+\label{sec:transformer}
+
+Transformer sử dụng Self-Attention~\cite{vaswani2017attention} làm cơ chế cốt lõi, nhờ đó mô hình có thể đánh giá mối quan hệ giữa các phần tử trong cùng một chuỗi. Thay vì xử lý tuần tự như RNN và LSTM, Transformer cho phép tính toán đồng thời trên nhiều vị trí. Nhờ khả năng xử lý song song, kiến trúc này tận dụng tốt tài nguyên GPU và rút ngắn thời gian huấn luyện~\cite{lin2022survey}. Ngoài ra, Self-Attention tạo điều kiện để mô hình liên kết các phần tử ở những vị trí xa nhau, qua đó hỗ trợ việc học các quan hệ phụ thuộc dài hạn trong chuỗi.
+
+\subsection{Cơ chế Scaled Dot-Product Attention}
+
+Scaled Dot-Product Attention là phép tính attention cơ bản được dùng trong Transformer. Đối với chuỗi đầu vào, thông tin biểu diễn được ánh xạ thành ba thành phần $\mathbf{Q}$ (Query), $\mathbf{K}$ (Key) và $\mathbf{V}$ (Value) thông qua các phép chiếu tuyến tính. Từ ba ma trận này, đầu ra của cơ chế attention được xác định bằng:
+
+\begin{equation}
+    \mathrm{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
+    =
+    \mathrm{softmax}\!\left(
+    \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}
+    \right)\mathbf{V}
+    \label{eq:attention}
+\end{equation}
+
+Trong đó $d_k$ biểu thị số chiều của vector Key. Hệ số $\sqrt{d_k}$ xuất hiện ở mẫu số nhằm kiểm soát độ lớn của tích vô hướng trước khi áp dụng softmax. Khi số chiều vector tăng, phép chia này giúp tránh việc các giá trị truyền vào softmax trở nên quá lớn --- điều khiến quá trình tối ưu gặp khó khăn~\cite{vaswani2017attention}. Trong trường hợp self-attention, $\mathbf{Q}$, $\mathbf{K}$ và $\mathbf{V}$ đều được tạo ra từ cùng một chuỗi biểu diễn. Nhờ đó, mỗi vị trí có thể tận dụng thông tin từ toàn bộ các vị trí khác trong chuỗi khi xây dựng biểu diễn đầu ra.
+
+\subsection{Multi-Head Attention và Positional Encoding}
+
+Một phép attention đơn lẻ có thể chưa đủ để nắm bắt đa dạng quan hệ giữa các thành phần trong văn bản. Transformer giải quyết hạn chế này bằng Multi-Head Attention, trong đó biểu diễn đầu vào được chiếu qua nhiều không gian con khác nhau để hình thành $h$ head. Attention được tính độc lập trên từng head, sau đó các kết quả được ghép nối thành biểu diễn cuối cùng:
+
+\begin{equation}
+    \mathrm{multihead}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
+    =
+    \mathrm{concat}(\mathrm{head}_1, \dots, \mathrm{head}_h)
+    \mathbf{W}^O
+\end{equation}
+
+với
+
+\[
+\mathrm{head}_i
+=
+\mathrm{Attention}
+(\mathbf{Q}\mathbf{W}_i^Q,
+ \mathbf{K}\mathbf{W}_i^K,
+ \mathbf{V}\mathbf{W}_i^V).
+\]
+
+Trong thiết kế này, mỗi head có thể tập trung vào một kiểu quan hệ khác nhau trong dữ liệu. Nếu kích thước biểu diễn đầu vào là $d$ và có $h$ head, mỗi không gian con thường có số chiều $d_k = d/h$. Sau khi hoàn thành các phép tính attention riêng rẽ, các biểu diễn thu được nối lại và biến đổi thông qua ma trận $\mathbf{W}^O$.
+
+Self-Attention không chứa thông tin trực tiếp về thứ tự xuất hiện của các phần tử trong chuỗi. Vì thế, Transformer cần bổ sung thông tin vị trí để phân biệt các phần tử dựa trên vị trí của chúng. Trong thiết kế Transformer ban đầu, Vaswani và cộng sự~\cite{vaswani2017attention} sử dụng các hàm sin và cos để xây dựng embedding vị trí:
+
+\begin{align}
+    pe_{(pos,\,2i)}
+    &= \sin\!\left(\frac{pos}{10000^{2i/d}}\right), \
+    pe_{(pos,\,2i+1)}
+    &= \cos\!\left(\frac{pos}{10000^{2i/d}}\right).
+\end{align}
+
+Việc bổ sung thông tin vị trí vào biểu diễn đầu vào giúp Transformer nhận biết thứ tự giữa các phần tử, đồng thời thiết lập được mối quan hệ giữa chúng khi thực hiện tính toán attention.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{encoder}
+    \caption[Minh họa kiến trúc Transformer encoder]{Minh họa kiến trúc Transformer encoder\protect\imagesourcemark}
+    \label{fig:encoder}
+\end{figure}
+\imagesource{https://d2l.ai/chapter\_attention-mechanisms-and-transformers/transformer.html}
+
+Hình~\ref{fig:encoder} minh họa một khối encoder điển hình của Transformer. Quy trình xử lý bên trong mỗi khối gồm hai thành phần chính. Đầu tiên là Multi-Head Self-Attention --- nơi thông tin tại một vị trí được kết hợp với biểu diễn của những vị trí khác trong chuỗi. Cơ chế này giúp mô hình xây dựng biểu diễn có tính ngữ cảnh rộng thay vì chỉ dựa vào thông tin ở các vị trí lân cận. Sau phép attention, kết quả được đưa qua kết nối dư và bước chuẩn hóa (Add \& Norm) nhằm hỗ trợ quá trình tối ưu.
+
+Thành phần thứ hai là mạng truyền thẳng theo vị trí (Position-wise Feed-Forward Network -- FFN). Mạng này áp dụng cho từng vị trí một cách riêng biệt và thực hiện các phép biến đổi phi tuyến. Một dạng FFN phổ biến có thể biểu diễn bằng:
+
+\[
+    \mathrm{FFN}(\mathbf{x})
+    =
+    \mathbf{W}_2 \cdot
+    \mathrm{gelu}(\mathbf{W}_1\mathbf{x}+\mathbf{b}_1)
+    +\mathbf{b}_2
+\]
+
+Trong nhiều cấu hình Transformer, số chiều của tầng ẩn trong FFN được đặt lớn hơn kích thước biểu diễn đầu vào, thường vào khoảng bốn lần $d$. Sau khi qua FFN, biểu diễn tiếp tục được đưa qua một khối Add \& Norm khác. Các encoder có thể xếp chồng thành nhiều tầng nhằm tăng khả năng học biểu diễn của mô hình. Ví dụ, BERT-base sử dụng $L=12$ tầng encoder, còn BERT-large sử dụng $L=24$ tầng~\cite{devlin2019bert}.
+
+\subsection{Encoder và Decoder}
+
+Trong kiến trúc Transformer nguyên bản, quy trình xử lý được chia thành hai phần là encoder và decoder~\cite{vaswani2017attention}:
+
+\begin{itemize}[leftmargin=2em]
+
+    \item \textit{Encoder}: Tiếp nhận chuỗi đầu vào và xây dựng biểu diễn có chứa thông tin ngữ cảnh. Cơ chế self-attention cho phép mỗi vị trí tận dụng thông tin từ toàn bộ chuỗi. Cấu trúc này phù hợp với các nhiệm vụ yêu cầu hiểu nội dung như phân loại văn bản, gán nhãn token hoặc trích xuất quan hệ.
+
+    \item \textit{Decoder}: Sinh ra chuỗi đầu ra dựa trên cơ chế masked self-attention, trong đó thông tin từ các vị trí tương lai bị che. Decoder đồng thời sử dụng cross-attention để kết hợp biểu diễn do encoder tạo ra. Cách tổ chức này thích hợp với các nhiệm vụ sinh chuỗi như dịch máy và tóm tắt văn bản.
+
+\end{itemize}
+
+Các mô hình BERT~\cite{devlin2019bert} và PhoBERT~\cite{phobert2020} thuộc nhóm kiến trúc sử dụng encoder để tạo biểu diễn ngữ cảnh cho văn bản. Do đó, trong phạm vi nghiên cứu này, phần trình bày về kiến trúc Transformer tập trung vào encoder.
+
+\section{PhoBERT và mô hình ngôn ngữ tiền huấn luyện}\label{sec:phobert}
+
+\subsection{Tiền huấn luyện (Pre-Training) và tinh chỉnh (Fine-Tuning)}
+
+Một trong những đóng góp quan trọng nhất của BERT~\cite{devlin2019bert} là thiết lập một framework huấn luyện gồm hai giai đoạn, cho phép tận dụng hiệu quả lượng lớn dữ liệu không nhãn:
+
+\begin{enumerate}[leftmargin=2.5em]
+  \item \textit{Tiền huấn luyện} (Pre-Training): mô hình Transformer encoder được huấn luyện trên kho ngữ liệu lớn với hai nhiệm vụ tự giám sát (self-supervised):
+  \begin{itemize}
+    \item \textit{Masked Language Modeling} (MLM): một tỷ lệ (thường 15\%) token trong đầu vào bị che ngẫu nhiên; các token bị che được khôi phục dựa trên thông tin ngữ cảnh hai phía (trước và sau trong chuỗi).
+    \item \textit{Next Sentence Prediction} (NSP): nhiệm vụ này yêu cầu mô hình xác định mối quan hệ về thứ tự giữa hai câu, từ đó học được sự liên kết ngữ nghĩa giữa chúng.
+  \end{itemize}
+  Quá trình này tiêu tốn nhiều tài nguyên --- BERT-base mất khoảng 4 ngày trên 64 GPU TPU~\cite{devlin2019bert} --- nhưng chỉ cần thực hiện một lần cho mỗi ngôn ngữ.
+  \item \textit{Tinh chỉnh} (Fine-Tuning): từ checkpoint tiền huấn luyện, mô hình chỉ cần bổ sung một tầng phân loại đơn giản --- thường được triển khai dưới dạng lớp tuyến tính trên đỉnh encoder --- và tiếp tục huấn luyện trên dữ liệu có nhãn của tác vụ cụ thể như phát hiện tin giả, phân tích cảm xúc hay trả lời câu hỏi. Vì phần lớn trọng số đã được khởi tạo tốt, fine-tuning thường chỉ cần 3--10 epoch trên dữ liệu tác vụ~\cite{rajpurkar2016squad}.
+\end{enumerate}
+
+Hai giai đoạn này giải quyết được nghịch lý cố hữu của NLP: \textit{dữ liệu không nhãn thì rất nhiều nhưng dữ liệu có nhãn lại rất đắt}. Các mô hình BERT, PhoBERT và RoBERTa~\cite{liu2019roberta} đều tuân theo paradigm này.
+
+\subsection{PhoBERT cho tiếng Việt}
+Được phát triển dành riêng cho tiếng Việt, PhoBERT~\cite{phobert2020} kế thừa kiến trúc RoBERTa~\cite{liu2019roberta} để xây dựng mô hình ngôn ngữ tiền huấn luyện. Theo đó, mô hình kế thừa bốn cải tiến chính của RoBERTa so với BERT nguyên bản, bao gồm:
+\begin{itemize}[leftmargin=2em]
+  \item Bỏ tác vụ NSP, chỉ giữ lại MLM;
+  \item Sử dụng tập dữ liệu huấn luyện lớn hơn đáng kể --- 160GB so với 13GB của BERT.;
+  \item Sử dụng dynamic masking thay vì static masking;
+  \item Sinh chuỗi dài hơn, lên tới 512 token.
+\end{itemize}
+
+Dữ liệu tiền huấn luyện của PhoBERT bao gồm khoảng 20GB ngữ liệu tiếng Việt, được tổng hợp từ Wikipedia và các bài viết trên báo điện tử. Mô hình có hai biến thể:
+\begin{itemize}[leftmargin=2em]
+  \item \texttt{PhoBERT-base}: 12 lớp encoder, $d = 768$, 12 head attention, $\sim$135M tham số.
+  \item \texttt{PhoBERT-large}: 24 lớp encoder, $d = 1024$, 16 head attention, $\sim$370M tham số.
+\end{itemize}
+
+Cả hai biến thể đều dùng RDRSegmenter (Mục~\ref{sec:vncore_2018}) để phân đoạn từ trước khi áp dụng BPE --- đảm bảo từ vựng và embedding phù hợp với đặc thù tiếng Việt. Trong thực nghiệm, \texttt{PhoBERT-base} thường được ưu tiên lựa chọn nhờ sự cân bằng giữa chất lượng mô hình và mức sử dụng tài nguyên tính toán.
+\subsection{Một số công trình liên quan về phát hiện tin giả tiếng Việt}
+
+Trước khi PhoBERT xuất hiện, các nghiên cứu về nhận diện tin giả tiếng Việt thường dựa trên những đặc trưng được thiết kế thủ công, sau đó đưa các đặc trưng này vào các mô hình học máy truyền thống~\cite{vlsp2016}. Việc PhoBERT ra đời đã mở ra một hướng tiếp cận mới dựa trên mô hình ngôn ngữ tiền huấn luyện, việc thích nghi mô hình với từng tác vụ thông qua quá trình tinh chỉnh trên tập dữ liệu tương ứng mang lại hiệu quả cao đối với nhiệm vụ nhận diện tin giả. Cụ thể, Luu và cộng sự~\cite{luu2021vifakedect} đã xây dựng hệ thống \textit{ViFakeDect} dựa trên \textit{PhoBERT-base}, với kết quả F1-macro đạt khoảng 88\% trên bộ dữ liệu do nhóm tự thu thập. Ngoài việc sử dụng trực tiếp embedding từ PhoBERT, Tran và cộng sự~\cite{tran2020vietnamesefake} còn khai thác các đặc trưng phong cách ngôn ngữ (Stylometric Features) kết hợp với PhoBERT, cho thấy nhóm đặc trưng này có thể bổ sung thêm thông tin cho quá trình biểu diễn văn bản. Ở quy mô rộng hơn, một số công trình tổng quan quốc tế~\cite{shu2017fake, zhou2020survey, nakov2022overview} cũng ghi nhận xu hướng ứng dụng ngày càng nhiều của các kiến trúc Transformer trong hệ thống phát hiện tin giả.
+
+\section{Đánh giá mô hình và phân tích hiệu chuẩn}\label{sec:evaluation}
+
+\subsection{Các độ đo hiệu năng phân loại}
+
+Trong phân loại nhị phân, kết quả dự đoán của mô hình có thể được quy về bốn trường hợp dựa trên nhãn thực tế và nhãn dự đoán. Theo quy ước lớp \textit{thật} là Negative và lớp \textit{giả} là Positive, bốn thành phần của ma trận nhầm lẫn gồm $TP$ (tin giả được nhận diện đúng), $TN$ (tin thật được nhận diện đúng), $FP$ (tin thật bị phân loại thành tin giả) và $FN$ (tin giả bị phân loại thành tin thật). Từ bốn giá trị này, hiệu năng của bộ phân loại được đánh giá thông qua các đại lượng:
+
+\begin{align*}
+\mathrm{accuracy}    &= \frac{TP+TN}{TP+TN+FP+FN} \\
+\mathrm{precision}  &= \frac{TP}{TP+FP} \\
+\mathrm{recall}     &= \frac{TP}{TP+FN} \\
+F_1                 &= 2 \cdot \frac{\mathrm{precision} \cdot \mathrm{recall}}{\mathrm{precision} + \mathrm{recall}}
+\end{align*}
+
+Công thức $F_1$ ở trên được tính cho lớp \textit{Positive}, tương ứng với lớp \textit{giả} trong nghiên cứu. Khi phân bố giữa hai lớp không hoàn toàn cân bằng, có thể tính $F_1$ riêng cho từng lớp rồi lấy trung bình để thu được $F_1$-macro:
+
+\[
+F_1\text{-macro} = \frac{F_1^{(0)} + F_1^{(1)}}{2},
+\]
+
+trong đó $F_1^{(0)}$ biểu thị kết quả của lớp \textit{Negative} (lớp \textit{thật}) và $F_1^{(1)}$ tương ứng với lớp \textit{Positive} (lớp \textit{giả}). Do hai lớp đóng góp như nhau vào giá trị trung bình, độ đo này cho thấy hiệu năng của mô hình trên từng lớp mà không phụ thuộc trực tiếp vào số lượng mẫu của mỗi lớp.
+
+Đối với dữ liệu phát hiện tin giả trong nghiên cứu, tỷ lệ giữa hai nhãn có sự chênh lệch, với khoảng 56\% mẫu thuộc lớp thật và 44\% thuộc lớp giả. Trong trường hợp này, Accuracy có thể chưa phản ánh đầy đủ chất lượng phân loại, bởi mô hình vẫn có khả năng đạt giá trị tương đối cao nếu nghiêng về lớp chiếm ưu thế. Vì vậy, $\mathbf{F_1}$-macro được sử dụng làm thước đo chính, nhằm xem xét đồng thời khả năng nhận diện của cả hai lớp. Việc lấy trung bình không trọng số giữa hai giá trị $F_1$ cũng giúp giảm thiểu ảnh hưởng của sự mất cân bằng nhãn khi đánh giá.
+
+
+\subsection{Kiểm định thống kê}
+
+Các thước đo hiệu năng cho phép so sánh mức độ khác biệt về kết quả giữa các mô hình, nhưng chưa thể xác định liệu sự chênh lệch này có mang ý nghĩa thống kê hay không. Do đó, nghiên cứu áp dụng các phép kiểm định thống kê để đánh giá độ tin cậy của kết quả và xem xét mức độ có ý nghĩa của những khác biệt được ghi nhận.
+
+\begin{itemize}[leftmargin=2em]
+
+  \item \textit{Kiểm định McNemar}~\cite{mcnemar1947}: được sử dụng khi cần đối chiếu hai mô hình cùng dự đoán trên một tập kiểm tra gồm \ntest{} mẫu. Kiểm định tập trung vào những trường hợp hai mô hình đưa ra kết quả khác nhau và sử dụng phân phối $\chi^2$ với 1 bậc tự do để đánh giá sự khác biệt. Phương pháp này không yêu cầu thực hiện k-fold nên phù hợp với những trường hợp chi phí huấn luyện mô hình cao.
+
+  \item \textit{Khoảng tin cậy bootstrap}~\cite{efron1979bootstrap}: từ tập kiểm tra, các mẫu được lấy lại có hoàn lại để tạo ra nhiều tập bootstrap có cùng kích thước $n$. Quy trình được lặp $B$ lần, với $B = 1000$ được dùng làm giá trị tham khảo, và $F_1$ được tính trên mỗi lần lấy mẫu. Các giá trị thu được sau đó được sử dụng để xây dựng khoảng tin cậy 95\% theo phương pháp percentile, qua đó cung cấp thông tin về mức biến động của ước lượng.
+
+  \item \textit{Kiểm tra chéo} (Cross-Validation)~\cite{pedregosa2011sklearn}: dữ liệu được chia thành $k$ phần và quá trình huấn luyện được lặp lại sao cho mỗi phần lần lượt được dùng để đánh giá, trong khi $k-1$ phần còn lại phục vụ huấn luyện. Khi tiến hành nhiều phép so sánh giữa các mô hình, kiểm định Holm~\cite{holm1979} được áp dụng để điều chỉnh p-value và hạn chế ảnh hưởng của vấn đề đa so sánh.
+
+\end{itemize}
+
+\subsection{Hiệu chuẩn xác suất (Probability Calibration)}
+
+Không chỉ dựa vào kết quả phân loại, mô hình còn được xem xét qua độ tin cậy của các xác suất dự đoán. Một mô hình được gọi là \textit{well-calibrated} khi xác suất mà nó đưa ra tương đối phù hợp với tần suất thực tế của các kết quả tương ứng. Ví dụ, nếu một nhóm mẫu được mô hình dự đoán với xác suất *$p = 0{,}8$*, thì khoảng 80\% số mẫu trong nhóm đó được kỳ vọng thuộc đúng lớp tương ứng~\cite{guo2017calibration}.
+
+Trong bài toán phát hiện tin giả, xác suất dự đoán đặc biệt có giá trị khi kết quả phân loại được sử dụng như thông tin hỗ trợ cho quá trình ra quyết định (decision support). Lúc đó, kết quả không chỉ cần cho biết bài viết thuộc lớp tin thật hay tin giả mà còn cần phản ánh mức độ chắc chắn tương ứng của mô hình. Vì vậy, việc đánh giá khả năng hiệu chuẩn có thể được thực hiện thông qua một số thước đo thường gặp như:
+
+\begin{itemize}[leftmargin=2em]
+
+  \item \textit{Expected Calibration Error} (ECE)~\cite{naeini2015ece}: miền xác suất $[0, 1]$ được chia thành $B$ khoảng, sau đó kết quả dự đoán trong từng bin được dùng để đối chiếu độ chính xác thực tế với mức tự tin trung bình. ECE được tính bằng trung bình có trọng số của sai lệch giữa hai đại lượng này:
+
+  \[
+\mathrm{ECE} = \sum_{b=1}^{B} \frac{|B_b|}{n} \bigl| \mathrm{acc}(B_b) - \mathrm{conf}(B_b) \bigr|
+\]
+
+  \item \textit{Maximum Calibration Error} (MCE): thay vì lấy tổng sai lệch trên toàn bộ các bin, MCE lấy giá trị lớn nhất của $\bigl| \mathrm{acc}(B_b) - \mathrm{conf}(B_b) \bigr|$. Độ đo này phản ánh mức sai lệch hiệu chuẩn nghiêm trọng nhất xuất hiện trong các khoảng xác suất.
+
+  \item \textit{Brier Score}: đánh giá trực tiếp mức chênh lệch giữa xác suất dự đoán và nhãn thực thông qua trung bình bình phương sai số:
+
+  \[
+\mathrm{Brier} = \frac{1}{N}\sum_{i=1}^{N}(p_i - y_i)^2
+\]
+
+    trong đó $p_i \in [0,1]$ là xác suất dự đoán và $y_i \in \{0,1\}$ là nhãn thực. Giá trị Brier Score càng thấp cho thấy xác suất do mô hình cung cấp càng gần với kết quả thực tế.
+
+\end{itemize}
+
+Các thước đo trên được kết hợp với những phương pháp hiệu chỉnh sau huấn luyện như Platt scaling, Temperature scaling và Isotonic regression~\cite{guo2017calibration}. Các kỹ thuật này sẽ được áp dụng trong phần thực nghiệm tại Mục~\ref{sec:extended_analyses}, nhằm đánh giá mức độ đáng tin cậy của xác suất đầu ra từ bốn mô hình được so sánh.
+
+
+\section{Kết luận chương}
+
+Chương này đã tổng hợp các cơ sở lý thuyết phục vụ cho việc xây dựng hệ thống nhận diện tin giả, bao gồm các phương pháp học máy, mô hình học sâu và mô hình ngôn ngữ tiền huấn luyện. Bên cạnh đó, các kỹ thuật biểu diễn văn bản, cấu trúc mô hình và phương pháp đánh giá cũng được trình bày nhằm làm nền tảng cho phần thực nghiệm. 
+
+\clearpage

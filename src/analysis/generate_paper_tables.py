@@ -1,9 +1,3 @@
-"""
-Generate Publication-Quality Tables for Research Paper
-
-
-Creates LaTeX tables suitable for academic publication.
-"""
 
 import os
 import pandas as pd
@@ -16,15 +10,10 @@ log = get_logger(__name__)
 
 
 def _fetch_all_metrics():
-    """Load all metrics (thin wrapper around shared utility)."""
     return load_all_metrics()
 
 
 def table1_dataset_statistics(save_path: str):
-    """
-    Table 1: Dataset Statistics
-    """
-    # Load data statistics
     train_df = load_csv(os.path.join(cfg.PATHS.splits_dir, 'train.csv'), required_columns=['text', 'label'])
     val_df = load_csv(os.path.join(cfg.PATHS.splits_dir, 'val.csv'), required_columns=['text', 'label'])
     test_df = load_csv(os.path.join(cfg.PATHS.splits_dir, 'test.csv'), required_columns=['text', 'label'])
@@ -36,7 +25,6 @@ def table1_dataset_statistics(save_path: str):
         real = len(df[df['label'] == 0])
         fake = len(df[df['label'] == 1])
         
-        # Text statistics
         df['text_len'] = df['text'].astype(str).apply(lambda x: len(x.split()))
         avg_len = df['text_len'].mean()
         
@@ -50,7 +38,6 @@ def table1_dataset_statistics(save_path: str):
     
     df_stats = pd.DataFrame(stats)
     
-    # Generate LaTeX
     latex = r"""
 \begin{table}[h]
 \centering
@@ -78,9 +65,6 @@ def table1_dataset_statistics(save_path: str):
 
 
 def table2_model_comparison(metrics: dict, save_path: str):
-    """
-    Table 2: Model Performance Comparison
-    """
     rows = []
     
     model_order = ['Logistic Regression', 'SVM', 'BiLSTM', 'PhoBERT']
@@ -100,10 +84,8 @@ def table2_model_comparison(metrics: dict, save_path: str):
     
     df = pd.DataFrame(rows)
     
-    # Find best values for bolding
     best_idx = {col: df[col].idxmax() for col in ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'ROC-AUC']}
     
-    # Generate LaTeX
     latex = r"""
 \begin{table}[h]
 \centering
@@ -139,9 +121,6 @@ def table2_model_comparison(metrics: dict, save_path: str):
 
 
 def table3_per_class_metrics(metrics: dict, save_path: str):
-    """
-    Table 3: Per-Class Performance
-    """
     rows = []
     
     model_order = ['Logistic Regression', 'SVM', 'BiLSTM', 'PhoBERT']
@@ -151,7 +130,6 @@ def table3_per_class_metrics(metrics: dict, save_path: str):
             continue
         test = metrics[model]['test']
         
-        # Real news
         rows.append({
             'Model': model,
             'Class': 'Thật',
@@ -160,7 +138,6 @@ def table3_per_class_metrics(metrics: dict, save_path: str):
             'F1-Score': test['f1_per_class'][0]
         })
         
-        # Fake news
         rows.append({
             'Model': model,
             'Class': 'Giả',
@@ -171,7 +148,6 @@ def table3_per_class_metrics(metrics: dict, save_path: str):
     
     df = pd.DataFrame(rows)
     
-    # Generate LaTeX with multirow
     latex = r"""
 \begin{table}[h]
 \centering
@@ -208,9 +184,6 @@ def table3_per_class_metrics(metrics: dict, save_path: str):
 
 
 def table4_hyperparameters(save_path: str):
-    """
-    Table 4: Model Hyperparameters — all values pulled from cfg.
-    """
     latex = rf"""
 \begin{{table}}[h]
 \centering
@@ -245,9 +218,6 @@ SVM & C={cfg.SVM.C}, kernel={cfg.SVM.kernel}, gamma={cfg.SVM.gamma} \\
 
 
 def table5_training_time(metrics: dict, save_path: str):
-    """
-    Table 5: Training Time Comparison
-    """
     rows = []
     
     model_info = {
@@ -304,22 +274,15 @@ def table5_training_time(metrics: dict, save_path: str):
 
 
 def main():
-    """Generate all publication tables."""
-
-
     print("="*70)
     print("GENERATING PUBLICATION-QUALITY TABLES")
     print("="*70)
     
-    # Create output directory
     tables_dir = cfg.PATHS.paper_tables_dir
     os.makedirs(tables_dir, exist_ok=True)
     
-    # Load metrics
     print("\n Loading metrics...")
     metrics = _fetch_all_metrics()
-    
-    # Generate tables
     print("\n Generating tables...")
     
     table1_dataset_statistics(os.path.join(tables_dir, 'table1_dataset.tex'))

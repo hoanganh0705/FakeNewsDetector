@@ -1,9 +1,4 @@
-"""
-Generate Publication-Quality Figures for Research Paper
 
-
-Creates high-resolution figures suitable for academic publication.
-"""
 
 import os
 import joblib
@@ -36,18 +31,14 @@ plt.rcParams.update({
 
 
 def figure0a_overall_distribution(save_path: str):
-    """
-    Figure 0a: Overall Label Distribution (Donut Chart)
-    """
     fig, ax = plt.subplots(figsize=(6, 5))
 
-    # --- Load data ---
     raw_df = load_csv(cfg.PATHS.raw_data, required_columns=['label'])
 
     class_labels = ['Thật (0)', 'Giả (1)']
-    palette = ['#2E86AB', '#C73E1D']  # blue = real, red = fake
+    palette = ['#2E86AB', '#C73E1D']
 
-    counts = raw_df['label'].value_counts().sort_index().values  # [real, fake]
+    counts = raw_df['label'].value_counts().sort_index().values
     total = counts.sum()
     wedges, texts, autotexts = ax.pie(
         counts,
@@ -76,19 +67,15 @@ def figure0a_overall_distribution(save_path: str):
 
 
 def figure0b_split_distribution(save_path: str):
-    """
-    Figure 0b: Per-Split Label Distribution (Grouped Bar Chart)
-    """
     fig, ax = plt.subplots(figsize=(8, 5))
 
-    # --- Load data ---
     splits = {}
     for name in ['train', 'val', 'test']:
         path = os.path.join(cfg.PATHS.splits_dir, f'{name}.csv')
         if os.path.exists(path):
             splits[name] = load_csv(path, required_columns=['label'])
 
-    palette = ['#2E86AB', '#C73E1D']  # blue = real, red = fake
+    palette = ['#2E86AB', '#C73E1D']
 
     split_names = ['Huấn luyện', 'Xác thực', 'Kiểm tra']
     split_keys  = ['train', 'val', 'test']
@@ -105,7 +92,6 @@ def figure0b_split_distribution(save_path: str):
                        label='Giả (1)', color=palette[1],
                        edgecolor='black', linewidth=0.5)
 
-    # Value labels on bars
     for bars in (bars_real, bars_fake):
         for bar in bars:
             h = bar.get_height()
@@ -132,7 +118,6 @@ def figure0b_split_distribution(save_path: str):
 
 
 def load_all_data():
-    """Load metrics and predictions."""
     metrics = load_all_metrics()
     predictions = {}
 
@@ -145,9 +130,6 @@ def load_all_data():
 
 
 def figure1_model_comparison_bar(metrics: dict, save_path: str):
-    """
-    Figure 1: Model Performance Comparison (Bar Chart)
-    """
     fig, ax = plt.subplots(figsize=(10, 5))
     
     models = list(MODEL_DIR_MAP.keys())
@@ -173,7 +155,6 @@ def figure1_model_comparison_bar(metrics: dict, save_path: str):
         offset = (i - 1.5) * width
         bars = ax.bar(x + offset, values, width, label=metric, color=color, edgecolor='black', linewidth=0.5)
         
-        # Add value labels
         for bar in bars:
             height = bar.get_height()
             ax.annotate(f'{height:.2f}',
@@ -198,9 +179,6 @@ def figure1_model_comparison_bar(metrics: dict, save_path: str):
 
 
 def figure2_confusion_matrices(metrics: dict, save_path: str):
-    """
-    Figure 2: Confusion Matrices Grid
-    """
     fig, axes = plt.subplots(2, 2, figsize=(10, 9))
     axes = axes.flatten()
     
@@ -213,13 +191,10 @@ def figure2_confusion_matrices(metrics: dict, save_path: str):
             
         cm = np.array(metrics[model]['test']['confusion_matrix'])
         
-        # Normalize for display
         cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         
-        # Plot
         im = axes[idx].imshow(cm_normalized, interpolation='nearest', cmap='Blues', vmin=0, vmax=1)
         
-        # Add text annotations
         for i in range(2):
             for j in range(2):
                 color = 'white' if cm_normalized[i, j] > 0.5 else 'black'
@@ -234,12 +209,10 @@ def figure2_confusion_matrices(metrics: dict, save_path: str):
         axes[idx].set_xticklabels(class_names)
         axes[idx].set_yticklabels(class_names)
         
-        # Add accuracy
         acc = metrics[model]['test']['accuracy']
         axes[idx].text(0.5, -0.18, f'Độ chính xác: {acc:.2%}', 
                       transform=axes[idx].transAxes, ha='center', fontsize=10)
     
-    # Add colorbar
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
     cbar = fig.colorbar(im, cax=cbar_ax)
     cbar.set_label('Tỷ lệ chuẩn hóa')
@@ -252,9 +225,6 @@ def figure2_confusion_matrices(metrics: dict, save_path: str):
 
 
 def figure3_roc_curves(predictions: dict, save_path: str):
-    """
-    Figure 3: ROC Curves Comparison
-    """
     fig, ax = plt.subplots(figsize=(8, 7))
     
     colors = {'Logistic Regression': '#2E86AB', 'SVM': '#A23B72', 
@@ -270,7 +240,6 @@ def figure3_roc_curves(predictions: dict, save_path: str):
                linestyle=linestyles.get(model_name, '-'),
                linewidth=2, label=f'{model_name} (AUC = {roc_auc:.3f})')
     
-    # Random classifier line
     ax.plot([0, 1], [0, 1], 'k--', linewidth=1.5, alpha=0.7, label='Ngẫu nhiên (AUC = 0.500)')
     
     ax.set_xlim([0.0, 1.0])
@@ -281,7 +250,6 @@ def figure3_roc_curves(predictions: dict, save_path: str):
     ax.grid(True, alpha=0.3)
     ax.set_aspect('equal')
     
-    # Add annotation for best model
     ax.annotate('PhoBERT đạt\nAUC cao nhất', 
                xy=(0.1, 0.9), fontsize=10, 
                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
@@ -294,9 +262,6 @@ def figure3_roc_curves(predictions: dict, save_path: str):
 
 
 def figure4_precision_recall_curves(predictions: dict, save_path: str):
-    """
-    Figure 4: Precision-Recall Curves
-    """
     fig, ax = plt.subplots(figsize=(8, 7))
     
     colors = {'Logistic Regression': '#2E86AB', 'SVM': '#A23B72', 
@@ -324,20 +289,15 @@ def figure4_precision_recall_curves(predictions: dict, save_path: str):
 
 
 def figure5_per_class_performance(metrics: dict, save_path: str):
-    """
-    Figure 5: Per-Class Performance Comparison
-    """
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     
     models = list(MODEL_DIR_MAP.keys())
     x = np.arange(len(models))
     width = 0.35
     
-    # Real news performance
     real_f1 = [metrics[m]['test']['f1_per_class'][0] for m in models if m in metrics]
     fake_f1 = [metrics[m]['test']['f1_per_class'][1] for m in models if m in metrics]
     
-    # Plot Real News
     axes[0].bar(x - width/2, [metrics[m]['test']['precision_per_class'][0] for m in models], 
                width, label='Precision', color='#2E86AB', edgecolor='black', linewidth=0.5)
     axes[0].bar(x + width/2, [metrics[m]['test']['recall_per_class'][0] for m in models], 
@@ -351,7 +311,6 @@ def figure5_per_class_performance(metrics: dict, save_path: str):
     axes[0].legend()
     axes[0].grid(True, alpha=0.3, axis='y')
     
-    # Plot Fake News
     axes[1].bar(x - width/2, [metrics[m]['test']['precision_per_class'][1] for m in models], 
                width, label='Precision', color='#2E86AB', edgecolor='black', linewidth=0.5)
     axes[1].bar(x + width/2, [metrics[m]['test']['recall_per_class'][1] for m in models], 
@@ -373,12 +332,8 @@ def figure5_per_class_performance(metrics: dict, save_path: str):
 
 
 def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
-    """
-    Figure 6: Performance by Model Paradigm
-    """
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Group models by paradigm
     paradigms = {
         'ML truyền thống\n(TF-IDF)': ['Logistic Regression', 'SVM'],
         'Học sâu\n(Word Embeddings)': ['BiLSTM'],
@@ -406,7 +361,6 @@ def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
     bars2 = ax.bar(x, paradigm_f1, width, label='F1-Score', color='#F18F01', edgecolor='black')
     bars3 = ax.bar(x + width, paradigm_auc, width, label='ROC-AUC', color='#C73E1D', edgecolor='black')
     
-    # Add value labels
     for bars in [bars1, bars2, bars3]:
         for bar in bars:
             height = bar.get_height()
@@ -431,22 +385,16 @@ def figure6_model_paradigm_comparison(metrics: dict, save_path: str):
 
 
 def main():
-    """Generate all publication figures."""
-
-
     print("="*70)
     print("GENERATING PUBLICATION-QUALITY FIGURES")
     print("="*70)
     
-    # Create output directory
     figures_dir = cfg.PATHS.paper_figures_dir
     os.makedirs(figures_dir, exist_ok=True)
     
-    # Load data
     print("\n Loading data...")
     metrics, predictions = load_all_data()
     
-    # Generate figures
     print("\n Generating figures...")
     
     figure0a_overall_distribution(

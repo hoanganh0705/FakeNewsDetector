@@ -1,15 +1,3 @@
-"""
-Master script to extract all features for the Fake News Detection project.
-
-This script extracts:
-1. TF-IDF features for Logistic Regression and SVM
-2. Word embedding sequences for BiLSTM
-3. PhoBERT tokenized features for PhoBERT transformer
-
-Usage:
-    python src/features/extract_all_features.py
-"""
-
 import os
 import time
 
@@ -20,19 +8,15 @@ from config import cfg
 
 
 def main():
-    """Extract all features for all models."""
-    
     print("="*60)
     print("FEATURE EXTRACTION FOR FAKE NEWS DETECTION")
     print("="*60)
     
-    # Paths
     train_path = os.path.join(cfg.PATHS.splits_dir, 'train.csv')
     val_path = os.path.join(cfg.PATHS.splits_dir, 'val.csv')
     test_path = os.path.join(cfg.PATHS.splits_dir, 'test.csv')
     features_dir = cfg.PATHS.features_dir
     
-    # Check if data exists
     for path in [train_path, val_path, test_path]:
         if not os.path.exists(path):
             print(f"Error: {path} not found!")
@@ -41,9 +25,6 @@ def main():
     
     total_start = time.time()
     
-    # ============================================================
-    # 1. TF-IDF Features (for Logistic Regression and SVM)
-    # ============================================================
     print("\n" + "="*60)
     print("Step 1/3: Extracting TF-IDF Features")
     print("="*60)
@@ -54,15 +35,11 @@ def main():
         val_path=val_path,
         test_path=test_path,
         output_dir=cfg.PATHS.tfidf_dir,
-        max_features=cfg.TFIDF.max_features,  # Vocabulary size
+        max_features=cfg.TFIDF.max_features,
         ngram_range=cfg.TFIDF.ngram_range   # Unigrams/bigrams/trigrams per config
     )
     print(f"Time: {time.time() - start:.2f}s")
     print(f"Train shape: {tfidf_features['X_train'].shape}")
-    
-    # ============================================================
-    # 2. Embedding Features (for BiLSTM)
-    # ============================================================
     print("\n" + "="*60)
     print("Step 2/3: Extracting Embedding Features")
     print("="*60)
@@ -73,16 +50,13 @@ def main():
         val_path=val_path,
         test_path=test_path,
         output_dir=cfg.PATHS.embedding_dir,
-        max_vocab_size=50000,  # Vocabulary size
-        max_seq_length=cfg.BILSTM.max_seq_length,  # Max sequence length (BiLSTM's own setting)
-        min_freq=2             # Minimum word frequency
+        max_vocab_size=50000,
+        max_seq_length=cfg.BILSTM.max_seq_length,
+        min_freq=2
     )
     print(f"Time: {time.time() - start:.2f}s")
     print(f"Vocabulary size: {embedding_features['extractor'].vocab_size}")
     
-    # ============================================================
-    # 3. PhoBERT Features (for PhoBERT transformer)
-    # ============================================================
     print("\n" + "="*60)
     print("Step 3/3: Extracting PhoBERT Features")
     print("="*60)
@@ -103,9 +77,6 @@ def main():
         print("You may need to install transformers: pip install transformers")
         print("Skipping PhoBERT features...")
     
-    # ============================================================
-    # Summary
-    # ============================================================
     total_time = time.time() - total_start
     
     print("\n" + "="*60)

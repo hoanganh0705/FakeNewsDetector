@@ -1,9 +1,3 @@
-"""Tests for model architecture definitions (BiLSTM & PhoBERT).
-
-PhoBERT tests are skipped when transformers model download would be required;
-BiLSTM tests run purely on small tensors with no I/O.
-"""
-
 import numpy as np
 import pytest
 import torch
@@ -11,13 +5,7 @@ import torch
 from src.models.bilstm_model import BiLSTMClassifier
 
 
-# ──────────────────────────────────────────────────────────────
-# BiLSTM
-# ──────────────────────────────────────────────────────────────
-
 class TestBiLSTMClassifier:
-    """Forward-pass shape and basic behaviour checks."""
-
     VOCAB, EMB, HID, CLASSES = 500, 64, 32, 2
 
     def _make_model(self, **kw):
@@ -42,7 +30,7 @@ class TestBiLSTMClassifier:
         model = self._make_model()
         x = torch.randint(0, self.VOCAB, (4, 20))
         mask = torch.ones(4, 20, dtype=torch.long)
-        mask[:, 15:] = 0  # last 5 tokens are padding
+        mask[:, 15:] = 0
         out = model(x, attention_mask=mask)
         assert out.shape == (4, self.CLASSES)
 
@@ -75,7 +63,6 @@ class TestBiLSTMClassifier:
         assert torch.allclose(model.embedding.weight.data, matrix, atol=1e-6)
 
     def test_gradient_flows(self):
-        """Backward pass should produce non-None gradients in embedding."""
         model = self._make_model()
         x = torch.randint(0, self.VOCAB, (2, 10))
         out = model(x)
@@ -84,17 +71,7 @@ class TestBiLSTMClassifier:
         assert model.embedding.weight.grad is not None
 
 
-# ──────────────────────────────────────────────────────────────
-# PhoBERT — heavier; skip if model weights are unavailable
-# ──────────────────────────────────────────────────────────────
-
 class TestPhoBertClassifier:
-    """Forward-pass shape checks for PhoBertClassifier.
-
-    Skipped entirely if the PhoBERT weights cannot be loaded (e.g. no
-    internet / no local cache), so CI without GPU/model files still passes.
-    """
-
     @pytest.fixture(autouse=True)
     def _load_model(self):
         try:

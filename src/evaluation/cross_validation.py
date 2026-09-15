@@ -1,14 +1,3 @@
-"""
-Cross-Validation Evaluation for Traditional ML Models
-
-
-Performs stratified k-fold cross-validation for Logistic Regression and SVM
-to provide more robust performance estimates beyond a single train/test split.
-
-This addresses reviewer concerns about single-seed evaluation and strengthens
-the validity of reported results.
-"""
-
 import os
 import json
 import joblib
@@ -32,7 +21,6 @@ log = get_logger(__name__)
 
 
 def get_scorers() -> Dict:
-    """Define scoring metrics for cross-validation."""
     return {
         'accuracy': 'accuracy',
         'precision_macro': make_scorer(precision_score, average='macro'),
@@ -51,21 +39,6 @@ def run_cross_validation(
     n_seeds: int = 3,
     random_state: int = None
 ) -> Dict:
-    """
-    Run stratified k-fold cross-validation with multiple random seeds.
-    
-    Args:
-        model: sklearn model (unfitted)
-        X: Feature matrix
-        y: Labels
-        model_name: Name of the model
-        n_folds: Number of CV folds
-        n_seeds: Number of random seeds
-        random_state: Base random seed
-        
-    Returns:
-        Dictionary with CV results
-    """
     if random_state is None:
         random_state = cfg.RANDOM_STATE
     if n_folds is None:
@@ -98,7 +71,6 @@ def run_cross_validation(
         mean_f1 = np.mean(cv_results['test_f1_macro'])
         log.info(f"Seed {seed}: Mean F1 = {mean_f1:.4f}")
     
-    # Compute summary statistics
     summary = {}
     for metric, scores in all_results.items():
         scores = np.array(scores)
@@ -135,7 +107,6 @@ def main():
     print(f"Running stratified {cv_folds}-fold CV with {cv_seeds} random seeds")
     print(f"Total: {cv_folds * cv_seeds} folds per model for robust estimates")
     
-    # Load TF-IDF features (combine train + val for CV)
     features_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_features.pkl')
     
     if not os.path.exists(features_path):
@@ -144,14 +115,12 @@ def main():
     
     features = joblib.load(features_path)
     
-    # Combine train and validation for cross-validation
     from scipy.sparse import vstack
     X_train = features['X_train']
     X_val = features['X_val']
     y_train = features['y_train']
     y_val = features['y_val']
     
-    # Stack train + val for full CV
     X_cv = vstack([X_train, X_val])
     y_cv = np.concatenate([y_train, y_val])
     
@@ -160,7 +129,6 @@ def main():
     
     results = {}
     
-    # 1. Logistic Regression
     lr_model = LogisticRegression(
         C=cfg.LR.C, max_iter=cfg.LR.max_iter, solver='liblinear',
         class_weight=cfg.LR.class_weight, random_state=cfg.RANDOM_STATE, n_jobs=cfg.LR.n_jobs
@@ -170,7 +138,6 @@ def main():
         n_folds=cv_folds, n_seeds=cv_seeds
     )
     
-    # 2. SVM
     svm_model = SVC(
         C=cfg.SVM.C, kernel=cfg.SVM.kernel, gamma=cfg.SVM.gamma,
         class_weight=cfg.SVM.class_weight, random_state=cfg.RANDOM_STATE, probability=True
@@ -180,11 +147,9 @@ def main():
         n_folds=cv_folds, n_seeds=cv_seeds
     )
     
-    # Save results
     results_dir = cfg.PATHS.tables_dir
     os.makedirs(results_dir, exist_ok=True)
     
-    # Save detailed results
     cv_output = {
         'description': f'Stratified {cv_folds}-fold cross-validation with {cv_seeds} random seeds',
         'total_folds_per_model': cv_folds * cv_seeds,
@@ -201,7 +166,6 @@ def main():
     with open(os.path.join(results_dir, 'cross_validation_results.json'), 'w') as f:
         json.dump(cv_output, f, indent=2)
     
-    # Create comparison table
     rows = []
     for model_name, model_results in results.items():
         rows.append({
@@ -216,7 +180,6 @@ def main():
     cv_df = pd.DataFrame(rows)
     cv_df.to_csv(os.path.join(results_dir, 'cross_validation_summary.csv'), index=False)
     
-    # Save LaTeX table
     with open(os.path.join(results_dir, 'cross_validation.tex'), 'w') as f:
         f.write(f"% Kết quả kiểm chéo ({cv_folds}-fold, {cv_seeds} seed)\n")
         f.write(cv_df.to_latex(index=False, escape=True))

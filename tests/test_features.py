@@ -1,4 +1,3 @@
-"""Tests for feature extractors (TF-IDF, Embedding, PhoBERT tokenizer)."""
 
 import numpy as np
 import pandas as pd
@@ -7,10 +6,6 @@ import pytest
 from src.features.tfidf_features import TfidfFeatureExtractor
 from src.features.embedding_features import EmbeddingFeatureExtractor, Vocabulary
 
-
-# ──────────────────────────────────────────────────────────────
-# Vocabulary
-# ──────────────────────────────────────────────────────────────
 
 class TestVocabulary:
 
@@ -36,10 +31,6 @@ class TestVocabulary:
         indices = vocab.text_to_indices("hello unknown_xyz_token")
         assert vocab.UNK_IDX in indices
 
-
-# ──────────────────────────────────────────────────────────────
-# TF-IDF
-# ──────────────────────────────────────────────────────────────
 
 class TestTfidfFeatureExtractor:
 
@@ -77,10 +68,6 @@ class TestTfidfFeatureExtractor:
         assert len(names) > 0
 
 
-# ──────────────────────────────────────────────────────────────
-# Embedding
-# ──────────────────────────────────────────────────────────────
-
 class TestEmbeddingFeatureExtractor:
 
     @pytest.fixture()
@@ -108,10 +95,6 @@ class TestEmbeddingFeatureExtractor:
         ext.fit(sample_texts)
         assert ext.vocab_size > 2  # at least PAD + UNK + some words
 
-
-# ──────────────────────────────────────────────────────────────
-# PhoBERT tokenizer — skipped if weights unavailable
-# ──────────────────────────────────────────────────────────────
 
 class TestPhoBertFeatureExtractor:
 

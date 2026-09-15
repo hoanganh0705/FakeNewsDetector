@@ -1,0 +1,20 @@
+\begin{table*}[h]
+  \centering
+  \caption[Độ trung thực của giải thích cấp token]{Độ trung thực của giải thích cấp token: mức giảm xác suất trung bình sau khi che 5 token được attribution đánh giá quan trọng nhất.}
+  \label{tab:attribution-faithfulness}
+  \small
+  \setlength{\tabcolsep}{6pt}
+  \begin{tabular}{lc}
+    \toprule
+    \textbf{Mô hình -- Phương pháp} & \textbf{Mức giảm xác suất (Mean)} \\
+    \midrule
+    Logistic Regression -- SHAP                & \attrfaithfulnesslR{} \\
+    SVM -- SHAP                                & \attrfaithfulnesssVM{} \\
+    BiLSTM -- Integrated Gradients             & \attrfaithfulnessbilstm{} \\
+    BiLSTM -- Simple Gradients                 & \attrfaithfulnessbilstmgrad{} \\
+    PhoBERT -- SHAP                            & \attrfaithfulnessphobERTSHAP{} \\
+    PhoBERT -- Integrated Gradients            & \attrfaithfulnessphobERTIG{} \\
+    PhoBERT -- Attention Rollout               & \attrfaithfulnessphobERTRollout{} \\
+    \bottomrule
+  \end{tabular}
+\end{table*}

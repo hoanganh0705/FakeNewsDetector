@@ -1,13 +1,3 @@
-"""
-Error Analysis Script
-
-
-Analyzes model errors to understand:
-1. What types of news are misclassified
-2. Common patterns in errors
-3. Differences between models
-"""
-
 import os
 import joblib
 import numpy as np
@@ -24,12 +14,9 @@ log = get_logger(__name__)
 
 
 def load_test_data_with_predictions():
-    """Load test data and predictions from all models."""
-    # Load test data
     test_path = os.path.join(cfg.PATHS.splits_dir, 'test.csv')
     test_df = load_csv(test_path, required_columns=['text', 'label'])
     
-    # Load predictions
     models = list(MODEL_DIR_MAP.values())           # ['lr', 'svm', 'bilstm', 'bert']
     model_names = list(MODEL_DIR_MAP.keys())        # ['Logistic Regression', ...]
     
@@ -45,22 +32,18 @@ def load_test_data_with_predictions():
 
 
 def analyze_error_patterns(test_df: pd.DataFrame, model_name: str):
-    """Analyze error patterns for a specific model."""
     pred_col = f'{model_name}_pred'
     correct_col = f'{model_name}_correct'
     
     if pred_col not in test_df.columns:
         return None
     
-    # Get errors
     errors_df = test_df[test_df[correct_col] == 0].copy()
     correct_df = test_df[test_df[correct_col] == 1].copy()
     
-    # Calculate text length
     errors_df['text_len'] = errors_df['text'].astype(str).apply(len)
     correct_df['text_len'] = correct_df['text'].astype(str).apply(len)
     
-    # Error analysis
     analysis = {
         'total_errors': len(errors_df),
         'error_rate': len(errors_df) / len(test_df),
@@ -74,13 +57,11 @@ def analyze_error_patterns(test_df: pd.DataFrame, model_name: str):
 
 
 def plot_error_analysis(test_df: pd.DataFrame, save_dir: str):
-    """Create visualizations for error analysis."""
     os.makedirs(save_dir, exist_ok=True)
     
     model_names = ['Logistic Regression', 'SVM', 'BiLSTM', 'PhoBERT']
     available_models = [m for m in model_names if f'{m}_pred' in test_df.columns]
     
-    # 1. Error rate comparison
     fig, ax = plt.subplots(figsize=(10, 6))
     error_rates = []
     
@@ -107,7 +88,6 @@ def plot_error_analysis(test_df: pd.DataFrame, save_dir: str):
     plt.close()
     log.info(f"Saved error rate comparison")
     
-    # 2. False Positives vs False Negatives
     fig, ax = plt.subplots(figsize=(10, 6))
     
     fp_rates = []
@@ -137,7 +117,6 @@ def plot_error_analysis(test_df: pd.DataFrame, save_dir: str):
     plt.close()
     log.info(f"Saved FP/FN comparison")
     
-    # 3. Text length distribution for errors vs correct
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     axes = axes.flatten()
     
@@ -163,9 +142,7 @@ def plot_error_analysis(test_df: pd.DataFrame, save_dir: str):
     plt.close()
     log.info(f"Saved text length analysis")
     
-    # 4. Agreement between models
     if len(available_models) >= 2:
-        # Count how many models agree on each prediction
         test_df['model_agreement'] = 0
         for model in available_models:
             pred_col = f'{model}_pred'
@@ -188,17 +165,14 @@ def plot_error_analysis(test_df: pd.DataFrame, save_dir: str):
 
 
 def find_hard_examples(test_df: pd.DataFrame, n: int = 10):
-    """Find examples that all models got wrong."""
     model_names = ['Logistic Regression', 'SVM', 'BiLSTM', 'PhoBERT']
     available_models = [m for m in model_names if f'{m}_pred' in test_df.columns]
     
-    # Count errors per sample
     test_df['total_errors'] = 0
     for model in available_models:
         correct_col = f'{model}_correct'
         test_df['total_errors'] += (1 - test_df[correct_col])
     
-    # Get hardest examples (all models wrong)
     hardest = test_df[test_df['total_errors'] == len(available_models)]
     
     log.info(f"\n Found {len(hardest)} examples that ALL models got wrong:")
@@ -213,15 +187,6 @@ def find_hard_examples(test_df: pd.DataFrame, n: int = 10):
 
 
 def track_per_id_confidence(test_df: pd.DataFrame, save_path: str) -> pd.DataFrame:
-    """
-    Recommendation #3 — Per-ID Confidence Tracking.
-
-    For every test sample, records whether each available model predicted it
-    correctly and how confident it was. Rows are sorted so the hardest samples
-    (wrong by the most models) appear first.
-
-    Saves results to `save_path` (CSV).
-    """
     model_names = ['Logistic Regression', 'SVM', 'BiLSTM', 'PhoBERT']
     available_models = [m for m in model_names if f'{m}_pred' in test_df.columns]
 
@@ -269,14 +234,7 @@ def analyze_hard_examples(
     tables_dir: Optional[str] = None,
     figures_dir: Optional[str] = None,
 ) -> pd.DataFrame:
-    """Thin wrapper around :func:`src.evaluation.hard_cases.analyze_hard_examples`.
 
-    This function exists so that callers importing
-    ``src.evaluation.error_analysis`` continue to find ``analyze_hard_examples``
-    as documented in the project plan (§4.6.7 / Step 4.2).  Internally it
-    delegates to the dedicated ``hard_cases`` module — see that module for
-    full documentation.
-    """
     from src.evaluation.hard_cases import analyze_hard_examples as _impl
 
     log.info("=" * 60)
@@ -293,20 +251,15 @@ def analyze_hard_examples(
 
 
 def main():
-    """Run error analysis."""
-
-
     print("="*60)
     print("ERROR ANALYSIS")
     print("="*60)
     
-    # Load data with predictions
     print("\n Loading test data with predictions...")
     test_df = load_test_data_with_predictions()
     
     print(f"Total test samples: {len(test_df)}")
     
-    # Analyze each model
     print("\n Error Analysis by Model:")
     print("-"*60)
     
@@ -323,22 +276,16 @@ def main():
             print(f"Avg Text Length (Errors): {analysis['avg_text_len_errors']:.0f}")
             print(f"Avg Text Length (Correct): {analysis['avg_text_len_correct']:.0f}")
     
-    # Generate visualizations
     figures_dir = os.path.join(cfg.PATHS.figures_dir, 'error_analysis')
     print(f"\n Generating error analysis visualizations...")
     plot_error_analysis(test_df, figures_dir)
     
-    # Find hard examples
     print("\n" + "="*60)
     hardest = find_hard_examples(test_df, n=5)
     
-    # Save error analysis results
     tables_dir = cfg.PATHS.tables_dir
     os.makedirs(tables_dir, exist_ok=True)
 
-    # ── Recommendation #1: Enhanced hard-example export ──────────────
-    # Join back to raw.csv via id to include original (pre-segmentation)
-    # text alongside the segmented version for human readability.
     hardest_path = os.path.join(tables_dir, 'hard_examples.csv')
     if len(hardest) > 0:
         raw_path = cfg.PATHS.raw_data
@@ -349,14 +296,12 @@ def main():
             raw_df = pd.read_csv(raw_path, usecols=['id', 'text'])
             raw_df = raw_df.rename(columns={'text': 'original_text'})
             export_df = export_df.merge(raw_df, on='id', how='left')
-            # Place original_text right after id for readability
             cols = ['id', 'original_text', 'text', 'label']
             export_df = export_df[[c for c in cols if c in export_df.columns]]
 
         export_df.to_csv(hardest_path, index=False)
         print(f"\n Hard examples saved to {hardest_path}")
 
-    # ── Recommendation #3: Per-ID confidence tracking ────────────────
     confidence_path = os.path.join(tables_dir, 'per_id_confidence.csv')
     track_per_id_confidence(test_df, confidence_path)
 

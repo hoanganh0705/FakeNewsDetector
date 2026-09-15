@@ -12,7 +12,6 @@ from src.features.embedding_features import EmbeddingFeatureExtractor
 
 
 class TestTfidfSaveLoad:
-    """TfidfFeatureExtractor save → load round-trip."""
 
     def test_round_trip(self, tmp_path):
         texts = pd.Series([
@@ -33,7 +32,6 @@ class TestTfidfSaveLoad:
 
     def test_load_preserves_config(self, tmp_path):
         ext = TfidfFeatureExtractor(max_features=42, min_df=1, ngram_range=(1, 3))
-        # Need to fit before saving — use multi-letter tokens to avoid stop-word filtering
         ext.fit(pd.Series([
             "alpha beta gamma delta epsilon zeta",
             "eta theta iota kappa lambda mu",
@@ -49,7 +47,6 @@ class TestTfidfSaveLoad:
 
 
 class TestEmbeddingSaveLoad:
-    """EmbeddingFeatureExtractor save → load round-trip."""
 
     def test_round_trip(self, tmp_path):
         texts = pd.Series(["aaa bbb ccc", "aaa ddd", "eee bbb"])
@@ -66,7 +63,6 @@ class TestEmbeddingSaveLoad:
 
 
 class TestLRTrainerSaveLoad:
-    """LogisticRegressionTrainer save → load round-trip (fit, save, load, predict)."""
 
     def test_round_trip(self, tmp_path):
         from src.training.train_lr import LogisticRegressionTrainer

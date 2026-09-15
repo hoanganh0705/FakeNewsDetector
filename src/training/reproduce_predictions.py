@@ -1,58 +1,3 @@
-"""
-Phase 0 — reproduce_predictions.py
-
-End-to-end reproduction of the 4 models (LR, SVM, BiLSTM, PhoBERT) used
-in the Vietnamese Fake News Detector paper, with **on-disk artefacts
-that match the format needed by Phase 1/2/3 downstream analyses**.
-
-Stages
-------
-Stage A — sklearn models (LR + SVM)
-    Re-loads the existing ``experiments/{lr,svm}/*.pkl`` checkpoints
-    and re-runs inference on val + test to capture ``raw_logits.pkl``.
-    No retraining, no network access.
-
-Stage B — BiLSTM (train from scratch)
-    Loads ``data/features/embedding_features.pkl`` +
-    ``embedding_extractor.pkl``, builds ``BiLSTMClassifier`` per
-    ``cfg.BILSTM``, trains with early stopping, saves model + predictions
-    + raw_logits to ``experiments/bilstm/``.
-
-Stage C — PhoBERT (fine-tune)
-    Loads ``data/features/phobert_features.pkl``, builds ``PhoBertClassifier``,
-    fine-tunes ``vinai/phobert-base`` for 3 epochs (or until early stop),
-    saves model + predictions + raw_logits to ``experiments/bert/``.
-
-Outputs (per model, in ``experiments/<model>/``)
-------------------------------------------------
-- ``predictions.pkl``     — ``{y_true, y_pred, y_prob}``  (test split)
-- ``raw_logits.pkl``      — ``{val: {...}, test: {...}}``  with raw_logit per sample
-- ``metrics.json``        — val + test metrics dict (overwrites prior)
-- ``<model>_model.pt|pkl``— checkpoint (BiLSTM/PhoBERT only)
-- ``experiment_log.json`` — append a Phase-0 entry
-
-Usage
------
-    # Full retrain (sklearn + BiLSTM + PhoBERT), idempotent:
-    python src/training/reproduce_predictions.py --stage all
-
-    # Just one stage:
-    python src/training/reproduce_predictions.py --stage A
-    python src/training/reproduce_predictions.py --stage B
-    python src/training/reproduce_predictions.py --stage C
-
-    # Skip retraining of BiLSTM/PhoBERT (just re-load existing ckpts):
-    python src/training/reproduce_predictions.py --stage all --skip-retrain
-
-Notes
------
-- Random seeds are pinned via ``src.utils.common.set_reproducibility_seeds``.
-- Deviations from paper numbers are expected (±1% F1) due to library
-  version drift.  Documented in ``experiments/<model>/metrics.json``.
-- For PhoBERT on CPU: expect 6-12 hours for 3 epochs.  GPU strongly
-  recommended — use ``--device cuda`` if available.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -66,7 +11,6 @@ from pathlib import Path
 import joblib
 import numpy as np
 
-# Make `config` importable when running as a script
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -80,10 +24,6 @@ from src.evaluation.metrics import compute_metrics, save_metrics  # noqa: E402
 log = get_logger(__name__)
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Stage A — sklearn models (LR + SVM)
-# ─────────────────────────────────────────────────────────────────────
-
 def _to_list(arr):
     if hasattr(arr, "tolist"):
         return arr.tolist()
@@ -91,8 +31,6 @@ def _to_list(arr):
 
 
 def _resolve_raw_logit_sklearn(model, X: np.ndarray) -> np.ndarray:
-    """Return pre-sigmoid / pre-platt score for any sklearn-style model."""
-    # CalibratedClassifierCV path (linear SVM is wrapped)
     if hasattr(model, "calibrated_classifiers_"):
         base = getattr(model, "estimator", None) or getattr(model, "base_estimator", None)
         if base is None:
@@ -147,10 +85,6 @@ def stage_a(force: bool = False) -> None:
         log.info("[%s] saved → %s", name, out_path)
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Stage B — BiLSTM (train from scratch)
-# ─────────────────────────────────────────────────────────────────────
-
 def stage_b(skip_retrain: bool = False, device: str = None, epochs: int = None) -> None:
     log.info("=" * 70)
     log.info("Stage B — BiLSTM (train from scratch)")
@@ -201,21 +135,18 @@ def stage_b(skip_retrain: bool = False, device: str = None, epochs: int = None) 
         log.info("Loading BiLSTM checkpoint from %s", model_ckpt)
         trainer = BiLSTMTrainer.load(str(model_ckpt), device=device)
 
-    # ── Inference on val + test ──
     log.info("Running BiLSTM inference on val + test ...")
     val_pred, val_prob = trainer.predict(val_loader)
     val_logits = _extract_logits_bilstm(trainer, val_loader)  # shape (N, 2)
     test_pred, test_prob = trainer.predict(test_loader)
     test_logits = _extract_logits_bilstm(trainer, test_loader)
 
-    # Save predictions.pkl (test split)
     joblib.dump({
         "y_true": _to_list(y_test),
         "y_pred": _to_list(test_pred),
         "y_prob": _to_list(test_prob),
     }, pred_path)
 
-    # Save raw_logits.pkl (both splits)
     joblib.dump({
         "model_name": "BiLSTM",
         "timestamp": datetime.now().isoformat(),
@@ -235,12 +166,10 @@ def stage_b(skip_retrain: bool = False, device: str = None, epochs: int = None) 
         },
     }, logits_path)
 
-    # metrics.json
     val_metrics = compute_metrics(np.asarray(y_val), val_pred, val_prob)
     test_metrics = compute_metrics(np.asarray(y_test), test_pred, test_prob)
     save_metrics({
         "model": "BiLSTM",
-        "phase": "Phase 0 reproduce",
         "timestamp": datetime.now().isoformat(),
         "config": {
             "vocab_size": vocab_size,
@@ -272,10 +201,6 @@ def _extract_logits_bilstm(trainer, loader) -> np.ndarray:
             out.append(logits.cpu().numpy())
     return np.concatenate(out, axis=0)
 
-
-# ─────────────────────────────────────────────────────────────────────
-# Stage C — PhoBERT (fine-tune)
-# ─────────────────────────────────────────────────────────────────────
 
 def stage_c(skip_retrain: bool = False, device: str = None, epochs: int = None) -> None:
     log.info("=" * 70)
@@ -356,7 +281,6 @@ def stage_c(skip_retrain: bool = False, device: str = None, epochs: int = None) 
     test_metrics = compute_metrics(np.asarray(y_test), test_pred, test_prob)
     save_metrics({
         "model": "PhoBERT",
-        "phase": "Phase 0 reproduce",
         "timestamp": datetime.now().isoformat(),
         "config": {
             "model_name": cfg.PHOBERT.model_name,
@@ -385,13 +309,9 @@ def _extract_logits_phobert(trainer, loader) -> np.ndarray:
     return np.concatenate(out, axis=0)
 
 
-# ─────────────────────────────────────────────────────────────────────
-# CLI
-# ─────────────────────────────────────────────────────────────────────
-
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Phase 0 — reproduce all 4 models' predictions.pkl + raw_logits.pkl",
+        description="Reproduce all 4 models' predictions.pkl + raw_logits.pkl",
     )
     parser.add_argument("--stage", choices=["A", "B", "C", "all"], default="all",
                         help="Which stage to run (default: all)")
@@ -416,7 +336,7 @@ def main() -> None:
             stage_c(skip_retrain=args.skip_retrain, device=args.device, epochs=args.epochs)
 
     log.info("=" * 70)
-    log.info("Phase 0 COMPLETE in %.1fs", time.time() - t0)
+    log.info("Reproduce COMPLETE in %.1fs", time.time() - t0)
     log.info("Verify with:  python -m pytest tests/test_save_load.py -v")
     log.info("=" * 70)
 

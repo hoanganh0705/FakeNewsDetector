@@ -1,4 +1,3 @@
-# Evaluation module
 from .metrics import (
     compute_metrics,
     print_metrics,
@@ -14,14 +13,14 @@ from .calibration_analysis import (
     brier_score,
     plot_calibration_curves,
 )
-from .post_hoc_calibration import (  # noqa: F401
+from .post_hoc_calibration import (
     platt_scaling,
     temperature_scaling,
     isotonic_regression,
     evaluate_recalibration,
     run_post_hoc_calibration,
 )
-from .hard_cases import (  # noqa: F401
+from .hard_cases import (
     HardExampleAnnotation,
     analyze_hard_examples,
 )
@@ -38,13 +37,11 @@ __all__ = [
     'maximum_calibration_error',
     'brier_score',
     'plot_calibration_curves',
-    # Phase 2
     'platt_scaling',
     'temperature_scaling',
     'isotonic_regression',
     'evaluate_recalibration',
     'run_post_hoc_calibration',
-    # Phase 4
     'HardExampleAnnotation',
     'analyze_hard_examples',
 ]

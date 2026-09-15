@@ -1,15 +1,3 @@
-"""
-Ablation Study for Vietnamese Fake News Detection
-
-
-Evaluates the impact of different components on model performance:
-1. TF-IDF vocabulary size impact (LR)
-2. N-gram range impact (LR)
-3. Word segmentation impact (LR)
-4. BiLSTM architecture variations
-5. PhoBERT max sequence length impact
-"""
-
 import os
 import json
 import time
@@ -30,7 +18,6 @@ log = get_logger(__name__)
 
 
 def load_text_data() -> Tuple[pd.Series, pd.Series, np.ndarray, np.ndarray]:
-    """Load train and test text data."""
     train_path = os.path.join(cfg.PATHS.splits_dir, 'train.csv')
     test_path = os.path.join(cfg.PATHS.splits_dir, 'test.csv')
     
@@ -46,7 +33,6 @@ def load_text_data() -> Tuple[pd.Series, pd.Series, np.ndarray, np.ndarray]:
 
 
 def _build_lr_model(C: float = None) -> LogisticRegression:
-    """Build a config-aligned LR model for ablation runs."""
     return LogisticRegression(
         C=C if C is not None else cfg.LR.C,
         max_iter=cfg.LR.max_iter,
@@ -58,11 +44,6 @@ def _build_lr_model(C: float = None) -> LogisticRegression:
 
 
 def ablation_tfidf_vocab_size(X_train_text, X_test_text, y_train, y_test) -> List[Dict]:
-    """
-    Ablation: Impact of TF-IDF vocabulary size on LR performance.
-    
-    Tests vocabulary sizes: 1000, 5000, 10000, 20000, 50000
-    """
     log.info("\n" + "="*60)
     log.info("ABLATION 1: TF-IDF Vocabulary Size")
     log.info("="*60)
@@ -103,11 +84,6 @@ def ablation_tfidf_vocab_size(X_train_text, X_test_text, y_train, y_test) -> Lis
 
 
 def ablation_ngram_range(X_train_text, X_test_text, y_train, y_test) -> List[Dict]:
-    """
-    Ablation: Impact of n-gram range on LR performance.
-    
-    Tests: unigrams only, bigrams, trigrams, (1,3)
-    """
     log.info("\n" + "="*60)
     log.info("ABLATION 2: N-gram Range")
     log.info("="*60)
@@ -156,11 +132,6 @@ def ablation_ngram_range(X_train_text, X_test_text, y_train, y_test) -> List[Dic
 
 
 def ablation_word_segmentation(X_train_text, X_test_text, y_train, y_test) -> List[Dict]:
-    """
-    Ablation: Impact of Vietnamese word segmentation.
-    
-    Compares: with segmentation (processed text) vs without (raw text).
-    """
     log.info("\n" + "="*60)
     log.info("ABLATION 3: Word Segmentation Impact")
     log.info("="*60)
@@ -171,7 +142,6 @@ def ablation_word_segmentation(X_train_text, X_test_text, y_train, y_test) -> Li
         if use_seg:
             X_train_text_seg = X_train_text
         else:
-            # Remove underscore connections (undo word segmentation)
             X_train_text_seg = X_train_text.str.replace('_', ' ', regex=False)
         
         if use_seg:
@@ -207,9 +177,6 @@ def ablation_word_segmentation(X_train_text, X_test_text, y_train, y_test) -> Li
 
 
 def ablation_lr_regularization(X_train_text, X_test_text, y_train, y_test) -> List[Dict]:
-    """
-    Ablation: Impact of regularization strength on LR.
-    """
     log.info("\n" + "="*60)
     log.info("ABLATION 4: Regularization Strength (LR)")
     log.info("="*60)
@@ -245,9 +212,6 @@ def ablation_lr_regularization(X_train_text, X_test_text, y_train, y_test) -> Li
 
 
 def ablation_sublinear_tf(X_train_text, X_test_text, y_train, y_test) -> List[Dict]:
-    """
-    Ablation: Impact of sublinear TF scaling.
-    """
     log.info("\n" + "="*60)
     log.info("ABLATION 5: Sublinear TF Scaling")
     log.info("="*60)
@@ -285,21 +249,16 @@ def ablation_sublinear_tf(X_train_text, X_test_text, y_train, y_test) -> List[Di
 
 
 def main():
-    """Run all ablation studies."""
-
-
     print("="*60)
     print("ABLATION STUDY")
     print("="*60)
     print("Evaluating component contributions to model performance")
     
-    # Load data
     X_train_text, X_test_text, y_train, y_test = load_text_data()
     print(f"\nDataset: {len(X_train_text)} train, {len(X_test_text)} test")
     
     all_results = {}
     
-    # Run ablation studies
     all_results['vocab_size'] = ablation_tfidf_vocab_size(
         X_train_text, X_test_text, y_train, y_test
     )
@@ -320,7 +279,6 @@ def main():
         X_train_text, X_test_text, y_train, y_test
     )
     
-    # Save results
     results_dir = cfg.PATHS.tables_dir
     os.makedirs(results_dir, exist_ok=True)
     
@@ -333,10 +291,8 @@ def main():
     with open(os.path.join(results_dir, 'ablation_study.json'), 'w') as f:
         json.dump(output, f, indent=2)
     
-    # Create summary table
     summary_rows = []
     
-    # Best vocab size
     best_vocab = max(all_results['vocab_size'], key=lambda x: x['f1_macro'])
     summary_rows.append({
         'Component': 'Kích thước từ vựng',
@@ -344,7 +300,6 @@ def main():
         'F1-Score': best_vocab['f1_macro']
     })
     
-    # Best ngram
     best_ngram = max(all_results['ngram_range'], key=lambda x: x['f1_macro'])
     summary_rows.append({
         'Component': 'Phạm vi N-gram',
@@ -352,7 +307,6 @@ def main():
         'F1-Score': best_ngram['f1_macro']
     })
     
-    # Segmentation impact
     seg_results = all_results['word_segmentation']
     for r in seg_results:
         summary_rows.append({
@@ -361,7 +315,6 @@ def main():
             'F1-Score': r['f1_macro']
         })
     
-    # Sublinear TF
     for r in all_results['sublinear_tf']:
         summary_rows.append({
             'Component': 'Co giãn TF',
@@ -372,7 +325,6 @@ def main():
     summary_df = pd.DataFrame(summary_rows)
     summary_df.to_csv(os.path.join(results_dir, 'ablation_summary.csv'), index=False)
     
-    # Save LaTeX table
     with open(os.path.join(results_dir, 'ablation_study.tex'), 'w') as f:
         f.write("% Kết quả nghiên cứu khả trừ\n")
         f.write("\\begin{table}[h]\n")
@@ -384,7 +336,6 @@ def main():
         f.write("\\textbf{Thành phần} & \\textbf{Cấu hình} & \\textbf{Độ chính xác} & \\textbf{F1-Score} \\\\\n")
         f.write("\\midrule\n")
         
-        # Vocab size
         f.write("\\multirow{5}{*}{Kích thước từ vựng}")
         for r in all_results['vocab_size']:
             best = " $\\star$" if r == best_vocab else ""
@@ -392,7 +343,6 @@ def main():
         
         f.write("\\midrule\n")
         
-        # N-gram
         f.write("\\multirow{5}{*}{Phạm vi N-gram}")
         for r in all_results['ngram_range']:
             best = " $\\star$" if r == best_ngram else ""
@@ -400,14 +350,12 @@ def main():
         
         f.write("\\midrule\n")
         
-        # Segmentation
         f.write("\\multirow{2}{*}{Tách từ}")
         for r in all_results['word_segmentation']:
             f.write(f" & {r['config']} & {r['accuracy']:.4f} & {r['f1_macro']:.4f} \\\\\n")
         
         f.write("\\midrule\n")
-        
-        # Sublinear TF
+            
         f.write("\\multirow{2}{*}{Co giãn TF}")
         for r in all_results['sublinear_tf']:
             f.write(f" & {r['config']} & {r['accuracy']:.4f} & {r['f1_macro']:.4f} \\\\\n")

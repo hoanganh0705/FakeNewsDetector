@@ -155,7 +155,6 @@ class BiLSTMTrainer:
         for epoch in range(epochs):
             epoch_start = time.time()
             
-            # Training phase
             self.model.train()
             train_loss = 0
             train_correct = 0
@@ -194,13 +193,11 @@ class BiLSTMTrainer:
             train_loss /= len(train_loader)
             train_acc = train_correct / train_total
             
-            # Validation phase
             val_loss, val_acc, val_f1 = self._evaluate(val_loader)
             
             # Update scheduler
             self.scheduler.step()
             
-            # Save history
             self.training_history['train_loss'].append(train_loss)
             self.training_history['train_acc'].append(train_acc)
             self.training_history['val_loss'].append(val_loss)
@@ -213,10 +210,8 @@ class BiLSTMTrainer:
                   f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f} | "
                   f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}")
 
-            # Per-epoch GPU telemetry (no-op when monitor unavailable).
             gpu_monitor.log_epoch(epoch + 1, epochs)
 
-            # Early stopping check
             if val_f1 > best_val_f1:
                 best_val_f1 = val_f1
                 self.best_val_f1 = val_f1
@@ -233,7 +228,6 @@ class BiLSTMTrainer:
         log.info(f"\n Training complete in {total_time:.2f}s")
         log.info(f"Best Val F1: {self.best_val_f1:.4f}")
         
-        # Restore best model
         if self.best_model_state is not None:
             self.model.load_state_dict(self.best_model_state)
         
@@ -242,7 +236,6 @@ class BiLSTMTrainer:
         return self
     
     def _evaluate(self, data_loader: DataLoader) -> Tuple[float, float, float]:
-        """Evaluate model on a data loader."""
         self.model.eval()
         total_loss = 0
         all_preds = []

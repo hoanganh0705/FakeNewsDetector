@@ -1,18 +1,3 @@
-"""
-Calibration Analysis for Fake News Detection Models
-
-Evaluates how well a model's predicted probabilities match actual outcomes.
-A well-calibrated model predicting 80% probability should be correct ~80% of the time.
-
-Metrics:
-- Reliability diagrams (calibration curves)
-- Expected Calibration Error (ECE)
-- Maximum Calibration Error (MCE)
-- Brier Score
-
-Uses saved predictions (predictions.pkl) — no retraining needed.
-"""
-
 import os
 import json
 import joblib
@@ -27,7 +12,6 @@ from src.utils.logger import get_logger
 
 log = get_logger(__name__)
 
-# ── Publication-quality plot settings ────────────────────────────────────────
 plt.rcParams.update({
     'font.size': 11,
     'font.family': 'serif',
@@ -50,31 +34,16 @@ MODEL_COLORS = {
 }
 
 
-# ── Core calibration metrics ────────────────────────────────────────────────
-
 def compute_calibration_curve(
     y_true: np.ndarray,
     y_prob: np.ndarray,
     n_bins: int = 10,
     strategy: str = "uniform",
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Compute calibration curve (reliability diagram data).
-
-    Args:
-        y_true:   Binary ground-truth labels (0/1).
-        y_prob:   Predicted probability of positive class.
-        n_bins:   Number of bins.
-        strategy: 'uniform' (equal-width) or 'quantile' (equal-count).
-
-    Returns:
-        bin_centers:       Midpoint of each bin on x-axis (mean predicted prob).
-        bin_true_fracs:    Fraction of positives in each bin (actual accuracy).
-        bin_counts:        Number of samples per bin.
-    """
     if strategy == "quantile":
         quantiles = np.linspace(0, 1, n_bins + 1)
         bin_edges = np.percentile(y_prob, quantiles * 100)
-        bin_edges = np.unique(bin_edges)  # deduplicate
+        bin_edges = np.unique(bin_edges)
     else:
         bin_edges = np.linspace(0, 1, n_bins + 1)
 
@@ -105,12 +74,6 @@ def expected_calibration_error(
     y_prob: np.ndarray,
     n_bins: int = 10,
 ) -> float:
-    """Compute Expected Calibration Error (ECE).
-
-    ECE = sum_b (|B_b| / N) * |acc(B_b) - conf(B_b)|
-
-    Lower is better.  0 = perfectly calibrated.
-    """
     bin_edges = np.linspace(0, 1, n_bins + 1)
     ece = 0.0
     n = len(y_true)
@@ -138,10 +101,6 @@ def maximum_calibration_error(
     y_prob: np.ndarray,
     n_bins: int = 10,
 ) -> float:
-    """Compute Maximum Calibration Error (MCE).
-
-    MCE = max_b |acc(B_b) - conf(B_b)|
-    """
     bin_edges = np.linspace(0, 1, n_bins + 1)
     mce = 0.0
 
@@ -164,18 +123,10 @@ def maximum_calibration_error(
 
 
 def brier_score(y_true: np.ndarray, y_prob: np.ndarray) -> float:
-    """Compute Brier Score.  Lower is better.  0 = perfect."""
     return float(np.mean((y_prob - y_true) ** 2))
 
 
-# ── Load predictions helper ─────────────────────────────────────────────────
-
 def load_all_predictions() -> Dict[str, Dict[str, np.ndarray]]:
-    """Load saved predictions for all available models.
-
-    Returns:
-        {model_name: {'y_true': ..., 'y_pred': ..., 'y_prob': ...}}
-    """
     all_preds = {}
     for model_name, dir_name in MODEL_DIR_MAP.items():
         pred_path = os.path.join(cfg.PATHS.experiments_dir, dir_name, 'predictions.pkl')
@@ -192,17 +143,10 @@ def load_all_predictions() -> Dict[str, Dict[str, np.ndarray]]:
     return all_preds
 
 
-# ── Per-model calibration analysis ──────────────────────────────────────────
-
 def analyze_calibration(
     all_preds: Dict[str, Dict[str, np.ndarray]],
     n_bins: int = 10,
 ) -> Dict[str, dict]:
-    """Compute calibration metrics for all models.
-
-    Returns:
-        {model_name: {ece, mce, brier, curve: {centers, fracs, counts}}}
-    """
     results = {}
     for name, preds in all_preds.items():
         y_true = preds['y_true']
@@ -230,18 +174,12 @@ def analyze_calibration(
     return results
 
 
-# ── Plotting ────────────────────────────────────────────────────────────────
-
 def plot_calibration_curves(
     all_preds: Dict[str, Dict[str, np.ndarray]],
     cal_results: Dict[str, dict],
     save_path: str,
     n_bins: int = 10,
 ):
-    """Create reliability diagrams for all models in a single figure.
-
-    Layout: 2×2 grid of individual calibration curves + a combined overlay.
-    """
     model_names = [n for n in MODEL_DIR_MAP.keys() if n in all_preds]
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
@@ -255,17 +193,14 @@ def plot_calibration_curves(
         counts = np.array(res['curve']['counts'])
         color = MODEL_COLORS.get(name, '#333333')
 
-        # Perfect calibration reference
         ax.plot([0, 1], [0, 1], 'k--', alpha=0.5, label='Hiệu chuẩn hoàn hảo')
 
-        # Calibration curve
         ax.plot(
             centers, fracs, 's-',
             color=color, linewidth=2, markersize=6,
             label=f'{name}\n(ECE={res["ece"]:.4f})',
         )
 
-        # Histogram of predictions
         ax2 = ax.twinx()
         ax2.bar(
             centers, counts, width=1.0 / n_bins * 0.7,
@@ -299,7 +234,6 @@ def plot_calibration_overlay(
     cal_results: Dict[str, dict],
     save_path: str,
 ):
-    """Single-axis overlay of all models' calibration curves for comparison."""
     model_names = [n for n in MODEL_DIR_MAP.keys() if n in all_preds]
 
     fig, ax = plt.subplots(figsize=(7, 6))
@@ -333,26 +267,17 @@ def plot_calibration_overlay(
     log.info("Saved calibration overlay → %s", save_path)
 
 
-# ── Save results ────────────────────────────────────────────────────────────
-
 def save_calibration_results(
     cal_results: Dict[str, dict],
     tables_dir: str,
 ) -> Tuple[str, str]:
-    """Save calibration metrics as JSON and CSV.
-
-    Returns:
-        (json_path, csv_path)
-    """
     os.makedirs(tables_dir, exist_ok=True)
 
-    # JSON (full detail)
     json_path = os.path.join(tables_dir, 'calibration_analysis.json')
     with open(json_path, 'w') as f:
         json.dump(cal_results, f, indent=2)
     log.info("Saved calibration JSON → %s", json_path)
 
-    # CSV summary
     rows = []
     for name, res in cal_results.items():
         rows.append({
@@ -369,13 +294,10 @@ def save_calibration_results(
     return json_path, csv_path
 
 
-# ── LaTeX table generation ──────────────────────────────────────────────────
-
 def generate_calibration_latex_table(
     cal_results: Dict[str, dict],
     save_path: str,
 ):
-    """Generate a LaTeX table of calibration metrics for the paper."""
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     lines = [
@@ -389,7 +311,6 @@ def generate_calibration_latex_table(
         r"\midrule",
     ]
 
-    # Find the best (lowest) for bolding
     best_ece = min(r['ece'] for r in cal_results.values())
     best_mce = min(r['mce'] for r in cal_results.values())
     best_brier = min(r['brier'] for r in cal_results.values())
@@ -424,27 +345,20 @@ def generate_calibration_latex_table(
     log.info("Saved calibration LaTeX table → %s", save_path)
 
 
-# ── Main entry point ────────────────────────────────────────────────────────
-
 def main():
-    """Run the complete calibration analysis pipeline."""
     log.info("=" * 60)
     log.info("  CALIBRATION ANALYSIS")
     log.info("=" * 60)
 
-    # 1. Load predictions
     all_preds = load_all_predictions()
     if not all_preds:
         log.error("No predictions found. Run training first.")
         return
 
-    # 2. Compute calibration metrics
     cal_results = analyze_calibration(all_preds, n_bins=10)
 
-    # 3. Save results
     save_calibration_results(cal_results, cfg.PATHS.tables_dir)
 
-    # 4. Generate plots
     figures_dir = cfg.PATHS.paper_figures_dir
     os.makedirs(figures_dir, exist_ok=True)
 
@@ -457,7 +371,6 @@ def main():
         save_path=os.path.join(figures_dir, 'fig_calibration_overlay.png'),
     )
 
-    # Also save to results/figures for reference
     results_fig_dir = cfg.PATHS.figures_dir
     os.makedirs(results_fig_dir, exist_ok=True)
     plot_calibration_curves(
@@ -465,13 +378,11 @@ def main():
         save_path=os.path.join(results_fig_dir, 'calibration_curves.png'),
     )
 
-    # 5. Generate LaTeX table
     generate_calibration_latex_table(
         cal_results,
         save_path=os.path.join(cfg.PATHS.paper_tables_dir, 'table_calibration.tex'),
     )
 
-    # 6. Print summary
     log.info("")
     log.info("=" * 60)
     log.info("  CALIBRATION SUMMARY")

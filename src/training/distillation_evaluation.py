@@ -1,26 +1,3 @@
-"""
-Knowledge-distillation evaluation — produces the comparison tables and
-the publishable F1-vs-size scatter plot for §4.6.8 of the paper.
-
-Loads the trained teacher (``PhoBERT``), the trained student
-(``student_bilstm``) and the original ``BiLSTM`` baseline, then
-computes:
-
-* F1 on the test set
-* Number of trainable parameters
-* Inference latency (per batch, averaged over N runs on CPU)
-* Compression ratio (teacher_params / student_params)
-
-Outputs:
-
-* ``paper/tables/table_distillation.tex``
-* ``paper/figures/fig_distillation_tradeoff.png``
-
-This module re-uses ``src.evaluation.metrics.compute_metrics`` for
-the F1 numbers — the same code path used by every other evaluation
-in the project.
-"""
-
 from __future__ import annotations
 
 import json
@@ -43,11 +20,6 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Helpers
-# ──────────────────────────────────────────────────────────────────────
-
-
 def _count_params_torch(model: torch.nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -61,11 +33,9 @@ def _measure_inference_time(
     sample_inputs: Tuple[torch.Tensor, torch.Tensor],
     n_runs: int = 30,
 ) -> float:
-    """Return median per-batch inference latency in milliseconds."""
     model.eval()
     seqs, mask = sample_inputs
     with torch.no_grad():
-        # Warm-up
         for _ in range(3):
             model(seqs, mask)
         latencies = []
@@ -77,12 +47,11 @@ def _measure_inference_time(
 
 
 def _load_teacher_metrics(model_dir_name: str = "bert") -> Dict:
-    """Load teacher metrics.json (preferred) or compute from predictions."""
     metrics_path = Path(cfg.PATHS.experiments_dir) / model_dir_name / "metrics.json"
     if metrics_path.exists():
         with open(metrics_path) as fh:
             return json.load(fh)
-    log.warning("No metrics.json for %s — computing from predictions.pkl", model_dir_name)
+    log.warning("No metrics.json for %s, computing from predictions.pkl", model_dir_name)
     preds_path = Path(cfg.PATHS.experiments_dir) / model_dir_name / "predictions.pkl"
     if not preds_path.exists():
         raise FileNotFoundError(preds_path)
@@ -100,31 +69,25 @@ def _load_student_metrics() -> Optional[Dict]:
 
 
 def _infer_teacher_params() -> Tuple[int, float]:
-    """Approximate PhoBERT size — it's a fine-tuned ``vinai/phobert-base``."""
-    # vinai/phobert-base has ~135M parameters (12 layers, 768 hidden).
-    # Most of them are frozen during fine-tuning; we report the
-    # *total* parameter count so the compression ratio is meaningful.
     return 135_000_000, 540.0
 
 
 def _infer_bilstm_params() -> Tuple[int, float]:
-    """Approximate the BiLSTM teacher from cfg.BILSTM."""
     try:
-        vocab_size = 20000  # default Vietnamese vocabulary size
+        vocab_size = 20000
         emb = cfg.BILSTM.embedding_dim
         hid = cfg.BILSTM.hidden_dim
         layers = cfg.BILSTM.num_layers
     except Exception:
         return 2_500_000, 10.0
     embed = vocab_size * emb
-    lstm = 4 * (emb + hid + 1) * hid * layers * 2  # bidirectional
+    lstm = 4 * (emb + hid + 1) * hid * layers * 2
     head = (hid * 2) * 2 + 2
     total = embed + lstm + head
     return total, (total * 4) / (1024 ** 2)
 
 
 def _load_teacher_bilstm_model() -> BiLSTMClassifier:
-    """Load the trained BiLSTM checkpoint for inference timing."""
     ckpt_path = Path(cfg.PATHS.experiments_dir) / "bilstm" / "bilstm_model.pt"
     if not ckpt_path.exists():
         raise FileNotFoundError(ckpt_path)
@@ -142,7 +105,6 @@ def _load_teacher_bilstm_model() -> BiLSTMClassifier:
 
 
 def _load_student_model(vocab_size: int) -> StudentBiLSTM:
-    """Load the trained student checkpoint for inference timing."""
     ckpt_path = Path(cfg.PATHS.experiments_dir) / "student_bilstm" / "student_bilstm_model.pt"
     if not ckpt_path.exists():
         raise FileNotFoundError(ckpt_path)
@@ -160,15 +122,9 @@ def _load_student_model(vocab_size: int) -> StudentBiLSTM:
 
 
 def _make_dummy_inputs(vocab_size: int, batch_size: int = 16, seq_len: int = 64) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Generate a synthetic batch of token ids for timing."""
     seqs = torch.randint(low=1, high=min(vocab_size, 5000), size=(batch_size, seq_len), dtype=torch.long)
     mask = torch.ones_like(seqs)
     return seqs, mask
-
-
-# ──────────────────────────────────────────────────────────────────────
-# Comparison
-# ──────────────────────────────────────────────────────────────────────
 
 
 def run_distillation_evaluation(
@@ -176,26 +132,15 @@ def run_distillation_evaluation(
     figures_dir: Optional[str] = None,
     n_runs: int = 30,
 ) -> Dict:
-    """Run the F1 / size / latency comparison across teacher + baselines + student.
-
-    Returns a dict::
-
-        {
-          "teacher_phobert":   {"f1": ..., "params": ..., "size_mb": ..., "latency_ms": ...},
-          "teacher_bilstm":    {...},
-          "student_bilstm":    {...},
-        }
-    """
     tables_dir = tables_dir or cfg.PATHS.paper_tables_dir
     figures_dir = figures_dir or cfg.PATHS.paper_figures_dir
     os.makedirs(tables_dir, exist_ok=True)
     os.makedirs(figures_dir, exist_ok=True)
 
     log.info("=" * 70)
-    log.info("  KNOWLEDGE DISTILLATION EVALUATION (Phase 3.4)")
+    log.info("  KNOWLEDGE DISTILLATION EVALUATION")
     log.info("=" * 70)
 
-    # ── F1 numbers (test set)
     teacher_phobert_metrics = _load_teacher_metrics("bert")
     teacher_bilstm_metrics = _load_teacher_metrics("bilstm")
     student_metrics = _load_student_metrics()
@@ -204,7 +149,6 @@ def run_distillation_evaluation(
     teacher_bilstm_f1 = float(teacher_bilstm_metrics.get("test", {}).get("f1_macro", 0.0))
     student_f1 = float(student_metrics.get("test", {}).get("f1_macro", 0.0)) if student_metrics else 0.0
 
-    # ── Parameter counts
     phobert_params, phobert_size = _infer_teacher_params()
     bilstm_params, bilstm_size = _infer_bilstm_params()
     if student_metrics:
@@ -214,7 +158,6 @@ def run_distillation_evaluation(
         student_params = StudentBiLSTM(vocab_size=20000).count_parameters()
         student_size = (student_params * 4) / (1024 ** 2)
 
-    # ── Latency on dummy inputs
     sample = _make_dummy_inputs(vocab_size=20000, batch_size=16, seq_len=64)
     try:
         bilstm_model = _load_teacher_bilstm_model()
@@ -228,11 +171,8 @@ def run_distillation_evaluation(
     except Exception as exc:
         log.warning("Could not load student for timing: %s", exc)
         student_lat = float("nan")
-    # PhoBERT latency: too expensive on CPU to time inline; report
-    # an order-of-magnitude estimate from the literature (≈150ms/batch).
     phobert_lat = 150.0
 
-    # ── Compression ratios
     def _ratio(num, denom):
         return float(num) / float(denom) if denom else float("nan")
     cr_phobert_vs_student = _ratio(phobert_params, student_params)
@@ -265,22 +205,15 @@ def run_distillation_evaluation(
             name, r["f1"], r["params"], r["size_mb"], r["latency_ms"],
         )
 
-    # ── LaTeX table
     latex_path = os.path.join(tables_dir, "table_distillation.tex")
     _render_distillation_table(results, latex_path)
     log.info("Saved LaTeX table → %s", latex_path)
 
-    # ── Trade-off figure
     fig_path = os.path.join(figures_dir, "fig_distillation_tradeoff.png")
     _render_tradeoff_scatter(results, fig_path)
     log.info("Saved trade-off figure → %s", fig_path)
 
     return results
-
-
-# ──────────────────────────────────────────────────────────────────────
-# Rendering
-# ──────────────────────────────────────────────────────────────────────
 
 
 def _render_distillation_table(results: Dict, save_path: str) -> None:
@@ -337,7 +270,6 @@ def _render_distillation_table(results: Dict, save_path: str) -> None:
 
 
 def _render_tradeoff_scatter(results: Dict, save_path: str) -> None:
-    """F1 vs. size scatter with arrows highlighting compression gains."""
     fig, ax = plt.subplots(figsize=(8, 6))
 
     points = [
@@ -352,7 +284,6 @@ def _render_tradeoff_scatter(results: Dict, save_path: str) -> None:
             s=size * 30, color=color, alpha=0.75, edgecolors="black",
             linewidths=1.0, label=name,
         )
-        # Annotate the point.
         ax.annotate(
             name.replace("\n", " "),
             (size, r["f1"]),
@@ -383,13 +314,7 @@ def _render_tradeoff_scatter(results: Dict, save_path: str) -> None:
     plt.close(fig)
 
 
-# ──────────────────────────────────────────────────────────────────────
-# CLI
-# ──────────────────────────────────────────────────────────────────────
-
-
 def main() -> Dict:
-    """CLI entry point — equivalent to ``fakenews distill --evaluate``."""
     return run_distillation_evaluation()
 
 

@@ -1,17 +1,3 @@
-"""
-CLI entry point for the FakeNewsDetector pipeline.
-
-Usage (after ``pip install -e .``):
-
-    fakenews preprocess          # word segmentation
-    fakenews split               # train/val/test split
-    fakenews features            # extract TF-IDF, embedding & PhoBERT features
-    fakenews train [MODEL ...]   # train models (lr, svm, bilstm, phobert, all)
-    fakenews evaluate            # full evaluation + figures
-
-    fakenews run                 # run the entire pipeline end-to-end
-"""
-
 import argparse
 import sys
 import time
@@ -24,7 +10,6 @@ log = get_logger(__name__)
 VALID_MODELS = ("lr", "svm", "bilstm", "phobert", "all")
 
 
-# ── helpers ────────────────────────────────────────────────────────────────────
 
 def _banner(title: str) -> None:
     log.info("=" * 60)
@@ -51,7 +36,6 @@ def _step_features() -> None:
 
 
 def _step_train(models: list[str] | None = None) -> None:
-    """Train one or more models.  *models* defaults to ``["all"]``."""
     models = models or ["all"]
     _banner("STEP 4 / 5 — Training (%s)" % ", ".join(models))
 
@@ -87,8 +71,7 @@ def _step_calibration() -> None:
 
 
 def _step_explain(args) -> None:
-    """Phase 1 token-level explainability orchestrator."""
-    _banner("Token-Level Explainability (Phase 1)")
+    _banner("Token-Level Explainability")
     from src.analysis.explainability_runner import run_explainability
 
     run_explainability(
@@ -100,8 +83,7 @@ def _step_explain(args) -> None:
 
 
 def _step_recalibrate(args) -> None:
-    """Phase 2 post-hoc calibration (Platt / Temperature / Isotonic)."""
-    _banner("Post-hoc Calibration (Phase 2)")
+    _banner("Post-hoc Calibration")
     from src.evaluation.post_hoc_calibration import run_post_hoc_calibration
 
     run_post_hoc_calibration(
@@ -113,8 +95,7 @@ def _step_recalibrate(args) -> None:
 
 
 def _step_hard_cases(args) -> None:
-    """Phase 4 hard cases deep analysis."""
-    _banner("Hard Cases Deep Analysis (Phase 4)")
+    _banner("Hard Cases Deep Analysis")
     from src.evaluation.hard_cases import analyze_hard_examples
 
     analyze_hard_examples(
@@ -127,16 +108,7 @@ def _step_hard_cases(args) -> None:
 
 
 def _step_distill(args) -> None:
-    """Phase 3 knowledge-distillation pipeline.
-
-    Two modes:
-
-    * ``--mode train``   train the student with KD loss (default).
-    * ``--mode eval``    produce the F1-vs-size comparison and
-      LaTeX figure/table from existing checkpoints.
-    * ``--mode all``     train then evaluate.
-    """
-    _banner("Knowledge Distillation (Phase 3)")
+    _banner("Knowledge Distillation")
     if args.mode in ("train", "all"):
         from src.training.train_student import main as train_main
         train_main(
@@ -155,8 +127,6 @@ def _step_distill(args) -> None:
         )
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="fakenews",
@@ -169,12 +139,6 @@ def _build_parser() -> argparse.ArgumentParser:
     sub.add_parser("features", help="Extract all features (TF-IDF, embeddings, PhoBERT)")
 
     train_p = sub.add_parser("train", help="Train model(s)")
-    # NOTE: we intentionally do NOT pass choices=VALID_MODELS here.
-    # Combining nargs="*" with choices on a positional has a well-known
-    # argparse gotcha: when zero values are supplied, argparse validates
-    # the resulting empty list itself against `choices` (instead of
-    # validating each element), which always fails with something like
-    # "invalid choice: []". We validate manually below instead.
     train_p.add_argument(
         "models",
         nargs="*",
@@ -187,7 +151,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     explain_p = sub.add_parser(
         "explain",
-        help="Phase 1 token-level attribution (SHAP / IG / attention rollout) for all 4 models",
+        help="Token-level attribution (SHAP / IG / attention rollout) for all 4 models",
     )
     explain_p.add_argument(
         "--n-examples", type=int, default=20,
@@ -209,7 +173,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     recal_p = sub.add_parser(
         "recalibrate",
-        help="Phase 2 post-hoc calibration (Platt / Temperature / Isotonic) for all 4 models",
+        help="Post-hoc calibration (Platt / Temperature / Isotonic) for all 4 models",
     )
     recal_p.add_argument(
         "--experiments-dir", default=None,
@@ -233,7 +197,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     hard_p = sub.add_parser(
         "hard-cases",
-        help="Phase 4 deep analysis of hard cases (samples wrong by all 4 models)",
+        help="Deep analysis of hard cases (samples wrong by all 4 models)",
     )
     hard_p.add_argument(
         "--per-id-confidence", default=None,
@@ -246,7 +210,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     hard_p.add_argument(
         "--attributions-dir", default=None,
-        help="Directory of Phase 1 attribution pickles "
+        help="Directory of attribution pickles "
              "(default: <results_dir>/attributions)",
     )
     hard_p.add_argument(
@@ -260,7 +224,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     distill_p = sub.add_parser(
         "distill",
-        help="Phase 3 Knowledge Distillation: train a small Student BiLSTM "
+        help="Knowledge Distillation: train a small Student BiLSTM "
              "with KD loss against a teacher (default: PhoBERT) and "
              "produce the F1-vs-size trade-off figure.",
     )
@@ -365,10 +329,6 @@ def main(argv: list[str] | None = None) -> None:
         _step_train(["all"])
         _step_evaluate()
         _step_calibration()
-        # Phase 1 + Phase 4 attribution runs require shap / captum;
-        # skipped here to keep ``run`` light.  Use ``fakenews explain``
-        # and ``fakenews hard-cases`` explicitly.
-
     elapsed = time.time() - start
     log.info("Done in %.1f s.", elapsed)
 

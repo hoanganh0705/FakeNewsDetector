@@ -1,0 +1,16 @@
+
+\begin{table}[h]
+\centering
+\caption[Độ phức tạp và thời gian huấn luyện]{Độ phức tạp và thời gian huấn luyện}
+\label{tab:complexity}
+\begin{tabular}{llcc}
+\toprule
+mô hình & loại & tham số & thời gian huấn luyện \\
+\midrule
+Logistic Regression & ML truyền thống & \lrParams & 1.6 s \\
+SVM & ML truyền thống & \svmParams & 3 min \\
+BILSTM & Học sâu & \bilstmParamCount & 5 min \\
+PhoBERT & Transformer & \phobertParamCount & 1.2 h \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,4 +1,3 @@
-"""Tests for ExperimentTracker versioning utility."""
 
 import json
 import os

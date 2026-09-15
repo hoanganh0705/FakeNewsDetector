@@ -1,0 +1,15 @@
+
+\begin{table}[h]
+\centering
+\caption[Thống kê tập dữ liệu]{Thống kê tập dữ liệu}
+\label{tab:dataset}
+\begin{tabular}{lcccc}
+\toprule
+tập & tổng & \textit{tin thật} & \textit{tin giả} & độ dài tb \\
+\midrule
+huấn luyện & \ntrain & \ntrainreal (\pctreal\%) & \ntrainfake (\pctfake\%) & \avglentrain \\
+xác thực & \nval & \nvalreal (\pctreal\%) & \nvalfake (\pctfake\%) & \avglenval \\
+kiểm tra & \ntest & \ntestreal (\pctreal\%) & \ntestfake (\pctfake\%) & \avglentest \\
+\bottomrule
+\end{tabular}
+\end{table}

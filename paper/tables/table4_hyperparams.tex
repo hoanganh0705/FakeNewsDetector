@@ -1,0 +1,27 @@
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{2pt}
+\caption[Siêu tham số các mô hình]{Siêu tham số các mô hình}
+\label{tab:hyperparams}
+\begin{tabular}{ll}
+\toprule
+mô hình & siêu tham số \\
+\midrule
+Logistic Regression & C=\lrbestc, solver=saga, class\_weight=balanced, max\_iter=3000 \\
+\midrule
+SVM & C=\svmbestc, linearsvc, class\_weight=balanced \\
+\midrule
+\multirow{4}{*}{BILSTM} & Embedding dim=\bilstmembdim, hidden dim=\bilstmhiddendim \\
+ & num layers=\bilstmlayers, Dropout=0{,}3 \\
+ & learning rate=0{,}001, batch size=64 \\
+ & early stopping patience=5 \\
+\midrule
+\multirow{4}{*}{PhoBERT} & pre-trained: vinai/phobert-base \\
+ & max length=\phobertmaxseq, weight decay=0{,}01 \\
+ & learning rate=3e-05, batch size=16 \\
+ & epochs=8, warmup ratio=0{,}1 \\
+\bottomrule
+\end{tabular}
+\end{table}

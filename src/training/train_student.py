@@ -1,33 +1,3 @@
-"""
-Knowledge-Distillation training for the StudentBiLSTM.
-
-Implements Phase 3 (Knowledge Distillation) of IMPLEMENTATION_PLAN.md:
-
-    loss = α · KL(student_logits/T, teacher_logits/T) · T²
-         + (1 − α) · CE(student_logits, hard_labels)
-
-with default α = 0.7 and T = 4 (Hinton et al., 2015).
-
-Teacher logits come from ``experiments/bert/raw_logits.pkl`` (saved by
-``reproduce_predictions.py`` in Phase 0.2).  Student is trained on the
-**same training split** as the BiLSTM teacher, but uses the teacher's
-**val/test logits** only for evaluation comparison — never as
-training targets.
-
-Outputs
--------
-* ``experiments/student_bilstm/student_bilstm_model.pt``
-* ``experiments/student_bilstm/predictions.pkl``
-* ``experiments/student_bilstm/raw_logits.pkl``
-* ``experiments/student_bilstm/metrics.json``
-* ``paper/tables/table_distillation.tex``
-* ``paper/figures/fig_distillation_tradeoff.png``
-
-The KD trainer re-uses the embedding features
-``data/features/embedding_features.pkl`` produced by
-``src.features.embedding_features``, mirroring
-``src.training.train_bilstm``.
-"""
 
 from __future__ import annotations
 
@@ -52,11 +22,6 @@ from config import cfg
 log = get_logger(__name__)
 
 
-# ──────────────────────────────────────────────────────────────────────
-# KD loss
-# ──────────────────────────────────────────────────────────────────────
-
-
 def distillation_loss(
     student_logits: torch.Tensor,
     teacher_logits: torch.Tensor,
@@ -64,24 +29,6 @@ def distillation_loss(
     alpha: float = 0.7,
     temperature: float = 4.0,
 ) -> torch.Tensor:
-    """Hinton-style KD loss.
-
-    .. math::
-
-        L = α · KL(student/T ‖ teacher/T) · T² + (1 − α) · CE(student, y)
-
-    Args:
-        student_logits: ``(B, C)`` raw logits from the student.
-        teacher_logits: ``(B, C)`` raw logits from the teacher
-            (PhoBERT in our setup).  **Detached** before use so
-            gradients do not flow back into the teacher.
-        labels:         ``(B,)`` integer ground-truth labels.
-        alpha:          Weight on the soft (KD) target (0–1).
-        temperature:    Distillation temperature (>1 softens probs).
-
-    Returns:
-        Scalar loss tensor.
-    """
     teacher_logits = teacher_logits.detach()
     soft_student = F.log_softmax(student_logits / temperature, dim=1)
     soft_teacher = F.softmax(teacher_logits / temperature, dim=1)
@@ -90,19 +37,7 @@ def distillation_loss(
     return alpha * kd + (1.0 - alpha) * ce
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Trainer
-# ──────────────────────────────────────────────────────────────────────
-
-
 class StudentBiLSTMTrainer:
-    """KD trainer wrapping :class:`StudentBiLSTM`.
-
-    Mirrors the public surface of ``BiLSTMTrainer`` so the rest of the
-    pipeline (``evaluate``, ``predict``, ``save``, ``load``) works
-    identically.
-    """
-
     def __init__(
         self,
         vocab_size: int,
@@ -157,10 +92,6 @@ class StudentBiLSTMTrainer:
             "val_f1": [],
         }
 
-    # ------------------------------------------------------------------
-    # Training
-    # ------------------------------------------------------------------
-
     def train(
         self,
         train_loader: DataLoader,
@@ -170,18 +101,6 @@ class StudentBiLSTMTrainer:
         epochs: int = 30,
         patience: int = 5,
     ) -> "StudentBiLSTMTrainer":
-        """Train the student with KD loss.
-
-        Args:
-            train_loader: Training data loader (yields ``(seq, mask, label)``).
-            val_loader:   Validation data loader.
-            teacher_logits_train: 1-D array of teacher logits for the
-                **training split** (in the same order as ``train_loader``).
-            teacher_logits_val:   1-D array of teacher logits for the
-                **validation split**.
-            epochs:       Max epochs.
-            patience:     Early-stopping patience.
-        """
         teacher_logits_train = torch.as_tensor(
             teacher_logits_train, dtype=torch.float32
         ).to(self.device)
@@ -189,11 +108,6 @@ class StudentBiLSTMTrainer:
             teacher_logits_val, dtype=torch.float32
         ).to(self.device)
 
-        # Convert 1-D teacher logits (logit for class 1) into 2-D logit
-        # tensors ``[logit_0, logit_1]``.  We assume binary classification
-        # (num_classes == 2) and use ``logit_0 = -logit_1`` (the model is
-        # symmetric around 0 if it was sigmoid-output, which is true for
-        # the BiLSTM/PhoBERT checkpoints used here).
         teacher_train = torch.stack(
             [-teacher_logits_train, teacher_logits_train], dim=1
         )
@@ -232,8 +146,6 @@ class StudentBiLSTMTrainer:
 
                 teacher_batch = teacher_train[train_cursor: train_cursor + batch_size]
                 if teacher_batch.size(0) != batch_size:
-                    # Shuffle order changed — fall back to slicing with a
-                    # safe modulo (rare path).
                     teacher_batch = teacher_train[
                         torch.arange(batch_size) % teacher_train.size(0)
                     ]
@@ -297,10 +209,6 @@ class StudentBiLSTMTrainer:
         self.history["total_time_s"] = elapsed
         return self
 
-    # ------------------------------------------------------------------
-    # Evaluation
-    # ------------------------------------------------------------------
-
     def _evaluate(
         self,
         loader: DataLoader,
@@ -352,10 +260,6 @@ class StudentBiLSTMTrainer:
         y_pred, y_prob = self.predict(loader)
         return compute_metrics(y_true, y_pred, y_prob)
 
-    # ------------------------------------------------------------------
-    # Persistence
-    # ------------------------------------------------------------------
-
     def save(self, path: str) -> None:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         torch.save({
@@ -395,13 +299,7 @@ class StudentBiLSTMTrainer:
         return trainer
 
 
-# ──────────────────────────────────────────────────────────────────────
-# CLI / main
-# ──────────────────────────────────────────────────────────────────────
-
-
 def _load_teacher_logits(model_dir_name: str) -> Tuple[np.ndarray, np.ndarray]:
-    """Load val + test teacher logits from raw_logits.pkl."""
     path = os.path.join(cfg.PATHS.experiments_dir, model_dir_name, "raw_logits.pkl")
     if not os.path.exists(path):
         raise FileNotFoundError(
@@ -421,18 +319,6 @@ def main(
     patience: int = 5,
     teacher_model: str = "bert",
 ) -> Dict:
-    """CLI entry point — equivalent to ``fakenews distill``.
-
-    Args:
-        alpha: KD weight on the soft target.
-        temperature: KD temperature.
-        epochs / patience: early-stopping hyperparameters.
-        teacher_model: directory name inside ``experiments/``
-            (``"bert"`` for PhoBERT, ``"bilstm"`` for BiLSTM teacher).
-
-    Returns:
-        A results dict with train/val/test metrics and KD config.
-    """
     from src.utils.common import set_reproducibility_seeds
     set_reproducibility_seeds()
 
@@ -441,10 +327,9 @@ def main(
     log.info("=" * 70)
     log.info("Teacher: %s | α=%.2f | T=%.1f", teacher_model, alpha, temperature)
 
-    # ── features
     features_path = os.path.join(cfg.PATHS.embedding_dir, "embedding_features.pkl")
     if not os.path.exists(features_path):
-        log.error("Missing %s — run ``fakenews features`` first.", features_path)
+        log.error("Missing %s", features_path)
         return {}
     features = joblib.load(features_path)
     train_seqs = features["train_sequences"]
@@ -457,7 +342,6 @@ def main(
     log.info("vocab_size=%d | train=%d | val=%d | test=%d",
              vocab_size, len(train_seqs), len(val_seqs), len(test_seqs))
 
-    # ── teacher logits
     teacher_val_logits, teacher_test_logits = _load_teacher_logits(teacher_model)
     if len(teacher_val_logits) != len(val_seqs):
         log.warning(
@@ -482,18 +366,12 @@ def main(
         shuffle=False, collate_fn=collate_fn, num_workers=nw, pin_memory=True,
     )
 
-    # ── trainer
     trainer = StudentBiLSTMTrainer(
         vocab_size=vocab_size,
         alpha=alpha,
         temperature=temperature,
     )
 
-    # We use teacher val logits as the **validation target** for early
-    # stopping (not train logits — we want the student to overfit less
-    # to the teacher signal and more to the val distribution).
-    # Note: teacher logits are NOT used during training — only val.
-    # We pass train teacher logits (zero-filled) for shape compat.
     n_train = len(train_seqs)
     dummy_train_logits = np.zeros((n_train,), dtype=np.float32)
     trainer.train(
@@ -505,7 +383,6 @@ def main(
         patience=patience,
     )
 
-    # ── final evaluation on val + test using hard labels
     val_metrics = trainer.evaluate(val_loader, y_val)
     log.info("Validation metrics (hard labels):")
     print_metrics(val_metrics)
@@ -515,7 +392,6 @@ def main(
     log.info("Test metrics (hard labels):")
     print_metrics(test_metrics)
 
-    # ── save artefacts
     model_dir = os.path.join(cfg.PATHS.experiments_dir, "student_bilstm")
     os.makedirs(model_dir, exist_ok=True)
 
@@ -533,7 +409,7 @@ def main(
                 "y_true": _to_list(y_val),
                 "y_pred": _to_list(trainer.predict(val_loader)[0]),
                 "y_prob": _to_list(trainer.predict(val_loader)[1]),
-                "raw_logit": _to_list(teacher_val_logits),  # teacher's val logits as raw_logit
+                "raw_logit": _to_list(teacher_val_logits),
                 "n_samples": int(len(y_val)),
             },
             "test": {
@@ -586,7 +462,6 @@ def _to_list(arr):
 
 
 def _to_serializable(obj):
-    """Best-effort conversion to JSON-safe types."""
     if isinstance(obj, np.ndarray):
         return obj.tolist()
     if isinstance(obj, (np.floating, np.integer)):

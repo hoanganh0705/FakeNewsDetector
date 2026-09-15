@@ -1,30 +1,3 @@
-"""
-Phase 1 orchestrator — ``run_explainability()``.
-
-* Picks 20 test examples using ``per_id_confidence.csv`` (most informative
-  = mix of all-correct, all-wrong and borderline examples — see
-  ``explainability_runner.pick_examples``).
-* Runs every attribution method (LR-SHAP, SVM-SHAP, BiLSTM-IG, BiLSTM
-  simple-gradients, PhoBERT-SHAP, PhoBERT-IG, PhoBERT attention-rollout)
-  on each selected example.
-* Persists per-example attribution pickles to
-  ``results/attributions/<example_id>.pkl``.
-* Renders aggregate figures:
-    - ``paper/figures/fig_token_attribution_lr_svm.png`` (LR + SVM)
-    - ``paper/figures/fig_token_attribution_phobert.png`` (3-method overlay)
-    - ``paper/figures/fig_method_agreement.png`` (N×N heatmap)
-    - ``paper/figures/fig_cross_model_agreement.png`` (all 4 models)
-  plus the faithfulness table ``paper/tables/table_attribution_faithfulness.tex``.
-
-Public API
-----------
-* ``run_explainability(n_examples=20, output_dir=None)``   — main entry point.
-
-The orchestrator is intentionally defensive: if a model checkpoint or
-its dependency (e.g. captum) is missing, that single model/method is
-skipped and a warning is logged — the rest of the pipeline still runs.
-"""
-
 from __future__ import annotations
 
 import json
@@ -41,13 +14,7 @@ from config import cfg
 from src.utils.logger import get_logger
 from src.utils.common import MODEL_DIR_MAP, load_csv
 
-log = get_logger(__name__)
-
-
-# ──────────────────────────────────────────────────────────────────────
-# Public entry point
-# ──────────────────────────────────────────────────────────────────────
-
+log = get_logger(__name__)  
 
 def run_explainability(
     n_examples: int = 20,
@@ -55,20 +22,7 @@ def run_explainability(
     figures_dir: Optional[str] = None,
     tables_dir: Optional[str] = None,
 ) -> Dict[str, str]:
-    """End-to-end Phase 1 token-level explainability pipeline.
 
-    Args:
-        n_examples:  How many informative test samples to attribute.
-        output_dir:  Where to save per-example attribution pickles
-                     (default ``cfg.PATHS.results_dir/attributions``).
-        figures_dir: Where to save aggregate figures
-                     (default ``cfg.PATHS.paper_figures_dir``).
-        tables_dir:  Where to save aggregate LaTeX tables
-                     (default ``cfg.PATHS.paper_tables_dir``).
-
-    Returns:
-        Dict mapping artefact name → absolute path.
-    """
     output_dir  = output_dir  or os.path.join(cfg.PATHS.results_dir, "attributions")
     figures_dir = figures_dir or cfg.PATHS.paper_figures_dir
     tables_dir  = tables_dir  or cfg.PATHS.paper_tables_dir
@@ -76,14 +30,12 @@ def run_explainability(
     os.makedirs(figures_dir, exist_ok=True)
     os.makedirs(tables_dir, exist_ok=True)
 
-    # ── 1. Load shared resources ───────────────────────────────────────
     test_df, per_id_df, examples = _select_examples(n_examples)
     log.info("Selected %d examples for attribution.", len(examples))
 
     artifacts = _load_models()
     log.info("Loaded artefacts: %s", {k: type(v).__name__ for k, v in artifacts.items()})
 
-    # ── 2. Per-example attribution ────────────────────────────────────
     per_example_records: List[Dict] = []
     for ex in examples:
         record = _attribute_one_example(
@@ -99,42 +51,18 @@ def run_explainability(
         log.warning("No examples produced attribution records — aborting aggregation.")
         return {}
 
-    # ── 3. Aggregate figures & tables ─────────────────────────────────
     paths = _render_aggregate_artifacts(per_example_records, figures_dir, tables_dir)
-    log.info("Phase 1 explainability complete. Artefacts:\n%s",
+    log.info("Explainability artifacts:\n%s",
              "\n".join(f"  {k}: {v}" for k, v in paths.items()))
     return paths
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Example selection
-# ──────────────────────────────────────────────────────────────────────
-
-
 def pick_examples(n_examples: int = 20) -> List[Dict]:
-    """Public alias used by tests / external callers.
-
-    Loads ``per_id_confidence.csv`` (produced by
-    ``src.evaluation.error_analysis.track_per_id_confidence``) and picks
-    the *most informative* test samples.  "Most informative" here means:
-
-    * A few examples that *all* models got right (sanity check).
-    * A few examples that *all* models got wrong (hard cases).
-    * The rest filled with samples in the "borderline" range
-      (1–2 models wrong).
-
-    Args:
-        n_examples: Total number of samples to return.
-
-    Returns:
-        List of dicts with ``{id, text, true_label, error_count}``.
-    """
     _, _, examples = _select_examples(n_examples)
     return examples
 
 
 def _select_examples(n_examples: int) -> Tuple[pd.DataFrame, pd.DataFrame, List[Dict]]:
-    """Load test data + per-id CSV and pick informative examples."""
     test_df = load_csv(
         os.path.join(cfg.PATHS.splits_dir, "test.csv"),
         required_columns=["text", "label"],
@@ -142,23 +70,19 @@ def _select_examples(n_examples: int) -> Tuple[pd.DataFrame, pd.DataFrame, List[
 
     per_id_path = os.path.join(cfg.PATHS.tables_dir, "per_id_confidence.csv")
     if not os.path.exists(per_id_path):
-        # Fall back to running error_analysis just-in-time.  Keep silent
-        # in tests — the orchestrator catches the error gracefully.
         log.warning(
             "per_id_confidence.csv missing at %s — running error_analysis.main()…",
             per_id_path,
         )
         try:
-            from src.evaluation import error_analysis as _ea  # late import
+            from src.evaluation import error_analysis as _ea
 
             _ea.main()
-        except Exception as exc:  # pragma: no cover — best-effort
+        except Exception as exc:
             log.error("Could not generate per_id_confidence.csv: %s", exc)
 
     per_id_df = pd.read_csv(per_id_path) if os.path.exists(per_id_path) else None
     if per_id_df is None or per_id_df.empty:
-        # Without the per-id CSV we just return the first n test rows
-        # ordered by length — clearly inferior but keeps the pipeline alive.
         log.warning("Falling back to length-based example selection.")
         scored = test_df.assign(_n=test_df["text"].astype(str).str.len())
         chosen = scored.sort_values("_n", ascending=False).head(n_examples)
@@ -168,7 +92,6 @@ def _select_examples(n_examples: int) -> Tuple[pd.DataFrame, pd.DataFrame, List[
             for _, r in chosen.iterrows()
         ]
 
-    # Bucket by error_count so each band is represented.
     n_models = len([c for c in per_id_df.columns if c.endswith("_correct")])
     n_total = min(n_examples, len(per_id_df))
     n_per_bucket = max(2, n_total // 3)
@@ -186,34 +109,22 @@ def _select_examples(n_examples: int) -> Tuple[pd.DataFrame, pd.DataFrame, List[
             if (test_df["id"] == r["id"]).any()
         ]
 
-    # Hard cases — top-K with the largest error_count, sorted by *low*
-    # confidence (i.e. the model was unsure when wrong → more informative).
     hard = per_id_df[per_id_df["error_count"] == n_models]
     examples.extend(_take(hard, n_per_bucket, descending=False))
 
-    # Borderline — 1 ≤ error_count ≤ n_models − 1.
     borderline = per_id_df[(per_id_df["error_count"] >= 1) & (per_id_df["error_count"] <= max(0, n_models - 1))]
     examples.extend(_take(borderline, n_per_bucket, descending=False))
 
-    # Easy cases — error_count = 0.
     easy = per_id_df[per_id_df["error_count"] == 0]
     examples.extend(_take(easy, max(0, n_total - len(examples)), descending=False))
 
-    # Trim to n_total.
     examples = examples[:n_total]
     return test_df, per_id_df, examples
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Model loading
-# ──────────────────────────────────────────────────────────────────────
-
-
 def _load_models() -> Dict[str, object]:
-    """Load every artefact we need for attribution.  Failures are logged but non-fatal."""
     artifacts: Dict[str, object] = {}
 
-    # ── TF-IDF vectorizer (shared by LR + SVM) ────────────────────────
     tfidf_path = os.path.join(cfg.PATHS.tfidf_dir, "tfidf_vectorizer.pkl")
     if os.path.exists(tfidf_path):
         vec = joblib.load(tfidf_path)
@@ -221,13 +132,11 @@ def _load_models() -> Dict[str, object]:
             vec = vec["vectorizer"]
         artifacts["tfidf_vectorizer"] = vec
 
-    # ── LR + SVM models ──────────────────────────────────────────────
     lr_bundle = joblib.load(os.path.join(cfg.PATHS.lr_dir, "lr_model.pkl"))
     artifacts["lr_model"] = lr_bundle["model"] if isinstance(lr_bundle, dict) else lr_bundle
     svm_bundle = joblib.load(os.path.join(cfg.PATHS.svm_dir, "svm_model.pkl"))
     artifacts["svm_model"] = svm_bundle["model"] if isinstance(svm_bundle, dict) else svm_bundle
 
-    # ── BiLSTM ────────────────────────────────────────────────────────
     bilstm_ckpt = os.path.join(cfg.PATHS.bilstm_dir, "bilstm_model.pt")
     if os.path.exists(bilstm_ckpt):
         try:
@@ -237,12 +146,10 @@ def _load_models() -> Dict[str, object]:
         except Exception as exc:
             log.warning("Could not load BiLSTM checkpoint: %s", exc)
 
-    # ── BiLSTM vocab ──────────────────────────────────────────────────
     emb_ext_path = os.path.join(cfg.PATHS.embedding_dir, "embedding_extractor.pkl")
     if os.path.exists(emb_ext_path):
         artifacts["embedding_extractor"] = joblib.load(emb_ext_path)
 
-    # ── PhoBERT ───────────────────────────────────────────────────────
     phobert_ckpt = os.path.join(cfg.PATHS.bert_dir, "phobert_model.pt")
     if os.path.exists(phobert_ckpt):
         try:
@@ -252,7 +159,6 @@ def _load_models() -> Dict[str, object]:
         except Exception as exc:
             log.warning("Could not load PhoBERT checkpoint: %s", exc)
 
-    # ── PhoBERT tokenizer (via the cached extractor) ──────────────────
     cache_dir = os.path.join(cfg.PATHS.features_dir, "phobert_tokenizer_cache")
     if os.path.isdir(cache_dir):
         try:
@@ -268,18 +174,12 @@ def _device_str() -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Per-example attribution
-# ──────────────────────────────────────────────────────────────────────
-
-
 def _attribute_one_example(
     example: Dict,
     test_df: pd.DataFrame,
     artifacts: Dict[str, object],
     output_dir: str,
 ) -> Optional[Dict]:
-    """Compute *every* available attribution for one example."""
     text = example["text"]
     record: Dict = {
         "id": example["id"],
@@ -288,10 +188,9 @@ def _attribute_one_example(
         "error_count": example["error_count"],
         "tokens": str(text).split(),
         "attributions": {},
-        "scores": {},  # numeric vectors aligned with "tokens"
+        "scores": {},
     }
 
-    # ── LR / SVM ──────────────────────────────────────────────────────
     vec = artifacts.get("tfidf_vectorizer")
     if vec is not None:
         from src.analysis.lr_svm_shap import lr_kernel_shap, svm_linear_shap
@@ -308,7 +207,6 @@ def _attribute_one_example(
             except Exception as exc:
                 log.warning("Attribution %s failed for example %d: %s", name, example["id"], exc)
 
-    # ── BiLSTM ────────────────────────────────────────────────────────
     bilstm_trainer = artifacts.get("bilstm_trainer")
     extractor = artifacts.get("embedding_extractor")
     if bilstm_trainer is not None and extractor is not None:
@@ -325,7 +223,6 @@ def _attribute_one_example(
             except Exception as exc:
                 log.warning("Attribution %s failed for example %d: %s", name, example["id"], exc)
 
-    # ── PhoBERT ───────────────────────────────────────────────────────
     phobert_trainer = artifacts.get("phobert_trainer")
     phobert_tokenizer = artifacts.get("phobert_tokenizer")
     if phobert_trainer is not None and phobert_tokenizer is not None:
@@ -346,7 +243,6 @@ def _attribute_one_example(
             except Exception as exc:
                 log.warning("Attribution %s failed for example %d: %s", name, example["id"], exc)
 
-    # Save per-example pickle.
     out_pickle = os.path.join(output_dir, f"{int(example['id'])}.pkl")
     try:
         with open(out_pickle, "wb") as fh:
@@ -358,26 +254,17 @@ def _attribute_one_example(
     return record
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Aggregate artefacts
-# ──────────────────────────────────────────────────────────────────────
-
-
 def _render_aggregate_artifacts(
     per_example_records: List[Dict],
     figures_dir: str,
     tables_dir: str,
 ) -> Dict[str, str]:
-    """Generate the four paper figures + faithfulness table."""
     paths: Dict[str, str] = {}
 
-    # Pick a single representative example (longest one with all 3 PhoBERT
-    # attributions + LR/SVM/BiLSTM — i.e. the showcase example).
     showcase = _pick_showcase(per_example_records)
     if showcase is None:
         return paths
 
-    # ── fig_token_attribution_lr_svm ─────────────────────────────────
     try:
         from src.analysis.lr_svm_shap import visualize_token_importance
 
@@ -402,15 +289,9 @@ def _render_aggregate_artifacts(
     except Exception as exc:
         log.warning("Could not render LR/SVM figure: %s", exc)
 
-    # ── fig_token_attribution_phobert ────────────────────────────────
     try:
         from src.analysis.phobert_attribution import compare_attribution_methods
 
-        # Build panels from whatever PhoBERT methods actually succeeded.
-        # When PhoBERT failed to load (no network, missing checkpoint,
-        # etc.) we still want the figure file to be a *useful* PNG — not
-        # the leftover placeholder — so callers downstream don't have to
-        # special-case it.
         method_labels = {
             "phobert_shap":    "PhoBERT — SHAP",
             "phobert_ig":      "PhoBERT — Integrated Gradients",
@@ -429,9 +310,6 @@ def _render_aggregate_artifacts(
                 title=f"PhoBERT attribution — example id={showcase['id']}",
             )
         else:
-            # No PhoBERT method produced attribution data — emit a
-            # informative placeholder PNG (title + reason) so downstream
-            # consumers (LaTeX, README) always see a valid file.
             _render_unavailable_panel(
                 save_path=path,
                 title=f"PhoBERT attribution — example id={showcase['id']}",
@@ -440,7 +318,6 @@ def _render_aggregate_artifacts(
         paths["fig_token_attribution_phobert"] = path
     except Exception as exc:
         log.warning("Could not render PhoBERT figure: %s", exc)
-        # Last-resort: make sure the PNG exists and is not the original placeholder.
         path = os.path.join(figures_dir, "fig_token_attribution_phobert.png")
         try:
             _render_unavailable_panel(
@@ -451,12 +328,9 @@ def _render_aggregate_artifacts(
         except Exception:
             pass
 
-    # ── fig_method_agreement ────────────────────────────────────────
     try:
         from src.analysis.method_agreement import agreement_matrix
 
-        # Aggregate agreement across all examples (mean Jaccard, NaN for
-        # pairs that were never comparable).
         all_methods = sorted({
             k for r in per_example_records for k in r["attributions"]
         })
@@ -481,7 +355,6 @@ def _render_aggregate_artifacts(
                         agg[gi, gj] += mat[i, j]
                         counts[gi, gj] += 1
 
-        # Divide by count; NaN cells stay NaN.
         mask = counts > 0
         agg[mask] /= counts[mask]
 
@@ -496,13 +369,10 @@ def _render_aggregate_artifacts(
     except Exception as exc:
         log.warning("Could not render method-agreement heatmap: %s", exc)
 
-    # ── fig_cross_model_agreement ────────────────────────────────────
     try:
         from src.analysis.method_agreement import cross_model_agreement
 
         path = os.path.join(figures_dir, "fig_cross_model_agreement.png")
-        # Use the showcase example's per-model attribution vectors
-        # (need to align them by token, which requires str.split(text)).
         words = str(showcase["text"]).split()
         aligned = _align_to_words(showcase, words)
         lr_vec  = aligned.get("lr_shap")
@@ -510,8 +380,6 @@ def _render_aggregate_artifacts(
         bilstm_vec = aligned.get("bilstm_ig")
         phobert_vec = aligned.get("phobert_ig")
 
-        # Extract the native token lists for each method (needed for
-        # cross_model_agreement's alignment logic).
         lr_toks  = showcase["attributions"].get("lr_shap", {}).get("tokens")
         svm_toks = showcase["attributions"].get("svm_shap", {}).get("tokens")
         bl_toks  = showcase["attributions"].get("bilstm_ig", {}).get("tokens")
@@ -536,7 +404,6 @@ def _render_aggregate_artifacts(
     except Exception as exc:
         log.warning("Could not render cross-model agreement figure: %s", exc)
 
-    # ── table_attribution_faithfulness ──────────────────────────────
     try:
         path = _render_faithfulness_table(per_example_records, tables_dir)
         if path:
@@ -548,31 +415,19 @@ def _render_aggregate_artifacts(
 
 
 def _pick_showcase(records: List[Dict]) -> Optional[Dict]:
-    """Pick the example with the most attribution methods available (and longest)."""
     def _score(r: Dict) -> Tuple[int, int]:
         return (len(r["attributions"]), len(str(r["text"]).split()))
     return max(records, key=_score) if records else None
 
 
 def _align_to_words(record: Dict, words: List[str]) -> Dict[str, np.ndarray]:
-    """Reindex per-method attribution vectors to the ``words`` tokenisation.
 
-    Different methods use different tokenisation schemes:
-    - LR/SVM   → TF-IDF n-grams (may span multiple words, joined by "_")
-    - BiLSTM   → Vocabulary words (1:1 with ``words`` when lengths match)
-    - PhoBERT  → BPE subwords ("▁token" or "##piece")
-
-    For n-grams we split on "_" and distribute the score equally to each
-    component word, accumulating with a counter so the final value is the
-    mean over all n-grams that contain that word.
-    """
     aligned: Dict[str, np.ndarray] = {}
     for name, blob in record["attributions"].items():
         toks = blob["tokens"]
         scores = np.asarray(blob["scores"], dtype=np.float64)
 
         if len(toks) == len(words):
-            # 1:1 tokenisation — use directly.
             aligned[name] = scores
             continue
 
@@ -580,30 +435,23 @@ def _align_to_words(record: Dict, words: List[str]) -> Dict[str, np.ndarray]:
         word_scores = np.zeros(len(words), dtype=np.float64)
         counts      = np.zeros(len(words), dtype=np.float64)
 
-        # Normalise each word once: underscores → spaces, lowercase.
-        # TF-IDF n-grams use "_" to join words, but str.split() preserves
-        # underscores in multi-word tokens (e.g. "việt_nam" stays as one token).
-        # Normalising both sides lets us match n-gram parts to underscore-preserved words.
         word_norm = [w.lower().replace("_", " ") for w in words]
 
         for tok, sc in zip(toks, scores):
-            parts = _split_token(tok)          # strip BPE/underscore markers, split
+            parts = _split_token(tok)
             if not parts:
                 continue
             for part in parts:
                 part_lc = part.lower().replace("_", " ")
                 if not part_lc:
                     continue
-                # Find all word-positions that contain this part.
                 for wi, wn in enumerate(word_norm):
-                    # Match if part equals the whole word, or is a prefix/suffix.
                     if (part_lc == wn or
                             wn.startswith(part_lc) or
                             part_lc.startswith(wn)):
                         word_scores[wi] += sc
                         counts[wi]      += 1.0
 
-        # Guard against zero-count (orphan tokens that matched nothing).
         counts = np.where(counts == 0, 1, counts)
         aligned[name] = word_scores / counts
 
@@ -611,34 +459,12 @@ def _align_to_words(record: Dict, words: List[str]) -> Dict[str, np.ndarray]:
 
 
 def _split_token(tok: str) -> List[str]:
-    """Split a token into its component words for alignment.
-
-    Handles underscore-joined n-grams (TF-IDF), sentencepiece BPE markers,
-    and BERT WordPiece markers.
-
-    The key insight is that TF-IDF joins *whole* words with "_", so
-    "tại việt_nam" → parts ["tại", "việt_nam"].  We should NOT further
-    split "việt_nam" on spaces because the word list contains "việt_nam"
-    as one entry.  We only split on "_" here; the caller then matches
-    each part (e.g. "việt_nam") against the normalized word list
-    (where underscores have been replaced by spaces, e.g. "việt nam").
-    """
-    # Remove BPE markers first.
     tok = tok.replace("▁", "").replace("##", "").replace("##_", "")
-    # TF-IDF uses "_" as word boundary — split on that, NOT on spaces.
     parts = tok.split("_")
     return [p.strip() for p in parts if p.strip()]
 
 
 def _render_unavailable_panel(save_path: str, title: str, reason: str) -> str:
-    """Render a clean, informative placeholder PNG when data is missing.
-
-    Used by :func:`run_explainability` to ensure that figure files
-    downstream never end up as blank 1×1 placeholder PNGs.  The output
-    is a real matplotlib figure (title + grey info panel) so the
-    LaTeX ``\\includegraphics`` and any README links still resolve to
-    a valid file.
-    """
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(8, 2.5))
@@ -664,8 +490,6 @@ def _overwrite_heatmap(
     title: str,
     nan_mask: Optional[np.ndarray] = None,
 ) -> None:
-    """Re-render a heatmap with a precomputed matrix (agreement_matrix
-    only supports unit matrices via its API)."""
     import matplotlib.pyplot as plt  # local import — heavy
 
     n = len(labels)
@@ -695,7 +519,6 @@ def _overwrite_heatmap(
 
 
 def _render_faithfulness_table(records: List[Dict], tables_dir: str) -> Optional[str]:
-    """Compute mean faithfulness (p_orig − p_masked) per method and write a LaTeX table."""
     drops: Dict[str, List[float]] = {}
     for r in records:
         for name, blob in r["attributions"].items():
@@ -741,20 +564,6 @@ def _render_faithfulness_table(records: List[Dict], tables_dir: str) -> Optional
 
 
 def _faithfulness_for_record(record: Dict, method_name: str) -> Optional[float]:
-    """Approximate faithfulness without re-running model inference on every text.
-
-    We don't have the original model loaded here (the orchestrator keeps
-    them only for the duration of the run), so we use a simple proxy:
-    the *self-consistency* of the attribution = mean L1 distance between
-    the current attribution and the same method's attribution for the
-    *same* example.  This is not strictly faithfulness but is a useful
-    proxy when re-running inference is expensive (BiLSTM / PhoBERT).
-
-    Real faithfulness numbers are produced by ``method_agreement.faithfulness``
-    in interactive scripts where the model is available.
-    """
-    # Use the maximum |score| as a stand-in — well-attributed tokens
-    # should have larger magnitudes on hard examples than on easy ones.
     scores = np.asarray(record["attributions"][method_name]["scores"], dtype=np.float64)
     if scores.size == 0:
         return None

@@ -1,34 +1,3 @@
-"""
-Hard cases deep analysis (Phase 4 of IMPLEMENTATION_PLAN.md).
-
-For every test sample that **all four** models misclassify, this module
-produces a structured annotation:
-
-* ``topic``        — keyword-based category (politics, health, COVID, ...)
-* ``length_bucket`` — text length in tokens → short / medium / long / very_long
-* ``lexical_density`` — type-token ratio (unique / total tokens)
-* ``contains_numbers``, ``contains_urls``, ``contains_named_entities``
-  — boolean flags
-* ``reason``        — categorised failure mode:
-    * ``"semantic_reasoning"`` — needs world knowledge beyond lexical cues
-    * ``"knowledge_verification"`` — contains verifiable claims that turn out false
-    * ``"dataset_ambiguity"`` — text is genuinely hard to label even for humans
-    * ``"stylistic"`` — short, factual-looking fake; or long, opinion-style real
-    * ``"other"``
-* ``top_attributions`` — for each model, the top-3 tokens from Phase 1 SHAP/IG
-
-Outputs:
-
-* ``results/tables/hard_examples_annotated.csv`` — machine-readable
-* ``paper/tables/table_hard_cases_annotated.tex``  — paper-ready table
-* ``paper/figures/fig_hard_case_distribution.png`` — distribution by topic/length/reason
-
-The annotator is **deterministic and rule-based** so the outputs are
-fully reproducible without LLM calls.  Where a human would normally
-be needed (semantic reason assignment), we use carefully designed
-heuristics documented in ``_categorise_reason``.
-"""
-
 from __future__ import annotations
 
 import os
@@ -51,14 +20,6 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Topic & reason vocabularies (Vietnamese + English keywords)
-# ──────────────────────────────────────────────────────────────────────
-
-# Topics are checked in priority order: most specific topics first.
-# IMPORTANT: covid_health must come BEFORE politics because the text
-# "COVID-19 lây lan tại Hà Nội" contains "hà nội" which would match
-# the politics block.  By checking covid first we avoid shadowing.
 TOPIC_KEYWORDS: List[Tuple[str, List[str]]] = [
     ("covid_health", [
         "covid", "covid 19", "covid19", "corona", "virus", "viêm phổi",
@@ -124,10 +85,6 @@ TOPIC_KEYWORDS: List[Tuple[str, List[str]]] = [
 DEFAULT_TOPIC = "other"
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Annotation primitives
-# ──────────────────────────────────────────────────────────────────────
-
 _RE_URL = re.compile(r"http[s]?://\S+|www\.\S+|< ?URL ?>", re.IGNORECASE)
 _RE_NUMBER = re.compile(r"\b\d+([.,]\d+)*\b")
 _RE_HTML_TAG = re.compile(r"<[^>]+>")
@@ -136,7 +93,6 @@ _RE_YEAR = re.compile(r"\b(19|20)\d{2}\b")
 
 
 def _clean(text: str) -> str:
-    """Strip HTML tags + collapse whitespace."""
     text = _RE_HTML_TAG.sub(" ", text or "")
     return _RE_MULTI_SPACE.sub(" ", text).strip()
 
@@ -172,8 +128,6 @@ def _contains_urls(text: str) -> bool:
 
 
 def _contains_named_entities(text: str) -> bool:
-    """Crude NE heuristic: any uppercase word of length ≥2 + any
-    name-shaped Vietnamese syllable.  We err on the side of inclusion."""
     if re.search(r"\b[A-Z][a-z]{2,}\b", text):
         return True
     if re.search(r"\b[A-ZÂĂĐÊÔƠƯ][a-zâăđêôơưáàảãạằẳẵặằẩẫậếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]+", text):
@@ -209,27 +163,17 @@ def _categorise_reason(
     has_all_caps: bool,
     label: int,
 ) -> str:
-    """Heuristic failure-mode categoriser."""
-    # knowledge_verification: numbers + URL → verifiable claim
     if has_urls and has_numbers:
         return "knowledge_verification"
     if has_numbers and re.search(r"\b\d{3,}\b", text_lower):
         return "knowledge_verification"
-    # semantic_reasoning: long, prose-heavy, no surface cues
     if n_tokens >= 80 and not has_all_caps:
         return "semantic_reasoning"
-    # stylistic: short + all-caps → clickbait fake / mistitled
     if has_all_caps and n_tokens < 80:
         return "stylistic"
-    # dataset_ambiguity: very short, no surface cues
     if n_tokens < 25:
         return "dataset_ambiguity"
     return "other"
-
-
-# ──────────────────────────────────────────────────────────────────────
-# Annotation container
-# ──────────────────────────────────────────────────────────────────────
 
 
 @dataclass
@@ -264,11 +208,6 @@ class HardExampleAnnotation:
         return d
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Phase 4.1 — Annotation pipeline
-# ──────────────────────────────────────────────────────────────────────
-
-
 def annotate_one(
     row_id: int,
     text_seg: str,
@@ -278,7 +217,6 @@ def annotate_one(
     confidences: Dict[str, float],
     attributions: Optional[Dict[str, List[Tuple[str, float]]]] = None,
 ) -> HardExampleAnnotation:
-    """Annotate a single hard example."""
     cleaned_raw = _clean(text_raw)
     cleaned_seg = _clean(text_seg)
     raw_lower = cleaned_raw.lower()
@@ -333,16 +271,10 @@ def annotate_one(
     )
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Phase 4.3 — Cross-reference with Phase 1 attributions
-# ──────────────────────────────────────────────────────────────────────
-
-
 def _load_topk_attribution(
     attribution_path: Path,
     k: int = 3,
 ) -> Dict[str, List[Tuple[str, float]]]:
-    """Load top-k tokens per attribution method from a Phase 1 pickle."""
     methods_to_keep = (
         "lr_shap", "svm_shap", "bilstm_ig",
         "phobert_shap", "phobert_ig", "phobert_rollout",
@@ -371,11 +303,6 @@ def _load_topk_attribution(
     return out
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Phase 4.2 — Main entry point
-# ──────────────────────────────────────────────────────────────────────
-
-
 def analyze_hard_examples(
     per_id_confidence_path: Optional[str] = None,
     test_csv_path: Optional[str] = None,
@@ -384,13 +311,6 @@ def analyze_hard_examples(
     tables_dir: Optional[str] = None,
     figures_dir: Optional[str] = None,
 ) -> pd.DataFrame:
-    """Run the full Phase 4 pipeline.
-
-    1. Load per-ID confidence, keep only samples wrong by all models.
-    2. Annotate each example with topic / length / density / reason / confidence.
-    3. Cross-reference with Phase 1 SHAP / IG attributions if available.
-    4. Write CSV + LaTeX + figure.
-    """
     per_id_confidence_path = per_id_confidence_path or os.path.join(
         cfg.PATHS.tables_dir, "per_id_confidence.csv",
     )
@@ -402,7 +322,7 @@ def analyze_hard_examples(
     os.makedirs(figures_dir, exist_ok=True)
 
     log.info("=" * 70)
-    log.info("  HARD CASES DEEP ANALYSIS (Phase 4)")
+    log.info("  HARD CASES DEEP ANALYSIS")
     log.info("=" * 70)
 
     if not os.path.exists(per_id_confidence_path):
@@ -414,8 +334,6 @@ def analyze_hard_examples(
     hard_ids = pid[pid["error_count"] == n_models]["id"].astype(int).tolist()
     log.info("Found %d hard examples (wrong by all %d models)", len(hard_ids), n_models)
 
-    # NOTE: test.csv ids and raw.csv ids do NOT align after the split.
-    # We use test.csv text directly (segmented but fully readable).
     test_df = pd.read_csv(test_csv_path)
     test_lookup = test_df.set_index("id")[["text", "date"]].to_dict("index")
 
@@ -450,12 +368,11 @@ def analyze_hard_examples(
             attributions=attr_topk,
         ))
 
-    log.info("Cross-referenced %d / %d hard examples with Phase 1 attributions",
+    log.info("Cross-referenced %d / %d hard examples with attributions from previous step",
              n_with_attributions, len(annotations))
 
     df = pd.DataFrame([a.to_dict() for a in annotations])
 
-    # Flatten top_tokens for the CSV.
     if not df.empty and "top_tokens" in df.columns:
         for method in (
             "lr_shap", "svm_shap", "bilstm_ig",
@@ -500,13 +417,7 @@ def analyze_hard_examples(
     return df
 
 
-# ──────────────────────────────────────────────────────────────────────
-# Phase 4.4 — LaTeX table + figure
-# ──────────────────────────────────────────────────────────────────────
-
-
 def _render_hard_cases_table(df: pd.DataFrame, save_path: str, n_rows: int = 12) -> None:
-    """Write ``table_hard_cases_annotated.tex`` with up to ``n_rows`` examples."""
     if df.empty:
         log.warning("Empty DataFrame — skipping LaTeX table.")
         return
@@ -550,8 +461,7 @@ def _render_hard_cases_table(df: pd.DataFrame, save_path: str, n_rows: int = 12)
         fh.write("\n".join(lines) + "\n")
 
 
-def _render_distribution_grid(df: pd.DataFrame, save_path: str) -> None:
-    """``fig_hard_case_distribution.png`` — 2 × 2 grid."""
+def _render_distribution_grid(df: pd.DataFrame, save_path: str) -> None:    
     if df.empty:
         log.warning("Empty DataFrame — skipping distribution figure.")
         return
@@ -606,13 +516,7 @@ def _render_distribution_grid(df: pd.DataFrame, save_path: str) -> None:
     plt.close(fig)
 
 
-# ──────────────────────────────────────────────────────────────────────
-# CLI entry point
-# ──────────────────────────────────────────────────────────────────────
-
-
 def main() -> None:
-    """CLI entry point — equivalent to ``fakenews hard-cases``."""
     analyze_hard_examples()
 
 

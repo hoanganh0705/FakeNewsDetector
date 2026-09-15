@@ -1,7 +1,3 @@
-"""
-Evaluation metrics module for fake news detection.
-"""
-
 import numpy as np
 from sklearn.metrics import (
 
@@ -32,19 +28,6 @@ def compute_metrics(
     labels: list = None,
     target_names: list = None
 ) -> Dict[str, Any]:
-    """
-    Compute comprehensive classification metrics.
-    
-    Args:
-        y_true: Ground truth labels
-        y_pred: Predicted labels
-        y_prob: Predicted probabilities (optional)
-        labels: List of label values
-        target_names: Names for each class
-        
-    Returns:
-        Dictionary containing all metrics
-    """
     if target_names is None:
         target_names = ['Thật (0)', 'Giả (1)']
     
@@ -62,14 +45,11 @@ def compute_metrics(
         )
     }
     
-    # Per-class metrics
     metrics['precision_per_class'] = precision_score(y_true, y_pred, average=None).tolist()
     metrics['recall_per_class'] = recall_score(y_true, y_pred, average=None).tolist()
     metrics['f1_per_class'] = f1_score(y_true, y_pred, average=None).tolist()
     
-    # ROC-AUC if probabilities are provided
     if y_prob is not None:
-        # For binary classification, use probability of positive class
         if len(y_prob.shape) > 1:
             y_prob_positive = y_prob[:, 1]
         else:
@@ -82,13 +62,6 @@ def compute_metrics(
 
 
 def print_metrics(metrics: Dict[str, Any], title: str = "Evaluation Results"):
-    """
-    Print metrics in a formatted way.
-    
-    Args:
-        metrics: Dictionary of metrics
-        title: Title for the output
-    """
     log.info("\n" + "=" * 60)
     log.info(f" {title}")
     log.info("=" * 60)
@@ -128,15 +101,6 @@ def plot_confusion_matrix(
     save_path: Optional[str] = None,
     title: str = "Confusion Matrix"
 ):
-    """
-    Plot confusion matrix.
-    
-    Args:
-        y_true: Ground truth labels
-        y_pred: Predicted labels
-        save_path: Path to save the figure
-        title: Plot title
-    """
     cm = confusion_matrix(y_true, y_pred)
     
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -153,7 +117,6 @@ def plot_confusion_matrix(
     
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
     
-    # Add text annotations
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
@@ -178,15 +141,6 @@ def plot_roc_curve(
     save_path: Optional[str] = None,
     title: str = "ROC Curve"
 ):
-    """
-    Plot ROC curve.
-    
-    Args:
-        y_true: Ground truth labels
-        y_prob: Predicted probabilities
-        save_path: Path to save the figure
-        title: Plot title
-    """
     if len(y_prob.shape) > 1:
         y_prob = y_prob[:, 1]
     
@@ -220,15 +174,6 @@ def plot_precision_recall_curve(
     save_path: Optional[str] = None,
     title: str = "Precision-Recall Curve"
 ):
-    """
-    Plot Precision-Recall curve.
-    
-    Args:
-        y_true: Ground truth labels
-        y_prob: Predicted probabilities
-        save_path: Path to save the figure
-        title: Plot title
-    """
     if len(y_prob.shape) > 1:
         y_prob = y_prob[:, 1]
     
@@ -257,18 +202,9 @@ def plot_precision_recall_curve(
 
 
 def save_metrics(metrics: Dict[str, Any], path: str):
-    """
-    Save metrics to JSON file.
-    
-    Args:
-        metrics: Dictionary of metrics
-        path: Path to save the file
-    """
-
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
     
-    # Convert numpy arrays to lists for JSON serialization
     def convert_to_serializable(obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
