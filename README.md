@@ -26,13 +26,12 @@ FakeNewsDetector/
 ├── src/
 │   ├── preprocessing/                  # Text cleaning & word segmentation
 │   ├── features/                       # Feature extraction (TF-IDF, embeddings, PhoBERT)
-│   ├── models/                        # Model classes (BiLSTM, PhoBERT, StudentBiLSTM)
+│   ├── models/                         # Model classes (BiLSTM, PhoBERT, StudentBiLSTM)
 │   ├── training/                       # Model training scripts
 │   ├── evaluation/                     # Metrics, error analysis, cross-validation, ablation
 │   └── analysis/                       # Statistical tests, explainability, paper generation
-├── experiments/                        # Trained models & metrics
-├── results/                            # Figures, tables, evaluation outputs
-├── paper/                              # LaTeX paper, figures, tables
+├── tests/                              # Unit & integration tests
+├── app.py                              # Optional Streamlit demo (loads trained models)
 ├── config.py                           # Centralised configuration
 └── pyproject.toml                      # Project metadata & dependencies
 ```
@@ -54,55 +53,12 @@ pip install -e .
 export JAVA_HOME=/usr/lib/jvm/java-25-openjdk  # adjust to your Java path
 ```
 
-## Paper source and LaTeX lists
-
-The main paper source is `paper/main.tex`. The compiled output is `paper/main.pdf`.
-
-To build the PDF (4-pass pipeline: pdflatex → bibtex → pdflatex → pdflatex):
-
-```bash
-cd paper
-./build.sh          # or: pdflatex main && bibtex main && pdflatex main && pdflatex main
-./build.sh clean    # xóa các file trung gian (.aux, .toc, .bbl, …)
-```
-
-Requires a TeX Live installation (tested with TeX Live 2025). The build script runs the
-standard `pdflatex` + `bibtex` cycle so that citations, cross-references and the table of
-contents settle correctly.
-
-When adding or editing a figure/table, keep two caption versions:
-
-```latex
-\caption[Short caption for the list]{Full caption shown beside the figure/table}
-```
-
-The short version is used automatically by `listoffigures` and `listoftables`; the full version remains visible in the report body. This is especially useful for long analytical captions.
-
-### File layout
-
-The paper is a single `main.tex` (~2,600 lines) organised as follows:
-
-| Lines (approx.) | Section                                                |
-| --------------- | ------------------------------------------------------ |
-| 1 – 100         | Document class, packages, hyperref setup                |
-| 100 – 470       | Centralised `\newcommand`s for every dataset/metric    |
-| 470 – 690       | Title page, ToC, lists of tables/figures, abbreviations |
-| 690 – 1,200     | Chapter 1 — Cơ sở lý thuyết                              |
-| 1,200 – 1,400   | Chapter 2 — Bộ dữ liệu và tiền xử lý                     |
-| 1,400 – 1,660   | Chapter 3 — Xác định tin giả                              |
-| 1,660 – 2,545   | Chapter 4 — Kết quả thực nghiệm                           |
-| 2,545 – 2,590   | Kết luận, Tài liệu tham khảo                              |
-
-Numerical results live in the `\newcommand` block near the top of `main.tex`. Editing a
-value there propagates everywhere — table `\input`s, body text, captions.
-
+## Streamlit Demo
 
 A research/demo interface that loads the existing trained models and runs
 inference on a user-pasted Vietnamese article. **No model is retrained.**
 If a checkpoint or feature file is missing, the demo shows a clear error
 explaining which artefact is required.
-
-## Streamlit Demo
 
 ```bash
 cd FakeNewsDetector
