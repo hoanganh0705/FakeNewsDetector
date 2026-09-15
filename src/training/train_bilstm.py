@@ -379,11 +379,29 @@ def main():
     # Initialize trainer (defaults pulled from cfg.BILSTM)
     trainer = BiLSTMTrainer(vocab_size=vocab_size)
 
-    # If FastText path is provided, load matrix and set embeddings (requires extractor)
+    # If FastText path is provided, load matrix and set embeddings (requires extractor).
+    # FastText is OPTIONAL: if the .bin file is missing (or fasttext-wheel can't open it),
+    # we warn and continue with random-init embeddings rather than crashing the run.
     if cfg.BILSTM.fasttext_path:
-        try:
-            if os.path.exists(extractor_path):
-                from src.features.embedding_features import EmbeddingFeatureExtractor, load_fasttext_matrix
+        if not os.path.exists(cfg.BILSTM.fasttext_path):
+            log.warning(
+                "FastText path '%s' does not exist on disk — skipping pretrained init "
+                "and continuing with random embeddings. "
+                "To enable, download cc.vi.300.bin from "
+                "https://fasttext.cc/docs/en/crawl-vectors.html into this path.",
+                cfg.BILSTM.fasttext_path,
+            )
+        elif not os.path.exists(extractor_path):
+            log.info(
+                "FastText path set but embedding extractor not found at %s; skipping pretrained init",
+                extractor_path,
+            )
+        else:
+            try:
+                from src.features.embedding_features import (
+                    EmbeddingFeatureExtractor,
+                    load_fasttext_matrix,
+                )
                 log.info("Loading FastText embeddings from %s ...", cfg.BILSTM.fasttext_path)
                 ext = EmbeddingFeatureExtractor.load(extractor_path)
                 matrix = load_fasttext_matrix(ext.vocab, cfg.BILSTM.fasttext_path, cfg.BILSTM.embedding_dim)
@@ -393,10 +411,14 @@ def main():
                 if getattr(cfg.BILSTM, 'freeze_embeddings', False):
                     trainer.model.embedding.weight.requires_grad = False
                     log.info("Embedding layer frozen (freeze_embeddings=True)")
-            else:
-                log.info("FastText path set but embedding extractor not found at %s; skipping pretrained init", extractor_path)
-        except (ImportError, FileNotFoundError, RuntimeError, OSError) as e:
-            log.warning("Could not load FastText embeddings: %s", e)
+            except (ImportError, FileNotFoundError, RuntimeError, OSError, ValueError) as e:
+                # ValueError is what fasttext.load_model raises when the file is missing
+                # or unreadable — the original exception list missed it and crashed training.
+                log.warning(
+                    "Could not load FastText embeddings (%s: %s) — "
+                    "continuing with random embeddings.",
+                    type(e).__name__, e,
+                )
 
     # Train
     log.info("-" * 60)
