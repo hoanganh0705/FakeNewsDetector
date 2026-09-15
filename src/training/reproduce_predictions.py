@@ -65,8 +65,15 @@ def stage_a(force: bool = False) -> None:
         model = bundle["model"] if isinstance(bundle, dict) and "model" in bundle else bundle
 
         combined = {"model_name": name, "timestamp": datetime.now().isoformat()}
-        for split_name, X, y in [("val", feats["X_val"], feats["y_val"]),
-                                 ("test", feats["X_test"], feats["y_test"])]:
+        for split_name, X, y in [
+            # BUG FIX (Phase 1, Task 1.1, 2026-09-15): Added "train" split so that
+            # the student distillation trainer has real teacher logits for the
+            # training set (previously only val/test were saved; train was filled
+            # with zeros, which made the KD term a constant).
+            ("train", feats["X_train"], feats["y_train"]),
+            ("val",   feats["X_val"],   feats["y_val"]),
+            ("test",  feats["X_test"],  feats["y_test"]),
+        ]:
             y_pred = np.asarray(model.predict(X))
             y_prob = np.asarray(model.predict_proba(X)[:, 1], dtype=np.float64)
             raw_logit = _resolve_raw_logit_sklearn(model, X)
@@ -135,9 +142,16 @@ def stage_b(skip_retrain: bool = False, device: str = None, epochs: int = None) 
         log.info("Loading BiLSTM checkpoint from %s", model_ckpt)
         trainer = BiLSTMTrainer.load(str(model_ckpt), device=device)
 
-    log.info("Running BiLSTM inference on val + test ...")
+    log.info("Running BiLSTM inference on train + val + test ...")
+    # BUG FIX (Phase 1, Task 1.1, 2026-09-15): Previously, BiLSTM teacher logits
+    # were only extracted on val/test. The student distillation trainer then
+    # used `np.zeros()` for train logits, causing the KD term to collapse to
+    # a constant and effectively reduce training to plain cross-entropy.
+    # We now extract train logits too so the KD loss is meaningful throughout.
+    train_pred, train_prob = trainer.predict(train_loader)
+    train_logits = _extract_logits_bilstm(trainer, train_loader)  # shape (N, 2)
     val_pred, val_prob = trainer.predict(val_loader)
-    val_logits = _extract_logits_bilstm(trainer, val_loader)  # shape (N, 2)
+    val_logits = _extract_logits_bilstm(trainer, val_loader)
     test_pred, test_prob = trainer.predict(test_loader)
     test_logits = _extract_logits_bilstm(trainer, test_loader)
 
@@ -150,6 +164,13 @@ def stage_b(skip_retrain: bool = False, device: str = None, epochs: int = None) 
     joblib.dump({
         "model_name": "BiLSTM",
         "timestamp": datetime.now().isoformat(),
+        "train": {
+            "y_true": _to_list(y_train),
+            "y_pred": _to_list(train_pred),
+            "y_prob": _to_list(train_prob),
+            "raw_logit": _to_list(train_logits[:, 1]),  # logit for class 1
+            "n_samples": int(len(y_train)),
+        },
         "val": {
             "y_true": _to_list(y_val),
             "y_pred": _to_list(val_pred),
@@ -246,7 +267,11 @@ def stage_c(skip_retrain: bool = False, device: str = None, epochs: int = None) 
         log.info("Loading PhoBERT checkpoint from %s", model_ckpt)
         trainer = PhoBertTrainer.load(str(model_ckpt), device=device)
 
-    log.info("Running PhoBERT inference on val + test ...")
+    log.info("Running PhoBERT inference on train + val + test ...")
+    # BUG FIX (Phase 1, Task 1.1, 2026-09-15): See BiLSTM comment above.
+    # We now extract train logits so the KD loss is meaningful on the train set.
+    train_pred, train_prob = trainer.predict(train_loader)
+    train_logits = _extract_logits_phobert(trainer, train_loader)
     val_pred, val_prob = trainer.predict(val_loader)
     val_logits = _extract_logits_phobert(trainer, val_loader)
     test_pred, test_prob = trainer.predict(test_loader)
@@ -261,6 +286,13 @@ def stage_c(skip_retrain: bool = False, device: str = None, epochs: int = None) 
     joblib.dump({
         "model_name": "PhoBERT",
         "timestamp": datetime.now().isoformat(),
+        "train": {
+            "y_true": _to_list(y_train),
+            "y_pred": _to_list(train_pred),
+            "y_prob": _to_list(train_prob),
+            "raw_logit": _to_list(train_logits[:, 1]),
+            "n_samples": int(len(y_train)),
+        },
         "val": {
             "y_true": _to_list(y_val),
             "y_pred": _to_list(val_pred),

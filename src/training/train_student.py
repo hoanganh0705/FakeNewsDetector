@@ -280,7 +280,10 @@ class StudentBiLSTMTrainer:
 
     @classmethod
     def load(cls, path: str, device: Optional[str] = None) -> "StudentBiLSTMTrainer":
-        ckpt = torch.load(path, map_location="cpu", weights_only=False)
+        # Security: weights_only=True prevents arbitrary code execution from tampered checkpoints.
+        # The saved checkpoint only contains plain Python primitives + tensor state_dicts,
+        # so weights_only=True is safe here.
+        ckpt = torch.load(path, map_location="cpu", weights_only=True)
         trainer = cls(
             vocab_size=ckpt["vocab_size"],
             embedding_dim=ckpt["embedding_dim"],
@@ -299,14 +302,33 @@ class StudentBiLSTMTrainer:
         return trainer
 
 
-def _load_teacher_logits(model_dir_name: str) -> Tuple[np.ndarray, np.ndarray]:
+def _load_teacher_logits(model_dir_name: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Load teacher (raw) logits for train, val, test splits.
+
+    BUG FIX (Phase 1, Task 1.1, 2026-09-15): The old code only loaded val + test
+    logits; train logits were then filled with `np.zeros()` in `main()`, which
+    caused the KD term to be a constant and effectively reduced training to
+    cross-entropy. We now require train logits to be present. If they are not,
+    we raise a clear error so the user knows to re-run `reproduce_predictions`.
+    """
     path = os.path.join(cfg.PATHS.experiments_dir, model_dir_name, "raw_logits.pkl")
     if not os.path.exists(path):
         raise FileNotFoundError(
             f"Teacher logits not found at {path}. Run reproduce_predictions first."
         )
     bundle = joblib.load(path)
+
+    missing_splits = [s for s in ("train", "val", "test") if s not in bundle]
+    if missing_splits:
+        raise KeyError(
+            f"Teacher logits at {path} are missing splits {missing_splits}. "
+            f"This usually means the file was produced before Phase 1 fix "
+            f"(2026-09-15). Re-run `python -m src.training.reproduce_predictions` "
+            f"to regenerate."
+        )
+
     return (
+        np.asarray(bundle["train"]["raw_logit"], dtype=np.float32),
         np.asarray(bundle["val"]["raw_logit"], dtype=np.float32),
         np.asarray(bundle["test"]["raw_logit"], dtype=np.float32),
     )
@@ -342,7 +364,7 @@ def main(
     log.info("vocab_size=%d | train=%d | val=%d | test=%d",
              vocab_size, len(train_seqs), len(val_seqs), len(test_seqs))
 
-    teacher_val_logits, teacher_test_logits = _load_teacher_logits(teacher_model)
+    teacher_train_logits, teacher_val_logits, teacher_test_logits = _load_teacher_logits(teacher_model)
     if len(teacher_val_logits) != len(val_seqs):
         log.warning(
             "Teacher val logits (%d) ≠ val set size (%d); "
@@ -372,12 +394,29 @@ def main(
         temperature=temperature,
     )
 
+    # BUG FIX (Phase 1, Task 1.1, 2026-09-15): Previously `dummy_train_logits`
+    # was an array of zeros, which made the KD term a constant in the loss.
+    # The student effectively trained on plain cross-entropy. We now use the
+    # real teacher logits on the training set, which makes the KD signal
+    # meaningful for the entire optimization trajectory.
     n_train = len(train_seqs)
-    dummy_train_logits = np.zeros((n_train,), dtype=np.float32)
+    if len(teacher_train_logits) != n_train:
+        raise ValueError(
+            f"Teacher train logits ({len(teacher_train_logits)}) do not match "
+            f"train set size ({n_train}). Re-run `python -m src.training.reproduce_predictions` "
+            f"to regenerate teacher logits with all three splits (train/val/test)."
+        )
+    log.info(
+        "Teacher train logits: shape=%s, mean=%.4f, std=%.4f "
+        "(was zero-filled before Phase 1 fix)",
+        teacher_train_logits.shape,
+        teacher_train_logits.mean(),
+        teacher_train_logits.std(),
+    )
     trainer.train(
         train_loader=train_loader,
         val_loader=val_loader,
-        teacher_logits_train=dummy_train_logits,
+        teacher_logits_train=teacher_train_logits,
         teacher_logits_val=teacher_val_logits,
         epochs=epochs,
         patience=patience,
@@ -405,6 +444,13 @@ def main(
     joblib.dump(
         {
             "model_name": "student_bilstm",
+            "train": {
+                "y_true": _to_list(y_train),
+                "y_pred": _to_list(trainer.predict(train_loader)[0]),
+                "y_prob": _to_list(trainer.predict(train_loader)[1]),
+                "raw_logit": _to_list(teacher_train_logits),
+                "n_samples": int(len(y_train)),
+            },
             "val": {
                 "y_true": _to_list(y_val),
                 "y_pred": _to_list(trainer.predict(val_loader)[0]),

@@ -91,7 +91,8 @@ def _load_teacher_bilstm_model() -> BiLSTMClassifier:
     ckpt_path = Path(cfg.PATHS.experiments_dir) / "bilstm" / "bilstm_model.pt"
     if not ckpt_path.exists():
         raise FileNotFoundError(ckpt_path)
-    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    # Security: weights_only=True prevents arbitrary code execution from tampered checkpoints.
+    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
     model = BiLSTMClassifier(
         vocab_size=ckpt["vocab_size"],
         embedding_dim=ckpt["embedding_dim"],
@@ -108,7 +109,8 @@ def _load_student_model(vocab_size: int) -> StudentBiLSTM:
     ckpt_path = Path(cfg.PATHS.experiments_dir) / "student_bilstm" / "student_bilstm_model.pt"
     if not ckpt_path.exists():
         raise FileNotFoundError(ckpt_path)
-    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    # Security: weights_only=True prevents arbitrary code execution from tampered checkpoints.
+    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
     model = StudentBiLSTM(
         vocab_size=ckpt["vocab_size"],
         embedding_dim=ckpt["embedding_dim"],

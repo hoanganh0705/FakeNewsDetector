@@ -75,7 +75,8 @@ class StudentBiLSTM(nn.Module):
 
     @classmethod
     def load(cls, path: str, **kwargs) -> "StudentBiLSTM":
-        state = torch.load(path, map_location="cpu", weights_only=False)
+        # Security: weights_only=True prevents arbitrary code execution from tampered checkpoints.
+        state = torch.load(path, map_location="cpu", weights_only=True)
         instance = cls(**kwargs)
         instance.load_state_dict(state)
         return instance

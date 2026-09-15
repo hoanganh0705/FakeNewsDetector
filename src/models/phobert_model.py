@@ -65,14 +65,10 @@ class PhoBertClassifier(nn.Module):
         os.makedirs(save_directory, exist_ok=True)
         self.transformer.save_pretrained(save_directory)
 
-    @classmethod
-    def from_pretrained(
-        cls,
-        pretrained_model_name_or_path: str,
-        **kwargs,
-    ) -> "PhoBertClassifier":
-        instance = cls(
-            model_name=pretrained_model_name_or_path,
-            **kwargs,
-        )
-        return instance
+    # NOTE: A `from_pretrained` classmethod was previously defined here that
+    # shadowed `transformers.AutoModelForSequenceClassification.from_pretrained`
+    # but only called `__init__` — returning an untrained model with random
+    # weights. It was never called anywhere in the codebase (verified via grep
+    # on 2026-09-15), so it was removed to eliminate the footgun. The `__init__`
+    # already loads pretrained weights via `AutoModelForSequenceClassification
+    # .from_pretrained`, so no replacement is needed.
