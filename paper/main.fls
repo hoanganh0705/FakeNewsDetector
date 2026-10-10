@@ -1974,10 +1974,10 @@ INPUT ./figures//fig4_pr_curves.png
 INPUT ./figures//fig4_pr_curves.png
 INPUT ./figures//fig4_pr_curves.png
 INPUT ./figures//fig4_pr_curves.png
-INPUT ./figures//fig_calibration_curves.png
-INPUT ./figures//fig_calibration_curves.png
-INPUT ./figures//fig_calibration_curves.png
-INPUT ./figures//fig_calibration_curves.png
+INPUT ./figures//fig_calibration_curves.pdf
+INPUT ./figures//fig_calibration_curves.pdf
+INPUT ./figures//fig_calibration_curves.pdf
+INPUT ./figures//fig_calibration_curves.pdf
 INPUT ./figures//fig_fp_fn_comparison.png
 INPUT ./figures//fig_fp_fn_comparison.png
 INPUT ./figures//fig_fp_fn_comparison.png

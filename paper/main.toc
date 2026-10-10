@@ -71,12 +71,12 @@
 \contentsline {section}{\numberline {4.5}Các mô hình phân loại}{44}{section.4.5}%
 \contentsline {subsection}{\numberline {4.5.1}Các mô hình học máy truyền thống}{44}{subsection.4.5.1}%
 \contentsline {subsubsection}{\numberline {4.5.1.1}Logistic Regression}{44}{subsubsection.4.5.1.1}%
-\contentsline {subsubsection}{\numberline {4.5.1.2}Support Vector Machine}{45}{subsubsection.4.5.1.2}%
+\contentsline {subsubsection}{\numberline {4.5.1.2}Support Vector Machine}{44}{subsubsection.4.5.1.2}%
 \contentsline {subsection}{\numberline {4.5.2}Các mô hình học sâu}{45}{subsection.4.5.2}%
 \contentsline {subsubsection}{\numberline {4.5.2.1}Mạng BiLSTM}{45}{subsubsection.4.5.2.1}%
 \contentsline {subsubsection}{\numberline {4.5.2.2}Tinh chỉnh PhoBERT}{45}{subsubsection.4.5.2.2}%
 \contentsline {section}{\numberline {4.6}Chiến lược xử lý mất cân bằng nhãn}{46}{section.4.6}%
-\contentsline {section}{\numberline {4.7}Các phân tích mở rộng được thiết kế cho chương thực nghiệm}{47}{section.4.7}%
+\contentsline {section}{\numberline {4.7}Các phân tích mở rộng được thiết kế cho chương thực nghiệm}{46}{section.4.7}%
 \contentsline {subsection}{\numberline {4.7.1}Phân tích khả năng giải thích (Explainability)}{47}{subsection.4.7.1}%
 \contentsline {subsection}{\numberline {4.7.2}Hiệu chỉnh xác suất sau huấn luyện (Post-Hoc Calibration)}{47}{subsection.4.7.2}%
 \contentsline {subsection}{\numberline {4.7.3}Phân tích các trường hợp khó (Hard Cases)}{48}{subsection.4.7.3}%

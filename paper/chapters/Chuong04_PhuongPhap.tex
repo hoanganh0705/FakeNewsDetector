@@ -14,16 +14,16 @@ Sự phát triển nhanh của môi trường trực tuyến đã làm thay đ�
 
 Để đưa văn bản vào các mô hình học máy, nội dung ngôn ngữ cần được chuyển đổi thành dạng biểu diễn mà thuật toán có thể khai thác. Các phương pháp truyền thống như Bag-of-Words và TF-IDF biểu diễn văn bản dựa trên sự xuất hiện hoặc tần suất của các từ, trong khi word embedding cung cấp cách biểu diễn giàu thông tin hơn thông qua các vector số. Tuy nhiên, những phương pháp này vẫn gặp hạn chế trong việc mô tả đầy đủ quan hệ ngữ cảnh của từ trong câu. Các mô hình dựa trên kiến trúc Transformer đã mở rộng khả năng biểu diễn này bằng cách khai thác thông tin ngữ cảnh trong toàn bộ chuỗi văn bản, từ đó đạt hiệu quả cao trong nhiều nhiệm vụ phân loại và phân tích ngôn ngữ.
 
-Dựa trên những hướng tiếp cận nói trên, đồ án xây dựng một quy trình thực nghiệm nhằm đánh giá và đối chiếu khả năng nhận diện tin giả giữa các nhóm mô hình khác nhau. Nhóm phương pháp truyền thống được đại diện bởi Logistic Regression và SVM --- sử dụng đặc trưng trích xuất từ văn bản; nhóm học sâu gồm BiLSTM và PhoBERT --- khai thác biểu diễn ngữ cảnh. Việc đặt các phương pháp này trong cùng một quy trình đánh giá tạo cơ sở để phân tích sự khác biệt về hiệu năng giữa cách tiếp cận dựa trên đặc trưng thủ công và cách tiếp cận dựa trên học biểu diễn từ dữ liệu.
+Dựa trên những hướng tiếp cận nói trên, đồ án xây dựng một quy trình thực nghiệm nhằm đánh giá và đối chiếu khả năng nhận diện tin giả giữa các nhóm mô hình khác nhau. Nhóm phương pháp truyền thống được đại diện bởi Logistic Regression và SVM; nhóm học sâu gồm BiLSTM và PhoBERT. Việc đặt các phương pháp này trong cùng một quy trình đánh giá tạo cơ sở để phân tích sự khác biệt về hiệu năng giữa cách tiếp cận dựa trên đặc trưng thủ công và cách tiếp cận dựa trên học biểu diễn từ dữ liệu.
 
 \section{Lý do lựa chọn các nhóm mô hình}
 \label{sec:model_selection}
 
 Đối với nhiệm vụ phân loại văn bản,  việc đánh giá các phương pháp có thể dựa trên ba tiêu chí chính:
 \begin{itemize}
-    \item \textit{Khả năng diễn giải} --- mức độ con người có thể hiểu được logic ra quyết định của mô hình.
-    \item \textit{Chi phí tính toán} --- chi phí về thời gian và tài nguyên trong quá trình huấn luyện cũng như suy diễn.
-    \item \textit{Năng lực biểu diễn ngữ nghĩa} --- khả năng khai thác những sắc thái ngữ nghĩa trong nội dung văn bản.
+    \item \textit{Khả năng diễn giải}: mức độ con người có thể hiểu được logic ra quyết định của mô hình.
+    \item \textit{Chi phí tính toán}: chi phí về thời gian và tài nguyên trong quá trình huấn luyện cũng như suy diễn.
+    \item \textit{Năng lực biểu diễn ngữ nghĩa}: khả năng khai thác những sắc thái ngữ nghĩa trong nội dung văn bản.
 \end{itemize}
 
 Dựa trên các tiêu chí này, đồ án này so sánh hai nhóm:
@@ -33,7 +33,7 @@ Dựa trên các tiêu chí này, đồ án này so sánh hai nhóm:
         \item Logistic Regression
         \item Support Vector Machine
     \end{itemize}
-    Đầu vào của hai mô hình trên là vector TF-IDF~\cite{sparkjones1972idf}. Cả hai mô hình có nền tảng lý thuyết vững, hoạt động ổn định trên dữ liệu văn bản đặc trưng chiều cao và thưa, đồng thời thuận tiện cho việc phân tích đóng góp của từng đặc trưng và kiểm soát hiện tượng quá khớp~\cite{cortes1995svm}. Vì vậy, chúng được sử dụng làm \textit{strong baselines} --- điểm chuẩn --- để đo lường mức cải thiện thực sự mà các phương pháp phức tạp hơn mang lại.
+    Đầu vào của hai mô hình trên là vector TF-IDF~\cite{sparkjones1972idf}. Cả hai mô hình có nền tảng lý thuyết vững, hoạt động ổn định trên dữ liệu văn bản đặc trưng chiều cao và thưa, đồng thời thuận tiện cho việc phân tích đóng góp của từng đặc trưng và kiểm soát hiện tượng quá khớp~\cite{cortes1995svm}. Vì vậy, chúng được sử dụng làm \textit{strong baselines}, còn được xem là điểm chuẩn để đo lường mức cải thiện thực sự mà các phương pháp phức tạp hơn mang lại.
 
     \item \textbf{Nhóm học sâu}, bao gồm:
     \begin{itemize}

@@ -1,21 +1,3 @@
-"""
-Streamlit demo for the Vietnamese Fake News Detector research project.
-
-This module is an inference/demo layer ONLY — it loads the *existing*
-trained model artifacts produced by ``fakenews train …`` and the existing
-preprocessing / feature-extraction modules.  No model is retrained and no
-existing artefact is modified.
-
-Usage::
-
-    source .venv/bin/activate
-    streamlit run app.py
-
-Label convention (preserved from the training pipeline):
-    0 = Real
-    1 = Fake
-"""
-
 from __future__ import annotations
 
 import os
@@ -26,7 +8,6 @@ from typing import Optional
 import numpy as np
 import streamlit as st
 
-# Ensure the project root is on sys.path when launched via ``streamlit run``.
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
@@ -34,16 +15,12 @@ if _PROJECT_ROOT not in sys.path:
 from config import cfg  # noqa: E402
 
 
-# ============================================================================
-# Constants
-# ============================================================================
 
 LABEL_REAL = 0
 LABEL_FAKE = 1
 LABEL_NAMES = {LABEL_REAL: "Real", LABEL_FAKE: "Fake"}
 LABEL_COLORS = {LABEL_REAL: "#1f8a4c", LABEL_FAKE: "#c0392b"}
 
-# Static research benchmark (from THESIS_PROJECT_CONTEXT.md §7).
 RESEARCH_METRICS = {
     "PhoBERT":            {"accuracy": 0.9007, "f1": 0.8988, "auc": 0.9495, "best": True},
     "SVM":                {"accuracy": 0.8434, "f1": 0.8410, "auc": 0.9190},
@@ -56,22 +33,14 @@ MODEL_KEYS = ("lr", "svm", "bilstm", "phobert")
 DISPLAY = {"lr": "Logistic Regression", "svm": "SVM",
            "bilstm": "BiLSTM", "phobert": "PhoBERT"}
 
-
-# ============================================================================
-# Custom exception — surfaced as a friendly UI error
-# ============================================================================
-
 class ArtifactMissingError(RuntimeError):
     """Raised when a model/feature artefact required for inference is absent."""
 
 
-# ============================================================================
-# Data classes
-# ============================================================================
+
 
 @dataclass
 class Prediction:
-    """Single-model prediction result."""
     label: int                 # 0 = Real, 1 = Fake
     p_real: float              # P(Real)
     p_fake: float              # P(Fake)

@@ -1,11 +1,3 @@
-"""
-Logistic Regression Training Script for Vietnamese Fake News Detection
-
-
-This script trains a Logistic Regression classifier using TF-IDF features.
-Includes hyperparameter tuning with cross-validation.
-"""
-
 import os
 import joblib
 import time
@@ -35,16 +27,7 @@ class LogisticRegressionTrainer:
         random_state: int = None,
         n_jobs: int = None
     ):
-        """
-        Initialize the trainer.
-        
-        Args:
-            C: Regularization strength (inverse, defaults to cfg.LR.C)
-            max_iter: Maximum iterations for solver (defaults to cfg.LR.max_iter)
-            class_weight: 'balanced' to handle class imbalance (defaults to cfg.LR.class_weight)
-            random_state: Random seed (defaults to cfg.RANDOM_STATE)
-            n_jobs: Number of parallel jobs (defaults to cfg.LR.n_jobs)
-        """
+
         self.C = C if C is not None else cfg.LR.C
         self.max_iter = max_iter if max_iter is not None else cfg.LR.max_iter
         self.class_weight = class_weight if class_weight is not None else cfg.LR.class_weight
@@ -62,18 +45,6 @@ class LogisticRegressionTrainer:
         X_val: np.ndarray = None,
         y_val: np.ndarray = None
     ) -> 'LogisticRegressionTrainer':
-        """
-        Train the Logistic Regression model.
-        
-        Args:
-            X_train: Training features
-            y_train: Training labels
-            X_val: Validation features (optional)
-            y_val: Validation labels (optional)
-            
-        Returns:
-            self
-        """
         log.info("Training Logistic Regression...")
         start_time = time.time()
         
@@ -89,7 +60,6 @@ class LogisticRegressionTrainer:
         
         train_time = time.time() - start_time
         
-        # Training metrics
         y_train_pred = self.model.predict(X_train)
         y_train_prob = self.model.predict_proba(X_train)[:, 1]
         train_metrics = compute_metrics(y_train, y_train_pred, y_train_prob)
@@ -101,7 +71,6 @@ class LogisticRegressionTrainer:
         log.info(f"Train Accuracy: {train_metrics['accuracy']:.4f}")
         log.info(f"Train F1: {train_metrics['f1_macro']:.4f}")
         
-        # Validation metrics
         if X_val is not None and y_val is not None:
             y_val_pred = self.model.predict(X_val)
             y_val_prob = self.model.predict_proba(X_val)[:, 1]
@@ -120,18 +89,6 @@ class LogisticRegressionTrainer:
         param_grid: dict = None,
         cv: int = None
     ) -> 'LogisticRegressionTrainer':
-        """
-        Train with hyperparameter tuning using GridSearchCV.
-        
-        Args:
-            X_train: Training features
-            y_train: Training labels
-            param_grid: Parameter grid for search
-            cv: Number of cross-validation folds
-            
-        Returns:
-            self
-        """
         if param_grid is None:
             param_grid = cfg.LR.param_grid
         cv = cv if cv is not None else cfg.LR.cv_folds
@@ -176,21 +133,17 @@ class LogisticRegressionTrainer:
         return self
     
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict labels."""
         return self.model.predict(X)
     
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Predict probabilities."""
         return self.model.predict_proba(X)[:, 1]
     
     def evaluate(self, X: np.ndarray, y: np.ndarray) -> dict:
-        """Evaluate on a dataset."""
         y_pred = self.predict(X)
         y_prob = self.predict_proba(X)
         return compute_metrics(y, y_pred, y_prob)
     
     def save(self, path: str) -> None:
-        """Save the model using joblib (safer & faster for sklearn objects)."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
         joblib.dump({
             'model': self.model,
@@ -201,7 +154,6 @@ class LogisticRegressionTrainer:
     
     @classmethod
     def load(cls, path: str) -> 'LogisticRegressionTrainer':
-        """Load a saved model."""
         data = joblib.load(path)
         
         trainer = cls()
@@ -212,18 +164,15 @@ class LogisticRegressionTrainer:
 
 
 def main():
-    """Main training function."""
 
     log.info("=" * 60)
     log.info("LOGISTIC REGRESSION TRAINING")
     log.info("=" * 60)
 
-    # Paths
     features_path = os.path.join(cfg.PATHS.tfidf_dir, 'tfidf_features.pkl')
     model_dir = cfg.PATHS.lr_dir
     os.makedirs(model_dir, exist_ok=True)
 
-    # Load features
     log.info("Loading TF-IDF features...")
     features = joblib.load(features_path)
 
@@ -266,7 +215,6 @@ def main():
     model_path = os.path.join(model_dir, 'lr_model.pkl')
     trainer.save(model_path)
 
-    # Save results (metrics, predictions, experiment log)
     save_training_results(
         model_name='Logistic Regression',
         model_dir=model_dir,

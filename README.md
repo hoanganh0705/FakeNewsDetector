@@ -17,7 +17,7 @@ A research project comparing machine learning approaches for Vietnamese fake new
 9. [Models](#models)
 10. [Dataset](#dataset)
 11. [Outputs (every artifact, where it lives)](#outputs-every-artifact-where-it-lives)
-12. [Statistical Validation & Analysis](#statistical-validation--analysis)
+12. [Statistical Validation &amp; Analysis](#statistical-validation--analysis)
 13. [Configuration (`config.py`)](#configuration-configpy)
 14. [Tests](#tests)
 
@@ -41,7 +41,7 @@ FakeNewsDetector/
 ├── README.md                          ← you are here
 ├── app.py                             ← Streamlit demo (inference only — no retraining)
 ├── config.py                          ← single source of truth for paths & hyperparams
-├── pyproject.toml                     ← Python 3.10–3.12, `pip install -e .`
+├── pyproject.toml                     ← Python 3.11–3.12, uv-managed environment
 ├── requirements.txt
 ├── data/
 │   └── raw/raw.csv                    ← Original dataset (15,789 rows)
@@ -111,25 +111,29 @@ FakeNewsDetector/
 
 ## Installation
 
-> **Supported Python versions: 3.10, 3.11, or 3.12.**
+> **Supported Python versions: 3.11 or 3.12.**
 > Python 3.13+ is **not yet supported** because `fasttext-wheel 0.9.2` does not compile against its bundled C++ headers on newer Python versions. See [`pyproject.toml`](pyproject.toml) for the canonical constraint.
 
 ```bash
 cd FakeNewsDetector
 
-# 1. Create a virtual env with a supported Python
-python3.11 -m venv .venv
-source .venv/bin/activate
+# Install uv if it is not already available:
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Install the project + all pinned deps
-pip install -e .
+# Create .venv, install the project, and install the locked dependencies.
+# uv selects a supported Python (3.11–3.12); use --python 3.12 to choose one.
+uv sync --python 3.12 --extra dev --extra demo
 
-# 3. (Optional) Install the Streamlit demo deps
-pip install -e ".[demo]"
-
-# 4. (Optional, Linux only) Py_VnCoreNLP requires Java
+# (Optional, Linux only) Py_VnCoreNLP requires Java.
 export JAVA_HOME=/usr/lib/jvm/java-25-openjdk   # adjust to your Java path
 ```
+
+`uv.lock` is committed so contributors and experiments resolve the same
+dependency versions. Use `uv run ...` for project commands; it automatically
+uses the project environment and does not require manual activation.
+
+For a non-uv workflow, the project remains compatible with `pip install -e .`
+and the optional extras in `pyproject.toml`.
 
 **Pinned tools** (see `pyproject.toml`): `numpy ≈ 2.4.1`, `pandas ≈ 3.0.0`, `scikit-learn ≈ 1.8.0`, `scipy ≈ 1.17.0`, `torch ≈ 2.10.0`, `transformers ≈ 4.57.6`, `sentencepiece ≈ 0.2.1`, `py_vncorenlp ≈ 0.1.4`, `underthesea ≈ 9.1.4`, `fasttext-wheel ≈ 0.9.2`, `matplotlib ≈ 3.10.8`, `seaborn ≈ 0.13.2`, `streamlit ≥1.39,<2`, `shap ≥0.45`, `captum ≥0.7`.
 
@@ -146,20 +150,20 @@ export JAVA_HOME=/usr/lib/jvm/java-25-openjdk   # adjust to your Java path
 
 ```bash
 # 1. End-to-end pipeline (5 steps in one command)
-fakenews run                        # preprocess → split → features → train → evaluate
+uv run fakenews run                 # preprocess → split → features → train → evaluate
 
 # 2. (Optional) Loosen or extend the run
-fakenews explain                    # token-level attribution (SHAP / IG / rollout)
-fakenews recalibrate                # Platt / Temperature / Isotonic calibration
-fakenews hard-cases                 # samples wrong by all 4 models
-fakenews distill                    # KD Student BiLSTM + trade-off figure
-fakenews run --help                 # all subcommands and flags
+uv run fakenews explain             # token-level attribution (SHAP / IG / rollout)
+uv run fakenews recalibrate         # Platt / Temperature / Isotonic calibration
+uv run fakenews hard-cases           # samples wrong by all 4 models
+uv run fakenews distill              # KD Student BiLSTM + trade-off figure
+uv run fakenews run --help           # all subcommands and flags
 
 # 3. Skip retraining — just try the demo
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
-Open the URL Streamlit prints (default: <http://localhost:8501>). See [Streamlit Demo](#streamlit-demo).
+Open the URL Streamlit prints (default: [http://localhost:8501](http://localhost:8501)). See [Streamlit Demo](#streamlit-demo).
 
 ---
 
@@ -171,7 +175,7 @@ Open the URL Streamlit prints (default: <http://localhost:8501>). See [Streamlit
 
 - **Filename**: `cc.vi.300.bin` (binary `.bin`, **not** `.vec`)
 - **Size**: ≈ **4.2 GB**
-- **Source page**: <https://fasttext.cc/docs/en/crawl-vectors.html>
+- **Source page**: [https://fasttext.cc/docs/en/crawl-vectors.html](https://fasttext.cc/docs/en/crawl-vectors.html)
 - **Default location** (after install): `data/fasttext/cc.vi.300.bin`
   — already excluded by `.gitignore`, so each user downloads their own copy.
 
@@ -245,8 +249,7 @@ A working file:
 ### Sanity-check BiLSTM can read it
 
 ```bash
-source .venv/bin/activate
-python -c "
+uv run python -c "
 import fasttext, os
 p = 'data/fasttext/cc.vi.300.bin'
 print('exists?', os.path.exists(p), 'size:', os.path.getsize(p))
@@ -262,7 +265,7 @@ Once `cc.vi.300.bin` is in place, `cfg.BILSTM.fasttext_path` already points at i
 ```bash
 # remove the previous BiLSTM artefacts to force a fresh run with pretrained init
 rm -rf experiments/bilstm
-fakenews train bilstm
+uv run fakenews train bilstm
 ```
 
 The training log will say `Loading FastText embeddings from ...` and F1 should improve over the random-init baseline. If you ever want to _disable_ pretrained init, set in `config.py`:
@@ -340,21 +343,19 @@ This section explains **the complete pipeline from a raw CSV to a paper-ready re
 
 ### Step-by-step (what each command does, what it reads, what it produces)
 
-#### Step 0 — Activate the environment
+#### Step 0 — Prepare the environment
 
 ```bash
 cd FakeNewsDetector
-source .venv/bin/activate          # Linux / macOS
-# .venv\Scripts\activate            # Windows
-pip install -e .                   # if not done yet
+uv sync --extra dev --extra demo
 ```
 
 #### Step 1 — Word Segmentation
 
 ```bash
-fakenews preprocess
+uv run fakenews preprocess
 # or, equivalently:
-python -m src.preprocessing.word_segmentation
+uv run python -m src.preprocessing.word_segmentation
 ```
 
 - **Reads**: `data/raw/raw.csv` (15,789 rows × columns `id, text, date, label`).
@@ -365,9 +366,9 @@ python -m src.preprocessing.word_segmentation
 #### Step 2 — Train / Val / Test Split
 
 ```bash
-fakenews split
+uv run fakenews split
 # or:
-python -m src.preprocessing.split_data
+uv run python -m src.preprocessing.split_data
 ```
 
 - **Reads**: `data/processed/segmented.csv`.
@@ -381,9 +382,9 @@ python -m src.preprocessing.split_data
 #### Step 3 — Feature Extraction
 
 ```bash
-fakenews features
+uv run fakenews features
 # or:
-python -m src.features.extract_all_features
+uv run python -m src.features.extract_all_features
 ```
 
 This step extracts **three parallel feature pipelines**:
@@ -401,13 +402,13 @@ This step extracts **three parallel feature pipelines**:
 You can train them all or pick the ones you need. Models are saved under `experiments/<dir>/` with the **same folder name** for every command so downstream scripts can rely on `MODEL_DIR_MAP`.
 
 ```bash
-fakenews train all             # or: fakenews train lr svm bilstm phobert
+uv run fakenews train all       # or: uv run fakenews train lr svm bilstm phobert
 
 # per-model:
-fakenews train lr              # Logistic Regression (GridSearchCV, 5-fold)
-fakenews train svm             # LinearSVC + calibration (GridSearchCV, 5-fold)
-fakenews train bilstm          # BiLSTM (AdamW + cosine schedule, early stopping)
-fakenews train phobert         # PhoBERT (layer-wise LR decay + linear warmup)
+uv run fakenews train lr        # Logistic Regression (GridSearchCV, 5-fold)
+uv run fakenews train svm       # LinearSVC + calibration (GridSearchCV, 5-fold)
+uv run fakenews train bilstm    # BiLSTM (AdamW + cosine schedule, early stopping)
+uv run fakenews train phobert   # PhoBERT (layer-wise LR decay + linear warmup)
 ```
 
 - **Reads**: feature `.pkl` files from Step 3.
@@ -429,7 +430,7 @@ fakenews train phobert         # PhoBERT (layer-wise LR decay + linear warmup)
 #### Step 5 — Evaluation (Comparison, Figures, Tables)
 
 ```bash
-fakenews evaluate
+uv run fakenews evaluate
 # or:  python -m src.evaluation.evaluate_all
 ```
 
@@ -454,8 +455,8 @@ fakenews evaluate
 #### Step 6 — Calibration Analysis
 
 ```bash
-fakenews calibration            # → src.evaluation.calibration_analysis
-fakenews recalibrate            # → src.evaluation.post_hoc_calibration
+uv run fakenews calibration     # → src.evaluation.calibration_analysis
+uv run fakenews recalibrate     # → src.evaluation.post_hoc_calibration
 ```
 
 - **Calibration** computes **ECE, MCE, Brier** and renders a 4-panel reliability diagram.
@@ -466,10 +467,10 @@ fakenews recalibrate            # → src.evaluation.post_hoc_calibration
 
 ```bash
 # default 20 examples
-fakenews explain
+uv run fakenews explain
 
 # customise
-fakenews explain --n-examples 30 --output-dir results/attributions \
+uv run fakenews explain --n-examples 30 --output-dir results/attributions \
                  --figures-dir paper/figures --tables-dir paper/tables
 ```
 
@@ -488,14 +489,14 @@ fakenews explain --n-examples 30 --output-dir results/attributions \
 
 ```bash
 # default: train student + render trade-off figure
-fakenews distill
+uv run fakenews distill
 
 # train only / eval only / everything
-fakenews distill --mode train
-fakenews distill --mode eval
+uv run fakenews distill --mode train
+uv run fakenews distill --mode eval
 
 # knobs
-fakenews distill --alpha 0.7 --temperature 4.0 --epochs 30 --patience 5 \
+uv run fakenews distill --alpha 0.7 --temperature 4.0 --epochs 30 --patience 5 \
                  --teacher-model bert --n-runs 30
 ```
 
@@ -510,9 +511,9 @@ fakenews distill --alpha 0.7 --temperature 4.0 --epochs 30 --patience 5 \
 #### Step 9 — Hard-Cases Deep-Dive (optional)
 
 ```bash
-fakenews hard-cases
+uv run fakenews hard-cases
 # or with custom paths:
-fakenews hard-cases --per-id-confidence results/tables/per_id_confidence.csv \
+uv run fakenews hard-cases --per-id-confidence results/tables/per_id_confidence.csv \
                     --test-csv data/splits/test.csv \
                     --attributions-dir results/attributions \
                     --figures-dir paper/figures --tables-dir paper/tables
@@ -528,15 +529,15 @@ fakenews hard-cases --per-id-confidence results/tables/per_id_confidence.csv \
 ```
                 ┌─ Want to retrain from scratch on the raw CSV? ─────────────────┐
                 │                                                                │
-                │           YES → fakenews run   (5 mandated steps)              │
+                │           YES → uv run fakenews run   (5 mandated steps)      │
                 │                                                                │
                 │           NO  → skip directly to your interest:                │
                 │                • Streamlit demo → just run `streamlit run     │
                 │                  app.py` (needs trained models)                │
                 │                • Reproduce paper numbers → fakenews            │
-                │                  evaluate + fakenews explain                   │
-                │                • Just KD → fakenews distill                   │
-                │                • New hard-cases analysis → fakenews hard-cases │
+                │                  evaluate + uv run fakenews explain           │
+                │                • Just KD → uv run fakenews distill             │
+                │                • New hard-cases → uv run fakenews hard-cases   │
                 │                                                                │
                 └────────────────────────────────────────────────────────────────┘
 ```
@@ -545,14 +546,14 @@ fakenews hard-cases --per-id-confidence results/tables/per_id_confidence.csv \
 
 ## CLI Reference (`fakenews …`)
 
-After `pip install -e .`, the **single entry point** `fakenews` (from `src/cli.py`) exposes every step:
+After `uv sync`, the **single entry point** `uv run fakenews` (from `src/cli.py`) exposes every step:
 
 | Command                                          | What it runs                                      |
 | ------------------------------------------------ | ------------------------------------------------- |
 | `fakenews preprocess`                            | `src.preprocessing.word_segmentation`             |
 | `fakenews split`                                 | `src.preprocessing.split_data`                    |
 | `fakenews features`                              | `src.features.extract_all_features`               |
-| `fakenews train [lr\|svm\|bilstm\|phobert\|all]` | per-model trainers (default `all`)                |
+| `fakenews train [lr\|svm\|bilstm\|phobert\|all]` | per-model trainers (default`all`)                 |
 | `fakenews evaluate`                              | `src.evaluation.evaluate_all`                     |
 | `fakenews calibration`                           | `src.evaluation.calibration_analysis` (ECE/MCE)   |
 | `fakenews recalibrate [--n-bins 10]`             | `src.evaluation.post_hoc_calibration` (Platt/T/I) |
@@ -572,13 +573,11 @@ If a checkpoint or feature file is missing, the demo shows a clear error explain
 
 ```bash
 cd FakeNewsDetector
-source .venv/bin/activate
-pip install -e .                      # installs the project + demo deps
-pip install -e ".[demo]"              # adds streamlit (if not yet present)
-streamlit run app.py
+uv sync --extra demo
+uv run streamlit run app.py
 ```
 
-Then open the local URL Streamlit prints (default: <http://localhost:8501>).
+Then open the local URL Streamlit prints (default: [http://localhost:8501](http://localhost:8501)).
 
 ### What the demo shows
 
@@ -595,15 +594,15 @@ The demo uses the same label convention as the research pipeline (`0 = Real, 1 =
 ### Demo with artefacts already on disk (fastest path)
 
 ```bash
-fakenews run                                  # one-shot end-to-end (~30–90 min on GPU)
-streamlit run app.py
+uv run fakenews run                         # one-shot end-to-end (~30–90 min on GPU)
+uv run streamlit run app.py
 ```
 
 ### Demo without retraining (assumes `experiments/` is committed or shared)
 
 ```bash
-pip install -e ".[demo]"
-streamlit run app.py                          # error per missing model, otherwise works
+uv sync --extra demo
+uv run streamlit run app.py                  # error per missing model, otherwise works
 ```
 
 ---
@@ -681,7 +680,7 @@ Notable knobs:
 - `cfg.TFIDF.max_features = 40 000`, `cfg.TFIDF.ngram_range = (1, 2)`.
 - `cfg.LR.param_grid` — GridSearchCV space.
 - `cfg.SVM.use_linear = True` — uses `LinearSVC` + calibrated CV.
-- `cfg.BILSTM.fasttext_path` — set to `data/fasttext/cc.vi.300.bin` to bootstrap BiLSTM embeddings. The file is downloaded by the user from <https://fasttext.cc/docs/en/crawl-vectors.html> — see the [Optional: Vietnamese FastText embeddings](#optional-vietnamese-fasttext-embeddings-bilstm-only) section for copy-pasteable `wget`, `curl`, and `huggingface-cli` commands. Leave it as-is to keep the default location.
+- `cfg.BILSTM.fasttext_path` — set to `data/fasttext/cc.vi.300.bin` to bootstrap BiLSTM embeddings. The file is downloaded by the user from [https://fasttext.cc/docs/en/crawl-vectors.html](https://fasttext.cc/docs/en/crawl-vectors.html) — see the [Optional: Vietnamese FastText embeddings](#optional-vietnamese-fasttext-embeddings-bilstm-only) section for copy-pasteable `wget`, `curl`, and `huggingface-cli` commands. Leave it as-is to keep the default location.
 - `cfg.PHOBERT.layer_lr_decay = 0.95`, `cfg.PHOBERT.gradient_accumulation_steps = 4`.
 - `cfg.ANALYSIS.bootstrap_iterations = 10 000`, `significance_level = 0.05`.
 
@@ -692,10 +691,9 @@ Notable knobs:
 The repo ships unit, smoke, and integration tests under `tests/` (runnable with `pytest`):
 
 ```bash
-source .venv/bin/activate
-pytest -q                                          # everything
-pytest tests/test_smoke.py -q                      # smoke-only (no GPU needed)
-pytest tests/test_integration.py -q                # end-to-end with tiny data
+uv run pytest -q                                   # everything
+uv run pytest tests/test_smoke.py -q               # smoke-only (no GPU needed)
+uv run pytest tests/test_integration.py -q         # end-to-end with tiny data
 ```
 
 Test catalog (`tests/`):

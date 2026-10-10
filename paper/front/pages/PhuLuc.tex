@@ -320,7 +320,7 @@ Tập \nhardexamples{} mẫu khó (cả bốn mô hình đều phân loại sai)
 
 Biến môi trường cần thiết: \texttt{JAVA\_HOME} trỏ tới JRE. PhoBERT (\texttt{vinai/phobert-base}) và FastText (\texttt{cc.vi.300.bin}) được tải tự động từ HuggingFace và lưu tại thư mục \texttt{data/fasttext/}.
 
-\subsection*{D.2. Pipeline huấn luyện -- đánh giá}
+\subsection*{D.2. Pipeline huấn luyện và đánh giá}
 
 \begin{verbatim}
 python -m venv .venv && source .venv/bin/activate
@@ -337,7 +337,6 @@ python -m src.evaluation.hard_cases
 python -m src.analysis.statistical_tests
 python -m src.analysis.generate_paper_tables
 python -m src.analysis.generate_paper_figures
-cd paper && ./build.sh
 \end{verbatim}
 
 \subsection*{D.3. Thiết lập ngẫu nhiên}

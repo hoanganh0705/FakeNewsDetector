@@ -7,7 +7,7 @@ name = "fake-news-detector"
 version = "0.1.0"
 description = "Vietnamese Fake News Detection — NCKH research project"
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     "numpy~=2.4.1",
     "pandas~=3.0.0",
@@ -32,6 +32,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=9.0.2"]
 demo = ["streamlit>=1.39,<2"]
+
+[tool.uv]
+package = true
 
 [project.scripts]
 fakenews = "src.cli:main"
